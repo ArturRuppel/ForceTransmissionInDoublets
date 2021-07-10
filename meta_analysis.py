@@ -79,35 +79,35 @@ def analyse_TFM_data(folder, stressmappixelsize):
     y = np.arange(0, y_half)
     for cell in np.arange(cell_end):
         # find peak in first frame
-        T_topleft = T[0:x_half,0:y_half,0,cell]
+        T_topleft = T[0:y_half, 0:x_half,0,cell]
         T_topleft_max = np.where(T_topleft == np.amax(T_topleft))
         
-        T_topright = T[x_half:x_end,0:y_half,0,cell]
+        T_topright = T[0:y_half,x_half:x_end,0,cell]
         T_topright_max = np.where(T_topright == np.amax(T_topright))    
         
-        T_bottomleft = T[0:x_half,y_half:y_end,0,cell]
+        T_bottomleft = T[y_half:y_end,0:x_half,0,cell]
         T_bottomleft_max = np.where(T_bottomleft == np.amax(T_bottomleft))
     
-        T_bottomright = T[x_half:x_end,y_half:y_end,0,cell]
+        T_bottomright = T[y_half:y_end,x_half:x_end,0,cell]
         T_bottomright_max = np.where(T_bottomright == np.amax(T_bottomright))
         for t in np.arange(t_end):
             
             mask_topleft = (x[np.newaxis,:]-T_topleft_max[1])**2 + (y[:,np.newaxis]-T_topleft_max[0])**2 < r**2            
-            Fx_topleft[t,cell] = np.nansum(Tx[0:x_half,0:y_half,t,cell]*mask_topleft)*stressmappixelsize**2
-            Fy_topleft[t,cell] = np.nansum(Ty[0:x_half,0:y_half,t,cell]*mask_topleft)*stressmappixelsize**2
+            Fx_topleft[t,cell] = np.nansum(Tx[0:y_half,0:x_half,t,cell]*mask_topleft)*stressmappixelsize**2
+            Fy_topleft[t,cell] = np.nansum(Ty[0:y_half,0:x_half,t,cell]*mask_topleft)*stressmappixelsize**2
             
             
             mask_topright = (x[np.newaxis,:]-T_topright_max[1])**2 + (y[:,np.newaxis]-T_topright_max[0])**2 < r**2
-            Fx_topright[t,cell] = np.nansum(Tx[0:x_half,0:y_half,t,cell]*mask_topright)*stressmappixelsize**2
-            Fy_topright[t,cell] = np.nansum(Ty[0:x_half,0:y_half,t,cell]*mask_topright)*stressmappixelsize**2
+            Fx_topright[t,cell] = np.nansum(Tx[0:y_half,x_half:x_end,t,cell]*mask_topright)*stressmappixelsize**2
+            Fy_topright[t,cell] = np.nansum(Ty[0:y_half,x_half:x_end,t,cell]*mask_topright)*stressmappixelsize**2
             
             mask_bottomleft = (x[np.newaxis,:]-T_bottomleft_max[1])**2 + (y[:,np.newaxis]-T_bottomleft_max[0])**2 < r**2
-            Fx_bottomleft[t,cell] = np.nansum(Tx[0:x_half,0:y_half,t,cell]*mask_bottomleft)*stressmappixelsize**2
-            Fy_bottomleft[t,cell] = np.nansum(Ty[0:x_half,0:y_half,t,cell]*mask_bottomleft)*stressmappixelsize**2
+            Fx_bottomleft[t,cell] = np.nansum(Tx[y_half:y_end,0:x_half,t,cell]*mask_bottomleft)*stressmappixelsize**2
+            Fy_bottomleft[t,cell] = np.nansum(Ty[y_half:y_end,0:x_half,t,cell]*mask_bottomleft)*stressmappixelsize**2
             
             mask_bottomright = (x[np.newaxis,:]-T_bottomright_max[1])**2 + (y[:,np.newaxis]-T_bottomright_max[0])**2 < r**2
-            Fx_bottomright[t,cell] = np.nansum(Tx[0:x_half,0:y_half,t,cell]*mask_bottomright)*stressmappixelsize**2
-            Fy_bottomright[t,cell] = np.nansum(Ty[0:x_half,0:y_half,t,cell]*mask_bottomright)*stressmappixelsize**2
+            Fx_bottomright[t,cell] = np.nansum(Tx[y_half:y_end,x_half:x_end,t,cell]*mask_bottomright)*stressmappixelsize**2
+            Fy_bottomright[t,cell] = np.nansum(Ty[y_half:y_end,x_half:x_end,t,cell]*mask_bottomright)*stressmappixelsize**2
             
             # mask_corneraverages = np.zeros((x_end,y_end))
             # mask_corneraverages[0:x_half,0:y_half] = mask_topleft
@@ -276,10 +276,10 @@ def main_meta_analysis(folder, title, noCells, noFrames):
     # # plot average movies with filtered data
     # plot_TFM_and_MSM_average_movies(folder, stressmappixelsize, baselinefilter)
     
-    # # remove cells with unstable baselines
-    # TFM_data = apply_filter(TFM_data, baselinefilter)
-    # MSM_data = apply_filter(MSM_data, baselinefilter)
-    # shape_data = apply_filter(shape_data, baselinefilter)
+    # remove cells with unstable baselines
+    TFM_data = apply_filter(TFM_data, baselinefilter)
+    MSM_data = apply_filter(MSM_data, baselinefilter)
+    shape_data = apply_filter(shape_data, baselinefilter)
     
     new_N = np.sum(baselinefilter)
     print(title +": "+str(baselinefilter.shape[0]-new_N) + " cells were filtered out")
@@ -309,9 +309,9 @@ if __name__ == "__main__":
     AR1to1d_fullstim_short = main_meta_analysis(folder,AR1to1dfss, 35,50)
     AR1to1s_fullstim_short = main_meta_analysis(folder, AR1to1sfss, 14,50)
     AR1to2d_halfstim = main_meta_analysis(folder, AR1to2dhs, 43,60)
-    # AR1to1d_halfstim = main_meta_analysis(folder, AR1to1dhs, 29,60)
-    # AR1to1s_halfstim = main_meta_analysis(folder, AR1to1shs, 41,60)
-    # AR2to1d_halfstim = main_meta_analysis(folder, AR2to1dhs ,18,60)  
+    AR1to1d_halfstim = main_meta_analysis(folder, AR1to1dhs, 29,60)
+    AR1to1s_halfstim = main_meta_analysis(folder, AR1to1shs, 41,60)
+    AR2to1d_halfstim = main_meta_analysis(folder, AR2to1dhs ,18,60)  
    
 
     # save dictionaries to a file using pickle
@@ -323,9 +323,9 @@ if __name__ == "__main__":
     with open(folder + "analysed_data/AR1to1d_fullstim_short.dat", 'wb') as outfile:pickle.dump(AR1to1d_fullstim_short, outfile, protocol=pickle.HIGHEST_PROTOCOL)
     with open(folder + "analysed_data/AR1to1s_fullstim_short.dat", 'wb') as outfile:pickle.dump(AR1to1s_fullstim_short, outfile, protocol=pickle.HIGHEST_PROTOCOL)
     with open(folder + "analysed_data/AR1to2d_halfstim.dat", 'wb') as outfile:      pickle.dump(AR1to2d_halfstim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
-    # with open(folder + "analysed_data/AR1to1d_halfstim.dat", 'wb') as outfile:      pickle.dump(AR1to1d_halfstim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
-    # with open(folder + "analysed_data/AR1to1s_halfstim.dat", 'wb') as outfile:      pickle.dump(AR1to1s_halfstim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
-    # with open(folder + "analysed_data/AR2to1d_halfstim.dat", 'wb') as outfile:      pickle.dump(AR2to1d_halfstim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(folder + "analysed_data/AR1to1d_halfstim.dat", 'wb') as outfile:      pickle.dump(AR1to1d_halfstim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(folder + "analysed_data/AR1to1s_halfstim.dat", 'wb') as outfile:      pickle.dump(AR1to1s_halfstim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(folder + "analysed_data/AR2to1d_halfstim.dat", 'wb') as outfile:      pickle.dump(AR2to1d_halfstim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
 
     # # save files that are necessary for the ellipsefit algorithm
     # ellipsefolder = folder + "data_for_ellipsefit/"

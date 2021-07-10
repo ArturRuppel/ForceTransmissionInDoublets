@@ -20,348 +20,27 @@ import pickle
 
 '''
 
-# The the only things that should and have to be changed in this script are in the "-----" marked domain
-# -------------------------------------------------------------------------------------------------------------------------------
-
-# location where all the data input data sits and where the output data is written to 
-# adjust this path to specifiy read directory (read and save direactory are the same)
-folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
-    
-data = pickle.load(open(folder + "analysed_data/AR1to1d_fullstim_long.dat", "rb"))
-
-# here you can specify which task to perform, default is that script performs all tasks
-# which operations should be performed in the script
-# Note !!!!!!!!!!!: If the script is run for the first time all options should be set to True
-cell_no_start_loop = 1 #Default value is 1
-do_circle_fit = True
-do_calc_tangents = True
-do_TEM_analysis_with_circle_fit = True
-do_ellipse_approx = True
-do_ellipse_fit = True
-# -------------------------------------------------------------------------------------------------------------------------------
-
-#####################################################################################
-# Additional code snippets and functions which are generalized and will be used in main code:
-# conversion factor from pixel to micro meter um
-uM_per_pix = 0.108
-
-def save_dict_to_csv(data_dict, path):
-    '''Save a Dictionary to .csv file 
-
-       Keys in dictionary give header (names of columns) in csv.
-
-    '''
-    # print(data_dict['r left arc'])
-    length_items = []
-    for key in data_dict:
-        length_items.append(len(data_dict[key]))
-
-    max_len = max(length_items)
-
-    # make all dicts same length
-    for key in data_dict:
-        l = len(data_dict[key])
-        if not max_len == l:
-            data_dict[key] = np.concatenate(
-                (data_dict[key], np.array(['']*(max_len-l))))
-    # save data as data frame to csv
-    df = pd.DataFrame(data_dict)
-    df.to_csv(path, sep=',', encoding='utf-8')
-
-# read the fibertrack x and y components of start and end point of top and bottom fiber (function still misses a description)
-def read_tangent_points_mat(directory,c):
-
-    read_path = directory + "fibertracking (%s).mat" % (c+1)
-    mat = sio.loadmat(read_path)
-    print(mat.keys())
-
-    # first index gives point and second index gives time point
-    # first point x coordinate over all time frames
-    X_top_left = np.array(mat['Xtop'])[0, :]
-    # first point y coordinate over all time frames
-    Y_top_left = np.array(mat['Ytop'])[0, :]
-    # last point x coordinate over all time frames
-    X_top_right = np.array(mat['Xtop'])[-1, :]
-    # last point y coordinate over all time frames
-    Y_top_right = np.array(mat['Ytop'])[-1, :]
-
-    # first point x coordinate over all time frames
-    X_bottom_left = np.array(mat['Xbottom'])[0, :]
-    # first point y coordinate over all time frames
-    Y_bottom_left = np.array(mat['Ybottom'])[0, :]
-    # last point x coordinate over all time frames
-    X_bottom_right = np.array(mat['Xbottom'])[-1, :]
-    # last point y coordinate over all time frames
-    Y_bottom_right = np.array(mat['Ybottom'])[-1, :]
-
-    return X_top_left, Y_top_left, X_top_right, Y_top_right, X_bottom_left, Y_bottom_left, X_bottom_right, Y_bottom_right
-
-# read the radii and center data from radii_hyperfit (n).csv and return them in px (pixel)
-def read_raddi_and_center_fit_circle_px(directory,c):
-
-    df = pd.read_csv(directory+'radii_hyperfit (%s).csv' % (c+1))
-    # center coordinates in px
-    XC_upper = df['x-pos center [px] (upper)'].values
-    YC_upper = df['y-pos center [px] (upper)'].values
-    XC_lower = df['x-pos center [px] (lower)'].values
-    YC_lower = df['y-pos center [px] (lower)'].values
-
-    R_upper = df['Radius [px] (upper)'].values
-    R_lower = df['Radius [px] (lower)'].values
-
-    return XC_upper, YC_upper, XC_lower, YC_lower, R_upper, R_lower
-
-# raddi and tangents data and return them in um, the tangents (n).csv also contains radii data which makes it easier (only read one file)
-# function still misses a description
-def read_radii_and_tangents_um(directory,c):
-    '''Description '''
-
-
-
-    df = pd.read_csv(directory+'tangents (%s).csv' % (c+1))
-    # center coordinates in px
-
-    R_upper = df['Radius [px] (upper)'].values*uM_per_pix
-    R_lower = df['Radius [px] (lower)'].values*uM_per_pix
-
-    tx_top_left = df['tx top left'].values
-    ty_top_left = df['ty top left'].values
-
-    tx_top_right = df['tx top right'].values
-    ty_top_right = df['ty top right'].values
-
-    tx_bottom_right = df['tx bottom right'].values
-    ty_bottom_right = df['ty bottom right'].values
-
-    tx_bottom_left = df['tx bottom left'].values
-    ty_bottom_left = df['ty bottom left'].values
-    # return radius in um
-    return R_upper, R_lower, tx_top_left, ty_top_left, tx_top_right, ty_top_right, tx_bottom_right, ty_bottom_right, tx_bottom_left, ty_bottom_left
-
-# read the force data in
-
-# read forces in nN and subtract force contribution from sigma_x at adherent fiber
-def read_force_data_mat(directory,c):
-    # bottom forces have a negative sign because y-axis pointing down 
-    read_path = directory+"corner_averages.mat"
-    read_path_sigma_contribution = directory + "sigma_contribution.mat"
-
-    mat = sio.loadmat(read_path)
-    # mat_sigma_contr = sio.loadmat(read_path_sigma_contribution)
-
-    # print(mat.keys())
-    # print(mat_sigma_contr.keys())
-    # F_x_sigma_left = np.array(mat_sigma_contr['Fx_centerleft'])[:, c]
-    # F_x_sigma_right = np.array(mat_sigma_contr['Fx_centerright'])[:, c]
-    sigma_xx = np.load(directory + '/sigma_xx.npy')
-    F_x_sigma_left = sigma_xx[:, c]*35*1e-6#*1.41 # length of a fiber for 1to1
-    F_x_sigma_right = sigma_xx[:, c]*35*1e-6#*1.41
-    # topleft
-    F_x_topleft = np.array(mat['Tx_topleft'])[:, c]# - F_x_sigma_left/2  # all forces in time for cell c
-    F_y_topleft = np.array(mat['Ty_topleft'])[:, c]
-    # F_total_topleft = np.sqrt(F_x_topleft**2 + F_y_topleft**2)
-    # topright
-    # all forces in time for cell c
-    F_x_topright = np.array(mat['Tx_topright'])[:, c]# - F_x_sigma_right/2
-    F_y_topright = np.array(mat['Ty_topright'])[:, c]
-    # F_total_topright = np.sqrt(F_x_topright**2 + F_y_topright**2)
-    # bottomright
-    F_x_bottomright = np.array(mat['Tx_bottomright'])[:, c]# - F_x_sigma_right/2  # all forces in time for cell c
-    F_y_bottomright = np.array(mat['Ty_bottomright'])[:, c]
-    # F_total_bottomright = np.sqrt(F_x_bottomright**2 + F_y_bottomright**2)
-    # bottomleft
-    F_x_bottomleft = np.array(mat['Tx_bottomleft'])[:, c]# - F_x_sigma_left/2  # all forces in time for cell c
-    F_y_bottomleft = np.array(mat['Ty_bottomleft'])[:, c]
-    # F_total_bottomleft = np.sqrt(F_x_bottomleft**2 + F_y_bottomleft**2)
-
-    # F_total = F_total_topleft + F_total_topright + F_total_bottomright + F_total_bottomleft
-
-    # force in nN
-    print(F_y_bottomleft,F_y_bottomright,F_y_topleft,F_y_topright)
-    return F_x_topleft*1e9, F_y_topleft*1e9, F_x_topright*1e9, F_y_topright*1e9, F_x_bottomright*1e9, F_y_bottomright*1e9, F_x_bottomleft*1e9, F_y_bottomleft*1e9
-
-
-# read radii tangents and center and return them in um
-def read_radii_and_tangents_and_center_um(directory,c):
-
-    df = pd.read_csv(directory+'tangents (%s).csv' % (c+1))
-    # center coordinates in px
-
-    R_upper = df['Radius [px] (upper)'].values*uM_per_pix
-    R_lower = df['Radius [px] (lower)'].values*uM_per_pix
-
-    xc_upper = df['x-pos center [px] (upper)'].values*uM_per_pix
-    yc_upper = df['y-pos center [px] (upper)'].values*uM_per_pix
-
-    xc_lower = df['x-pos center [px] (lower)'].values*uM_per_pix
-    yc_lower = df['y-pos center [px] (lower)'].values*uM_per_pix
-
-    tx_top_left = df['tx top left'].values
-    ty_top_left = df['ty top left'].values
-
-    tx_top_right = df['tx top right'].values
-    ty_top_right = df['ty top right'].values
-
-    tx_bottom_right = df['tx bottom right'].values
-    ty_bottom_right = df['ty bottom right'].values
-
-    tx_bottom_left = df['tx bottom left'].values
-    ty_bottom_left = df['ty bottom left'].values
-    # return radius in um
-    return R_upper, R_lower, xc_upper, yc_upper, xc_lower, yc_lower, tx_top_left, ty_top_left, tx_top_right, ty_top_right, tx_bottom_right, ty_bottom_right, tx_bottom_left, ty_bottom_left
-
-# read sigma contribution and return it in nN/um
-def read_sigma_contribution_mat(directory,c):
-
-    read_path_sigma_contribution = directory + "sigma_contribution.mat"
-    mat_sigma_contr = sio.loadmat(read_path_sigma_contribution)
-    # print(mat.keys())
-    print(mat_sigma_contr.keys())
-    # in SI N/m
-    sigma_x_left = np.array(mat_sigma_contr['sigma_x_left'])[:, c]
-    sigma_x_right = np.array(mat_sigma_contr['sigma_x_right'])[:, c]
-
-    # in nN/um
-    return sigma_x_left*1e3, sigma_x_right*1e3
-
-# read line tensions from TEM_circles oputput is in nN
-def read_line_tension(directory,c):
-
-    df = pd.read_csv(directory+'TEM_circles (%s).csv' % (c+1))
-    # center coordinates in px
-
-    landa_top_left = df['line tension top left'].values
-    landa_top_right = df['line tension top right'].values
-
-    landa_bottom_left = df['line tension bottom left'].values
-    landa_bottom_right = df['line tension bottom right'].values
-
-    return landa_top_left, landa_top_right, landa_bottom_left, landa_bottom_right
-
-
-
-# functions necessary for ellipse std estimation
-def read_ellipse_center_um(directory,c):
-
-    df = pd.read_csv(directory+'ellipse_approx (%s).csv' % (c+1))
-    # center coordinates in px
-
-    a_top = df['a top [um]'].values
-    b_top = df['b top [um]'].values
-
-    a_bottom = df['a bottom [um]'].values
-    b_bottom = df['b bottom [um]'].values
-
-    xc_top = df['xc top [um]'].values
-    yc_top = df['yc top [um]'].values
-
-    xc_bottom = df['xc bottom [um]'].values
-    yc_bottom = df['yc bottom [um]'].values
-
-    # return radius in um
-    return a_top, b_top, xc_top, yc_top, a_bottom, b_bottom, xc_bottom, yc_bottom
-
-def read_radii_center_um(directory,c):
-
-    df = pd.read_csv(directory+'tangents (%s).csv' % (c+1))
-    # center coordinates in px
-
-    R_upper = df['Radius [px] (upper)'].values*uM_per_pix
-    R_lower = df['Radius [px] (lower)'].values*uM_per_pix
-
-    xc_upper = df['x-pos center [px] (upper)'].values*uM_per_pix
-    yc_upper = df['y-pos center [px] (upper)'].values*uM_per_pix
-
-    xc_lower = df['x-pos center [px] (lower)'].values*uM_per_pix
-    yc_lower = df['y-pos center [px] (lower)'].values*uM_per_pix
-
-    # return radius in um
-    return R_upper, R_lower, xc_upper, yc_upper, xc_lower, yc_lower
-
-
-# functions necessary for ellipse fit
-def read_ellipse_center_fit_um(directory, c):
-
-    df = pd.read_csv(directory+'ellipse_data_fit (%s).csv' % (c+1))
-    # center coordinates in px
-
-    a_top = df['a top [um]'].values
-    b_top = df['b top [um]'].values
-
-    a_bottom = df['a bottom [um]'].values
-    b_bottom = df['b bottom [um]'].values
-
-    xc_top = df['xc top [um]'].values
-    yc_top = df['yc top [um]'].values
-
-    xc_bottom = df['xc bottom [um]'].values
-    yc_bottom = df['yc bottom [um]'].values
-
-    # return radius in um
-    return a_top, b_top, xc_top, yc_top, a_bottom, b_bottom, xc_bottom, yc_bottom
-
-
-def read_ellipse_center_um_sigma(directory, c):
-
-    df = pd.read_csv(directory+'ellipse_approx (%s).csv' % (c+1))
-    # center coordinates in px
-
-    a_top = df['a top [um]'].values
-    b_top = df['b top [um]'].values
-
-    a_bottom = df['a bottom [um]'].values
-    b_bottom = df['b bottom [um]'].values
-
-    xc_top = df['xc top [um]'].values
-    yc_top = df['yc top [um]'].values
-
-    xc_bottom = df['xc bottom [um]'].values
-    yc_bottom = df['yc bottom [um]'].values
-
-    sigma_y_top = df['sigma y top [nN/um]'].values
-    sigma_y_bottom = df['sigma y bottom [nN/um]'].values
-
-    sigma_x = df['sigma x [nN/um]'].values
-
-    # return radius in um
-    return a_top, b_top, xc_top, yc_top, a_bottom, b_bottom, xc_bottom, yc_bottom, sigma_y_top, sigma_y_bottom, sigma_x
-
-
-
-
-
-##################################################################################################
-################         !!!       MAIN FUNCTION STARTS HERE         !!!          ################
-##################################################################################################
-
 
 
 #####################################################################################
 # Step 1: fit circles to ellipses
-# Input file fibertrack (n).mat, Output file radii_hyperfit (n).csv
 
-def main_circle_fit(directory):
-    ''' Read fibertracking and fit circles to it using the hyoer fit algorithm
+def main_circle_fit(x_top, x_bottom, y_top, y_bottom):
+    ''' Read fibertracking and fit circles to it using the hyper fit algorithm
 
         Input: directory where fibertrack (n).mat sits 
         Output: circle_fit (n).csv -> contains: 
     
     '''
 
-    def fit_data_in_file(file_path, arc='left'):
+    def fit_data_in_file(x_data, y_data, arc='left'):
 
         R_list = []
         error_list = []
         xc_list = []
         yc_list = []
 
-        mat = sio.loadmat(file_path)
-        print(mat.keys())
-        # first index gives position and second index gives frame/time
-        x_data = np.array(mat['X%s' % (arc)])
-        y_data = np.array(mat['Y%s' % (arc)])
-
-        for frame in np.arange(0, noFrames):
+        for frame in np.arange(0, x_data.shape[1]):
 
             # first index gives position and second index gives frame/time
             x = x_data[:, frame]
@@ -377,58 +56,72 @@ def main_circle_fit(directory):
 
         return xc_list, yc_list, R_list, error_list
 
-    for c in range(cell_no_start_loop-1,noCells):
+    
+    xc_up = np.zeros((x_top.shape[1],x_top.shape[2])) # initialize array with noFrames by noCells
+    yc_up = np.zeros((x_top.shape[1],x_top.shape[2]))
+    R_up = np.zeros((x_top.shape[1],x_top.shape[2]))
+    error_up = np.zeros((x_top.shape[1],x_top.shape[2]))
+    
+    xc_lo = np.zeros((x_top.shape[1],x_top.shape[2])) 
+    yc_lo = np.zeros((x_top.shape[1],x_top.shape[2]))
+    R_lo = np.zeros((x_top.shape[1],x_top.shape[2]))
+    error_lo = np.zeros((x_top.shape[1],x_top.shape[2]))
+
+    
+    
+    for c in range(x_top.shape[2]):
         # c starts from 0 but file numbers (actual cell number) starts from 1
-        read_path = directory + "fibertracking (%s).mat" % (c+1)
+        
 
         # for each cell return fitted data (as list with entries meaning the frame) for all arcs of all frames 
-        xc_r, yc_r, R_r, error_r = fit_data_in_file(read_path, 'right')
-        xc_l, yc_l, R_l, error_l = fit_data_in_file(read_path, 'left')
-        xc_up, yc_up, R_up, error_up = fit_data_in_file(read_path, 'top')
-        xc_lo, yc_lo, R_lo, error_lo = fit_data_in_file(read_path, 'bottom')
+        xc_up[:,c], yc_up[:,c], R_up[:,c], error_up[:,c] = fit_data_in_file(x_top[:,:,c],y_top[:,:,c], 'top')
+        xc_lo[:,c], yc_lo[:,c], R_lo[:,c], error_lo[:,c] = fit_data_in_file(x_bottom[:,:,c],y_bottom[:,:,c], 'bottom')
 
-        # create data dictionary
-        data_dict = {'Radius [px] (upper)': R_up,
-                     'Radius Std [px] (upper)': error_up,
-                     'x-pos center [px] (upper)': xc_up,
-                     'y-pos center [px] (upper)': yc_up,
-                     'Radius [px] (right)': R_r,
-                     'Radius Std [px] (right)': error_r,
-                     'x-pos center [px] (right)': xc_r,
-                     'y-pos center [px] (right)': yc_r,
-                     'Radius [px] (lower)': R_lo,
-                     'Radius Std [px] (lower)': error_lo,
-                     'x-pos center [px] (lower)': xc_lo,
-                     'y-pos center [px] (lower)': yc_lo,
-                     'Radius [px] (left)': R_l,
-                     'Radius Std [px] (left)': error_l,
-                     'x-pos center [px] (left)': xc_l,
-                     'y-pos center [px] (left)': yc_l}
-        # save fit data to csv for each cell
-        save_dict_to_csv(data_dict, directory + '/radii_hyperfit (%s).csv'%(c+1))
+    # create data dictionary
+    data_dict = {'Radius [px] (upper)': R_up,
+                 'Radius Std [px] (upper)': error_up,
+                 'x-pos center [px] (upper)': xc_up,
+                 'y-pos center [px] (upper)': yc_up,
+                 'Radius [px] (lower)': R_lo,
+                 'Radius Std [px] (lower)': error_lo,
+                 'x-pos center [px] (lower)': xc_lo,
+                 'y-pos center [px] (lower)': yc_lo}
 
 
     print("Circle Fit terminated successfully!")
-    return None
+    return data_dict
 
-# run circle_fit function
-if do_circle_fit is True:
-    main_circle_fit(directory)
-else:
-    print("main_circle_fit is not called!")
 
 ####################################################################################
 # Step 2: calculate tangents of circles at fibertrack start and end point
-# Input files needed: fibertracking (n).mat and radii_hyperfit (n).csv, Output tangents_n.csv
 
-def main_calc_tangents(directory):
-    ''' Read radii_hyperfit (n).csv and fibertrack (n).mat to calculate tangents at start and end point of fiber track
+def main_calc_tangents(x_top, x_bottom, y_top, y_bottom,
+                       XC_upper_all, YC_upper_all, XC_lower_all, YC_lower_all, R_upper_all, R_lower_all):
+    ''' Calculate tangents at start and end point of fiber track
 
-        Input: directory where input-files sit 
-        Output: tangents (n).csv -> contains: 
+        Input: fibertracks and circlefits
+        Output: tangents
     
     '''
     # tl = top left, other "pos" are tr, bl, br
+    # def calc_tangent(X, Y, XC, YC, R, pos='tl'):
+    #     '''caluclate the tangents of point (X,Y) but also return closest point on circle (x,y)'''
+    #     theta = np.abs(np.arctan((Y-YC)/(X-XC)))
+        
+    #     if pos == 'tr' or pos == 'br':
+    #         theta+=np.pi/2
+            
+    #     x = XC + R*np.cos(theta)
+    #     y = YC + R*np.sin(theta)
+    #     tx = np.cos(theta)
+    #     ty = np.sin(theta)
+
+    #     if pos == 'tl' or pos == 'tr':
+    #         ty = -ty
+
+
+    #     return tx, ty, x, y
+    
     def calc_tangent(X, Y, XC, YC, R, pos='tl'):
         '''caluclate the tangents of point (X,Y) but also return closest point on circle (x,y)'''
         theta = np.arctan((Y-YC)/(X-XC))
@@ -440,209 +133,167 @@ def main_calc_tangents(directory):
 
         x = XC + R*np.cos(theta)
         y = YC + R*np.sin(theta)
-        tx = -np.sin(theta)
-        ty = np.cos(theta)
+        tx = -np.cos(theta)
+        ty = np.sin(theta)
 
-        if pos == 'tl':
-            theta = theta + np.pi
-            tx = -tx
+        if pos == 'tl' or pos == 'tr':
             ty = -ty
 
-        elif pos == 'br':
-            theta = np.pi+theta
-            tx = -tx
-            ty = -ty
-
-        # ty = (x-XC)/R
-        # tx = np.sqrt(1-ty**2)
-        # if pos == 'tl':
-        #     print("X touch ",X,"XC ",XC,"R ",R)
-        #     print(ty)
-
-        # if pos == 'tr':
-        #     tx = -tx
-        #     ty = -ty
-        # elif pos == 'br':
-        #     tx = -tx
-        # elif pos == 'bl':
-        #     ty = -ty
-
+  
         return tx, ty, x, y
+    
+    tx_top_left = np.zeros((x_top.shape[1],x_top.shape[2])) # initialize array with noFrames by noCells
+    ty_top_left = np.zeros((x_top.shape[1],x_top.shape[2])) 
+    x_top_left = np.zeros((x_top.shape[1],x_top.shape[2])) 
+    y_top_left = np.zeros((x_top.shape[1],x_top.shape[2]))
+    
+    tx_top_right = np.zeros((x_top.shape[1],x_top.shape[2])) # initialize array with noFrames by noCells
+    ty_top_right = np.zeros((x_top.shape[1],x_top.shape[2])) 
+    x_top_right = np.zeros((x_top.shape[1],x_top.shape[2])) 
+    y_top_right = np.zeros((x_top.shape[1],x_top.shape[2]))
+    
+    tx_bottom_left = np.zeros((x_top.shape[1],x_top.shape[2])) # initialize array with noFrames by noCells
+    ty_bottom_left = np.zeros((x_top.shape[1],x_top.shape[2])) 
+    x_bottom_left = np.zeros((x_top.shape[1],x_top.shape[2])) 
+    y_bottom_left = np.zeros((x_top.shape[1],x_top.shape[2]))
+    
+    tx_bottom_right = np.zeros((x_top.shape[1],x_top.shape[2])) # initialize array with noFrames by noCells
+    ty_bottom_right = np.zeros((x_top.shape[1],x_top.shape[2])) 
+    x_bottom_right = np.zeros((x_top.shape[1],x_top.shape[2])) 
+    y_bottom_right = np.zeros((x_top.shape[1],x_top.shape[2]))
+    
 
-    for c in range(cell_no_start_loop-1,noCells):
-        # each quantity here is a vector/array containing datapoint for all time frames
-        (X_top_left, Y_top_left, X_top_right, Y_top_right,
-         X_bottom_left, Y_bottom_left, X_bottom_right, Y_bottom_right) = read_tangent_points_mat(directory,c)
+    for c in range(x_top.shape[2]):
+        # remove lines with 0 first
+        x_top_current = x_top[:,:,c]
+        x_bottom_current = x_bottom[:,:,c]
+        y_top_current = y_top[:,:,c]
+        y_bottom_current = y_bottom[:,:,c]
+        
+        x_top_current = x_top_current[~np.all(x_top_current == 0, axis=1)]
+        x_bottom_current = x_bottom_current[~np.all(x_bottom_current == 0, axis=1)]
+        y_top_current = y_top_current[~np.all(y_top_current == 0, axis=1)]
+        y_bottom_current = y_bottom_current[~np.all(y_bottom_current == 0, axis=1)]
+        
+        # get end points for tangent calculation
+        X_top_left = x_top_current[0,:]
+        X_top_right = x_top_current[-1,:]
+        X_bottom_left = x_bottom_current[0,:]
+        X_bottom_right = x_bottom_current[-1,:]
+        
+        Y_top_left = y_top_current[0,:]
+        Y_top_right = y_top_current[-1,:]
+        Y_bottom_left = y_bottom_current[0,:]
+        Y_bottom_right = y_bottom_current[-1,:]
 
-        XC_upper, YC_upper, XC_lower, YC_lower, R_upper, R_lower = read_raddi_and_center_fit_circle_px(directory, c)
+        XC_upper = XC_upper_all[:,c]
+        YC_upper = YC_upper_all[:,c]
+        XC_lower = XC_lower_all[:,c]
+        YC_lower = YC_lower_all[:,c]
+        R_upper = R_upper_all[:,c]
+        R_lower = R_lower_all[:,c]
 
         # tangents top left
-        tx_top_left, ty_top_left, x_top_left, y_top_left = calc_tangent(X_top_left, Y_top_left, XC_upper, YC_upper, R_upper, pos='tl')
+        tx_top_left[:,c], ty_top_left[:,c], x_top_left[:,c], y_top_left[:,c] = calc_tangent(X_top_left, Y_top_left, XC_upper, YC_upper, R_upper, pos='tl')
         # tangents top right
-        tx_top_right, ty_top_right, x_top_right, y_top_right = calc_tangent(X_top_right, Y_top_right, XC_upper, YC_upper, R_upper, pos='tr')
+        tx_top_right[:,c], ty_top_right[:,c], x_top_right[:,c], y_top_right[:,c] = calc_tangent(X_top_right, Y_top_right, XC_upper, YC_upper, R_upper, pos='tr')
         # tangents bottom left
-        tx_bottom_left, ty_bottom_left, x_bottom_left, y_bottom_left = calc_tangent(X_bottom_left, Y_bottom_left, XC_lower, YC_lower, R_lower, pos='bl')
+        tx_bottom_left[:,c], ty_bottom_left[:,c], x_bottom_left[:,c], y_bottom_left[:,c] = calc_tangent(X_bottom_left, Y_bottom_left, XC_lower, YC_lower, R_lower, pos='bl')
         # tangents bottom right
-        tx_bottom_right, ty_bottom_right, x_bottom_right, y_bottom_right = calc_tangent(X_bottom_right, Y_bottom_right, XC_lower, YC_lower, R_lower, pos='br')
+        tx_bottom_right[:,c], ty_bottom_right[:,c], x_bottom_right[:,c], y_bottom_right[:,c] = calc_tangent(X_bottom_right, Y_bottom_right, XC_lower, YC_lower, R_lower, pos='br')
 
-        # debugg function (should be commented out always)
-        # def print_numbers():
-            # print("Cell No ", c+1)
-            # print("Top left")
-            # print("Radius ", R_upper[0])
-            # print("Touching Point ",X_top_left[0],Y_top_left[0])
-            # print("Tangent Point ",x_top_left[0],y_top_left[0])
-            # print("Center Point ",XC_upper[0],YC_upper[0])
-            # print("Tangents ",tx_top_left[0],ty_top_left[0])
-            # print("Norm ", tx_top_left[0]**2+ty_top_left[0]**2)
-            # print("Theta ", np.arctan((Y_top_left[0]-YC_upper[0])/(X_top_left[0]-XC_upper[0]))/np.pi)
-            # print("Origin Centered ", X_top_left[0]-XC_upper[0], Y_top_left[0]-YC_upper[0])
-            # print("################################")
-            # print("Top right")
-            # print("Radius ", R_upper[0])
-            # print("Touching Point ",X_top_right[0],Y_top_right[0])
-            # print("Tangent Point ",x_top_right[0],y_top_right[0])
-            # print("Center Point ",XC_upper[0],YC_upper[0])
-            # print("Tangents ",tx_top_right[0],ty_top_right[0])
-            # print("Norm ", tx_top_right[0]**2+ty_top_right[0]**2)
-            # print("Theta ", np.arctan((Y_top_right[0]-YC_upper[0])/(X_top_right[0]-XC_upper[0]))/np.pi)
-            # print("Origin Centered ", X_top_right[0]-XC_upper[0], Y_top_right[0]-YC_upper[0])
-            # print("################################")
-            # print("Bottom left")
-            # print("Radius ", R_lower[0])
-            # print("Touching Point ",X_bottom_left[0],Y_bottom_left[0])
-            # print("Tangent Point ",x_bottom_left[0],y_bottom_left[0])
-            # print("Center Point ",XC_lower[0],YC_lower[0])
-            # print("Tangents ",tx_bottom_left[0],ty_bottom_left[0])
-            # print("Norm ", tx_bottom_left[0]**2+ty_bottom_left[0]**2)
-            # print("Theta ", np.arctan((Y_bottom_left[0]-YC_lower[0])/(X_bottom_left[0]-XC_lower[0]))/np.pi)
-            # print("Origin Centered ", X_bottom_left[0]-XC_lower[0], Y_bottom_left[0]-YC_lower[0])
-            # print("################################")
-            # print("Bottom right")
-            # print("Radius ", R_upper[0])
-            # print("Touching Point ",X_bottom_right[0],Y_bottom_right[0])
-            # print("Tangent Point ",x_bottom_right[0],y_bottom_right[0])
-            # print("Center Point ",XC_lower[0],YC_lower[0])
-            # print("Tangents ",tx_bottom_right[0],ty_bottom_right[0])
-            # print("Norm ", tx_bottom_right[0]**2+ty_bottom_right[0]**2)
-            # print("Theta ", np.arctan((Y_bottom_right[0]-YC_lower[0])/(X_bottom_right[0]-XC_lower[0]))/np.pi)
-            # print("Origin Centered ", X_bottom_right[0]-XC_lower[0], Y_bottom_right[0]-YC_lower[0])
-            # print("################################")
 
-        # define data dictionary for each cell
-        data_dict = {'tx top left': tx_top_left,
-                     'ty top left': ty_top_left,
-                     'tx top right': tx_top_right,
-                     'ty top right': ty_top_right,
-                     'tx bottom left': tx_bottom_left,
-                     'ty bottom left': ty_bottom_left,
-                     'tx bottom right': tx_bottom_right,
-                     'ty bottom right': ty_bottom_right,
-                     'xTouch top left': X_top_left,
-                     'yTouch top left': Y_top_left,
-                     'xTouch top right': X_top_right,
-                     'yTouch top right': Y_top_right,
-                     'xTouch bottom left': X_bottom_left,
-                     'yTouch bottom left': Y_bottom_left,
-                     'xTouch bottom right': X_bottom_right,
-                     'yTouch bottom right': Y_bottom_right,
-                     'x-pos center [px] (upper)': XC_upper,
-                     'y-pos center [px] (upper)': YC_upper,
-                     'x-pos center [px] (lower)': XC_lower,
-                     'y-pos center [px] (lower)': YC_lower,
-                     'Radius [px] (upper)': R_upper,
-                     'Radius [px] (lower)': R_lower}
-        # write date dictionary to tangents (c+1).csv (each cell)
-        save_dict_to_csv(data_dict, directory+'tangents (%s).csv' % (c+1))
+    # define data dictionary for each cell
+    data_dict = {'tx top left': tx_top_left,
+                 'ty top left': ty_top_left,
+                 'tx top right': tx_top_right,
+                 'ty top right': ty_top_right,
+                 'tx bottom left': tx_bottom_left,
+                 'ty bottom left': ty_bottom_left,
+                 'tx bottom right': tx_bottom_right,
+                 'ty bottom right': ty_bottom_right,
+                 'xTouch top left': X_top_left,
+                 'yTouch top left': Y_top_left,
+                 'xTouch top right': X_top_right,
+                 'yTouch top right': Y_top_right,
+                 'xTouch bottom left': X_bottom_left,
+                 'yTouch bottom left': Y_bottom_left,
+                 'xTouch bottom right': X_bottom_right,
+                 'yTouch bottom right': Y_bottom_right}
 
     print("Calculating tangents terminated successfully!")
-    return None
+    return data_dict
 
-# run main_calc_tangents function
-if do_calc_tangents is True:
-    main_calc_tangents(directory)
-else:
-    print("main_calc_tangents is not called!") 
+
 
 ###################################################################################
 # Step 3: perform a tfm analysis based on the circle fits 
-# Input files needed: tangents (n).csv, corner_averages.mat,sigma_contribution.mat, Output TFM_circles (n).csv
 
-def main_TEM_circles(directory):
+def main_TEM_circles(R_upper, R_lower, tx_top_left, ty_top_left, tx_top_right, ty_top_right,
+                     tx_bottom_right, ty_bottom_right, tx_bottom_left, ty_bottom_left,
+                     Fx_top_left, Fy_top_left, Fx_top_right, Fy_top_right, Fx_bottom_right, Fy_bottom_right, Fx_bottom_left, Fy_bottom_left,
+                     pixelsize):
     '''Desciption'''
     # calculate forces coming from free (landa) and adherent fiber (f)
     def calc_landa_and_f(tx, ty, Fx, Fy):
-        landa = Fx/tx
+        landa = Fx/np.abs(tx)
         f = Fy - Fx*ty/tx
         return landa, f
+    
+    landa_top_left = np.zeros((R_upper.shape[0],R_upper.shape[1])) # initialize array with noFrames by noCells
+    landa_top_right = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    landa_bottom_left = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    landa_bottom_right = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    
+    f_top_left = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    f_top_right = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    f_bottom_left = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    f_bottom_right = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    
+    sigma_top_left = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    sigma_top_right = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    sigma_bottom_left = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    sigma_bottom_right = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    
+    for c in range(R_upper.shape[1]):
+        landa_top_left[:,c], f_top_left[:,c] = calc_landa_and_f(tx_top_left[:,c], ty_top_left[:,c], Fx_top_left[:,c], Fy_top_left[:,c])  # in N
+        landa_top_right[:,c], f_top_right[:,c] = calc_landa_and_f(tx_top_right[:,c], ty_top_right[:,c], Fx_top_right[:,c], Fy_top_right[:,c])
+        landa_bottom_left[:,c], f_bottom_left[:,c] = calc_landa_and_f(tx_bottom_left[:,c], ty_bottom_left[:,c], Fx_bottom_left[:,c], Fy_bottom_left[:,c])
+        landa_bottom_right[:,c], f_bottom_right[:,c] = calc_landa_and_f(tx_bottom_right[:,c], ty_bottom_right[:,c], Fx_bottom_right[:,c], Fy_bottom_right[:,c])
 
-    for c in range(cell_no_start_loop-1,noCells):
-        # each quantity here is a vector/array containing datapoint for all time frames
-        (R_upper, R_lower, tx_top_left, ty_top_left, tx_top_right, ty_top_right,
-         tx_bottom_right, ty_bottom_right, tx_bottom_left, ty_bottom_left) = read_radii_and_tangents_um(directory,c)  # radii in um
+        sigma_top_left[:,c] = landa_top_left[:,c]/(R_upper[:,c]*pixelsize)  # convert radius to m to obtain N/m
+        sigma_top_right[:,c] = -landa_top_right[:,c]/(R_upper[:,c]*pixelsize) 
+        sigma_bottom_left[:,c] = landa_bottom_left[:,c]/(R_lower[:,c]*pixelsize) 
+        sigma_bottom_right[:,c] = -landa_bottom_right[:,c]/(R_lower[:,c]*pixelsize) 
 
-        Fx_top_left, Fy_top_left, Fx_top_right, Fy_top_right, Fx_bottom_right, Fy_bottom_right, Fx_bottom_left, Fy_bottom_left = read_force_data_mat(directory,c)  # in nN
 
-        landa_top_left, f_top_left = calc_landa_and_f(tx_top_left, ty_top_left, Fx_top_left, Fy_top_left)  # in nN
-        landa_top_right, f_top_right = calc_landa_and_f(tx_top_right, ty_top_right, Fx_top_right, Fy_top_right)
-        landa_bottom_left, f_bottom_left = calc_landa_and_f(tx_bottom_left, ty_bottom_left, Fx_bottom_left, Fy_bottom_left)
-        landa_bottom_right, f_bottom_right = calc_landa_and_f(tx_bottom_right, ty_bottom_right, Fx_bottom_right, Fy_bottom_right)
+    data_dict = {'line tension top left': landa_top_left,
+                 'f top left': f_top_left,
+                 'line tension top right': landa_top_right,
+                 'f top right': f_top_right,
+                 'line tension bottom left': landa_bottom_left,
+                 'f bottom left': f_bottom_left,
+                 'line tension bottom right': landa_bottom_right,
+                 'f bottom right': f_bottom_right,
+                 'surface tension top left': sigma_top_left,
+                 'surface tension top right': sigma_top_right,
+                 'surface tension bottom left': sigma_bottom_left,
+                 'surface tension bottom right': sigma_bottom_right}
 
-        sigma_top_left = landa_top_left/R_upper  # in nN/um
-        sigma_top_right = landa_top_right/R_upper
-        sigma_bottom_left = landa_bottom_left/R_lower
-        sigma_bottom_right = landa_bottom_right/R_lower
-
-        # debug prints
-        # print("Cell ",c+1)
-        # print("# Bottom Left")
-        # print(Fx_bottom_left[0],Fy_bottom_left[0])
-        # print(f_bottom_left[0])
-        # print(tx_bottom_left[0],ty_bottom_left[0])
-        # print("# Top Left")
-        # print(Fx_top_left[0],Fy_top_left[0])
-        # print(f_top_left[0])
-        # print(tx_top_left[0],ty_top_left[0])
-        # print("# Bottom Right")
-        # print(Fx_bottom_right[0],Fy_bottom_right[0])
-        # print(f_bottom_right[0])
-        # print(tx_bottom_right[0],ty_bottom_right[0])
-        # print("# Top Right")
-        # print(Fx_top_right[0],Fy_top_right[0])
-        # print(f_top_right[0])
-        # print(tx_top_right[0],ty_top_right[0])
-        # print("######################")
-
-        data_dict = {'line tension top left': landa_top_left,
-                     'f top left': f_top_left,
-                     'line tension top right': landa_top_right,
-                     'f top right': f_top_right,
-                     'line tension bottom left': landa_bottom_left,
-                     'f bottom left': f_bottom_left,
-                     'line tension bottom right': landa_bottom_right,
-                     'f bottom right': f_bottom_right,
-                     'surface tension top left': sigma_top_left,
-                     'surface tension top right': sigma_top_right,
-                     'surface tension bottom left': sigma_bottom_left,
-                     'surface tension bottom right': sigma_bottom_right,
-                     'Radius [um] (upper)': R_upper,
-                     'Radius [um] (lower)': R_lower}
-
-        save_dict_to_csv(data_dict, directory +'/TEM_circles (%s).csv' % (c+1))
     print("TEM circle analysis terminated successfully!")
-    return None
+    return data_dict
 
-# run main_TEM_circles
-if do_TEM_analysis_with_circle_fit is True:
-    main_TEM_circles(directory)
-else:
-    print("main_TEM_circles is not called!")
 
 ####################################################################################
 # Step 4: given TEM_circle data and sigma_x contribution estimate ellipse based on curvature of circle
-# Input files needed, tangents (n).csv, sigma_contribution.mat,TEM_circles (n).csv, Output ellipse_approx (n).csv
 
-def main_ellipse_approx(directory):
+def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
+                        R_upper, R_lower,
+                        xc_upper, yc_upper, xc_lower, yc_lower,
+                        tx_top_left, ty_top_left, tx_top_right, ty_top_right,
+                        tx_bottom_right, ty_bottom_right, tx_bottom_left, ty_bottom_left,
+                        landa_top_left, landa_top_right, landa_bottom_left, landa_bottom_right,
+                        sigma_x, pixelsize):
     '''Description'''
 
     theta_max = 15  # in degree
@@ -675,21 +326,19 @@ def main_ellipse_approx(directory):
         return a, b, sigma_isotrop, sigma_anisotrop_x, sigma_anisotrop_y, xc_ellipse, yc_ellipse
 
     
-    def estimate_ellipse_approx_std(c):
+    def estimate_ellipse_approx_std(x_top, x_bottom, y_top, y_bottom,
+                                    R_upper, R_lower, xc_upper, yc_upper, xc_lower, yc_lower,
+                                    a_top, b_top, xc_top, yc_top, a_bottom, b_bottom, xc_bottom, yc_bottom,
+                                    pixelsize):
 
-        fibertrack_path = directory + "fibertracking (%s).mat" % (c+1)
-        mat = sio.loadmat(fibertrack_path)
-        print(mat.keys())
-        # first index gives position and second index gives frame/time
-        x_data_bottom = np.array(mat['Xbottom'])
-        y_data_bottom = np.array(mat['Ybottom'])
+
 
         # first index gives position and second index gives frame/time
-        x_data_top = np.array(mat['Xtop'])
-        y_data_top = np.array(mat['Ytop'])
+        x_data_top = x_top[~np.all(x_top == 0, axis=1)]
+        y_data_top = y_top[~np.all(y_top == 0, axis=1)]
+        x_data_bottom = x_bottom[~np.all(x_bottom == 0, axis=1)]
+        y_data_bottom = y_bottom[~np.all(y_bottom == 0, axis=1)]
 
-        R_upper, R_lower, xc_upper, yc_upper, xc_lower, yc_lower = read_radii_center_um(directory,c)
-        a_top, b_top, xc_top, yc_top, a_bottom, b_bottom, xc_bottom, yc_bottom = read_ellipse_center_um(directory,c)
 
         a_u = a_top
         b_u = b_top
@@ -700,15 +349,15 @@ def main_ellipse_approx(directory):
 
         std_u_list = []
         std_l_list = []
-        for frame in range(noFrames):
+        for frame in range(R_upper.shape[0]):
             # first read in tracks for each frame
             # first index gives position and second index gives frame/time
-            x_top_track = x_data_top[:, frame]*uM_per_pix
-            y_top_track = y_data_top[:, frame]*uM_per_pix
+            x_top_track = x_data_top[:, frame]*pixelsize
+            y_top_track = y_data_top[:, frame]*pixelsize
 
             # first index gives position and second index gives frame/time
-            x_bottom_track = x_data_bottom[:, frame]*uM_per_pix
-            y_bottom_track = y_data_bottom[:, frame]*uM_per_pix
+            x_bottom_track = x_data_bottom[:, frame]*pixelsize
+            y_bottom_track = y_data_bottom[:, frame]*pixelsize
 
             # loop over all data pointa in one track
             dist_container_u = []
@@ -768,7 +417,7 @@ def main_ellipse_approx(directory):
         if angle:
             # rotate the points onto an ellipse whose rx, and ry lay on the x, y
             # axis
-            angle = -pi / 180. * angle
+            angle = -np.pi / 180. * angle
             x, y = x * np.cos(angle) - y * np.sin(angle), x * np.sin(angle) + y * np.cos(angle)
 
         theta = np.arctan2(rx * y, ry * x)
@@ -778,58 +427,39 @@ def main_ellipse_approx(directory):
         px, py = rx * np.cos(theta), ry * np.sin(theta)
         return ((x - px) ** 2 + (y - py) ** 2) ** .5
     
-    sigma_xx = np.load(directory+'sigma_xx.npy')
+    # initialize arrays with noFrames by noCells
+    a_top_all = np.zeros((R_upper.shape[0],R_upper.shape[1])) 
+    b_top_all = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    sigma_y_top_all = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    xc_top_all = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    yc_top_all = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    std_top_all = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+
+    a_bottom_all = np.zeros((R_upper.shape[0],R_upper.shape[1])) 
+    b_bottom_all = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    sigma_y_bottom_all = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    xc_bottom_all = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    yc_bottom_all = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    std_bottom_all = np.zeros((R_upper.shape[0],R_upper.shape[1]))
     
-    for c in range(cell_no_start_loop-1,noCells):
-
-        print("CELL ", c+1)
-        # define save container
-        a_list_t = []
-        b_list_t = []
-        sigma_y_list_t = []
-        xc_list_t = []
-        yc_list_t = []
-
-        a_list_b = []
-        b_list_b = []
-        sigma_y_list_b = []
-        xc_list_b = []
-        yc_list_b = []
-
-        sigma_x_list = []
-        
-
-        (R_upper, R_lower,
-         xc_upper, yc_upper,
-         xc_lower, yc_lower,
-         tx_top_left, ty_top_left,
-         tx_top_right, ty_top_right,
-         tx_bottom_right, ty_bottom_right,
-         tx_bottom_left, ty_bottom_left) = read_radii_and_tangents_and_center_um(directory,c)
-
-        # sigma_x_left, sigma_x_right = read_sigma_contribution_mat(directory,c)
-        sigma_x_left = sigma_xx[:,c]
-        sigma_x_right = sigma_xx[:,c]
-
-        landa_top_left, landa_top_right, landa_bottom_left, landa_bottom_right = read_line_tension(directory,c)
-
-        for frame in np.arange(0, noFrames):
-            print("FRAME ", frame)
-            R_u = R_upper[frame]
-            R_l = R_lower[frame]
+    for c in range(R_upper.shape[1]):
+        for frame in np.arange(R_upper.shape[0]):
+            print("Ellipse approximation: cell "+ str(c+1) + " frame " + str(frame))
+            R_u = R_upper[frame,c]
+            R_l = R_lower[frame,c]
 
             curvature_u = (1/R_u).item()
             curvature_l = (1/R_l).item()
 
-            xc_u = xc_upper[frame]
-            yc_u = yc_upper[frame]
-            xc_l = xc_lower[frame]
-            yc_l = yc_lower[frame]
+            xc_u = xc_upper[frame,c]
+            yc_u = yc_upper[frame,c]
+            xc_l = xc_lower[frame,c]
+            yc_l = yc_lower[frame,c]
 
-            ty_tl = np.absolute(ty_top_left[frame])
-            ty_tr = np.absolute(ty_top_right[frame])
-            ty_bl = np.absolute(ty_bottom_left[frame])
-            ty_br = np.absolute(ty_bottom_right[frame])
+            ty_tl = np.absolute(ty_top_left[frame,c])
+            ty_tr = np.absolute(ty_top_right[frame,c])
+            ty_bl = np.absolute(ty_bottom_left[frame,c])
+            ty_br = np.absolute(ty_bottom_right[frame,c])
 
             ty_top = (ty_tl + ty_tr)/2
             ty_bottom = (ty_bl + ty_br)/2
@@ -842,32 +472,29 @@ def main_ellipse_approx(directory):
             phi_top = (phi_tl + phi_tr)/2
             phi_bottom = (phi_bl + phi_br)/2
 
-            landa_tl = np.absolute(landa_top_left[frame])
-            landa_tr = np.absolute(landa_top_right[frame])
-            landa_bl = np.absolute(landa_bottom_left[frame])
-            landa_br = np.absolute(landa_bottom_right[frame])
+            landa_tl = np.absolute(landa_top_left[frame,c])
+            landa_tr = np.absolute(landa_top_right[frame,c])
+            landa_bl = np.absolute(landa_bottom_left[frame,c])
+            landa_br = np.absolute(landa_bottom_right[frame,c])
 
             landa_top = (landa_tl + landa_tr)/2
             landa_bottom = (landa_bl + landa_br)/2
 
-            sigma_x_l = sigma_x_left[frame]
-            sigma_x_r = sigma_x_right[frame]
-
-            sigma_x_av = (sigma_x_l + sigma_x_r)/2
+            sigma_x_av = sigma_x[frame,c]
 
             def k_top(x, sigma_y):
                 phi = phi_top
                 landa = landa_top  # nN
                 sigma_x = sigma_x_av  # nN/um
-                print("phi ", phi)
-                print("landa ", landa)
-                print("sigma_x ", sigma_x)
+                # print("phi ", phi)
+                # print("landa ", landa)
+                # print("sigma_x ", sigma_x)
                 b_square = (landa/sigma_x)**2 * (1+(sigma_x/sigma_y) * np.tan(phi)**2)/(1+np.tan(phi)**2)
                 a_square = (landa)**2/(sigma_x*sigma_y) * (1+(sigma_x/sigma_y)*np.tan(phi)**2)/(1+np.tan(phi)**2)
                 a = np.sqrt(a_square)
                 b = np.sqrt(b_square)
-                print("a ", a)
-                print("b ", b)
+                # print("a ", a)
+                # print("b ", b)
                 # returns the curvature over x range
                 return a*b/(a**2*np.sin(x)**2+b**2*np.cos(x)**2)**(3/2)
 
@@ -893,7 +520,7 @@ def main_ellipse_approx(directory):
             params_top = model_top.make_params(sigma_y=landa_top/R_u)
             params_bottom = model_bottom.make_params(sigma_y=landa_bottom/R_l)
 
-            print(model_top.param_names, model_top.independent_vars)
+            # print(model_top.param_names, model_top.independent_vars)
 
             # params.add(name="factor", min=0.0, max=1)
             # model.print_param_hints(colwidth=8)
@@ -904,86 +531,51 @@ def main_ellipse_approx(directory):
 
             # print(result.fit_report())
             sigma_y_top = result_top.params['sigma_y'].value
-            a_top, b_top, sigma_isotrop_top, sigma_anisotrop_x_top, sigma_anisotrop_y_top, xc_ellipse_top, yc_ellipse_top = return_results(sigma_y_top, landa_top, phi_top, sigma_x_av, R_u, xc_u, yc_u, arc='top')
-            # print('sigma_x ', sigma_x_av)
-            # print('sigma_y_top ', sigma_y_top)
-            # print('sigma_anisotrop_x_top ', sigma_anisotrop_x_top)
-            # print('sigma_anisotrop_y_top ', sigma_anisotrop_y_top)
-            # print('a_top ', a_top)
-            # print('b_top ', b_top)
-            # print("xc_ellipse_top ", xc_ellipse_top)
-            # print("yc_ellipse_top ", yc_ellipse_top)
+            a_top, b_top, sigma_isotrop_top, sigma_anisotrop_x_top, sigma_anisotrop_y_top, xc_top, yc_top = return_results(sigma_y_top, landa_top, phi_top, sigma_x_av, R_u, xc_u, yc_u, arc='top')
+
 
             sigma_y_bottom = result_bottom.params['sigma_y'].value
-            a_bottom, b_bottom, sigma_isotrop_bottom, sigma_anisotrop_x_bottom, sigma_anisotrop_y_bottom, xc_ellipse_bottom, yc_ellipse_bottom = return_results(sigma_y_bottom, landa_bottom, phi_bottom, sigma_x_av, R_l, xc_l, yc_l, arc='bottom')
-            # print('sigma_x ', sigma_x_av)
-            # print('sigma_y_bottom ', sigma_y_bottom)
-            # print('sigma_anisotrop_x_bottom ', sigma_anisotrop_x_bottom)
-            # print('sigma_anisotrop_y_bottom ', sigma_anisotrop_y_bottom)
-            # print('a_bottom ', a_bottom)
-            # print('b_bottom ', b_bottom)
-            # print("xc_ellipse_bottom ", xc_ellipse_bottom)
-            # print("yc_ellipse_bottom ", yc_ellipse_bottom)
+            a_bottom, b_bottom, sigma_isotrop_bottom, sigma_anisotrop_x_bottom, sigma_anisotrop_y_bottom, xc_bottom, yc_bottom = return_results(sigma_y_bottom, landa_bottom, phi_bottom, sigma_x_av, R_l, xc_l, yc_l, arc='bottom')
 
-            a_list_t.append(a_top)
-            b_list_t.append(b_top)
-            sigma_y_list_t.append(sigma_y_top)
-            xc_list_t.append(xc_ellipse_top)
-            yc_list_t.append(yc_ellipse_top)
-
-            a_list_b.append(a_bottom)
-            b_list_b.append(b_bottom)
-            sigma_y_list_b.append(sigma_y_bottom)
-            xc_list_b.append(xc_ellipse_bottom)
-            yc_list_b.append(yc_ellipse_bottom)
-
-            sigma_x_list.append(sigma_x_av)
-            sigma_y_mean = (sigma_y_top + sigma_y_bottom)/2
+            a_top_all[frame, c] = a_top
+            b_top_all[frame, c]  = b_top
+            sigma_y_top_all[frame, c]  = sigma_y_top
+            xc_top_all[frame, c]  = xc_top
+            yc_top_all[frame, c]  = yc_top
+        
+            a_bottom_all[frame, c]  = a_bottom
+            b_bottom_all[frame, c]  = b_bottom
+            sigma_y_bottom_all[frame, c]  = sigma_y_bottom
+            xc_bottom_all[frame, c]  = xc_bottom
+            yc_bottom_all[frame, c]  = yc_bottom
        
+            # estimate std for each cell
+            std_t, std_b = estimate_ellipse_approx_std(x_top[:,:,c], x_bottom[:,:,c], y_top[:,:,c], y_bottom[:,:,c],
+                                                       R_upper[:,c], R_lower[:,c], xc_upper[:,c], yc_upper[:,c], xc_lower[:,c], yc_lower[:,c],
+                                                       a_top_all[:,c], b_top_all[:,c], xc_top_all[:,c], yc_top_all[:,c], 
+                                                       a_bottom_all[:,c], b_bottom_all[:,c], xc_bottom_all[:,c], yc_bottom_all[:,c],
+                                                       pixelsize)
+            std_top_all[:,c] = std_t
+            std_bottom_all[:,c] = std_b
 
-        data_dict = {'sigma x [nN/um]': sigma_x_list,
-                     'sigma y top [nN/um]': sigma_y_list_t,
-                     'a top [um]': a_list_t,
-                     'b top [um]': b_list_t,
-                     'xc top [um]': xc_list_t,
-                     'yc top [um]': yc_list_t,
-                     'a bottom [um]': a_list_b,
-                     'b bottom [um]': b_list_b,
-                     'sigma y bottom [nN/um]': sigma_y_list_b,
-                     'xc bottom [um]': xc_list_b,
-                     'yc bottom [um]': yc_list_b}
+    data_dict = {'sigma x': sigma_x,
+                  'sigma y top': sigma_y_top_all,
+                  'a top': a_top_all,
+                  'b top': b_top_all,
+                  'xc top': xc_top_all,
+                  'yc top': yc_top_all,
+                  'std top': std_top_all,
+                  'sigma y bottom': sigma_y_bottom_all,
+                  'a bottom': a_bottom_all,
+                  'b bottom': b_bottom_all,
+                  'xc bottom': xc_bottom_all,
+                  'yc bottom': yc_bottom_all,
+                  'std bottom': std_bottom_all,}
 
-        save_dict_to_csv(data_dict, directory+'/ellipse_approx (%s).csv'%(c+1))
-
-        # estimate std for each cell
-        std_t, std_b = estimate_ellipse_approx_std(c)
-        # save again to add std estimation
-        data_dict = {'sigma x [nN/um]': sigma_x_list,
-                     'sigma y top [nN/um]': sigma_y_list_t,
-                     'a top [um]': a_list_t,
-                     'b top [um]': b_list_t,
-                     'xc top [um]': xc_list_t,
-                     'yc top [um]': yc_list_t,
-                     'std top [um]': std_t,
-                     'a bottom [um]': a_list_b,
-                     'b bottom [um]': b_list_b,
-                     'sigma y bottom [nN/um]': sigma_y_list_b,
-                     'xc bottom [um]': xc_list_b,
-                     'yc bottom [um]': yc_list_b,
-                     'std bottom [um]': std_b}
-
-        save_dict_to_csv(data_dict, directory +
-                         '/ellipse_approx (%s).csv' % (c+1))
 
     print("Ellipse approximation terminated successfully!")
-    return None
+    return data_dict
 
-
-# run main_ellipse_approx
-if do_ellipse_approx is True:
-    main_ellipse_approx(directory)
-else:
-    print("main_ellipse_approx is not called!")
 
 
 ####################################################################################
@@ -1387,9 +979,124 @@ def main_ellipse_fit(directory):
 
     return None
 
+def main(inputpath, outputpath, pixelsize):
+    
+    # load data
+    data = pickle.load(open(inputpath, "rb"))
+   
+    # pull needed data for analysis out of dataset
+    x_top = data['shape_data']['Xtop']
+    x_bottom = data['shape_data']['Xbottom']
+    
+    y_top = data['shape_data']['Ytop']
+    y_bottom = data['shape_data']['Ybottom']
+    
+    Fx_top_left = data['TFM_data']['Fx_topleft']    
+    Fx_top_right = data['TFM_data']['Fx_topright'] 
+    Fx_bottom_right = data['TFM_data']['Fx_bottomright'] 
+    Fx_bottom_left = data['TFM_data']['Fx_bottomleft'] 
+    
+    Fy_top_left = data['TFM_data']['Fy_topleft']    
+    Fy_top_right = data['TFM_data']['Fy_topright'] 
+    Fy_bottom_right = data['TFM_data']['Fy_bottomright'] 
+    Fy_bottom_left = data['TFM_data']['Fy_bottomleft'] 
+    
+    sigma_x = data['MSM_data']['sigma_xx_average'] 
 
-# run main_ellipse_fit
-if do_ellipse_fit is True:
-    main_ellipse_fit(directory)
-else:
-    print("main_ellipse_fit is not called!")
+    # remove the loaded dataset to save memory    
+    del data
+
+    # run circle_fit function
+    circle_fit_data = main_circle_fit(x_top, x_bottom, y_top, y_bottom)
+       
+    
+    XC_upper = circle_fit_data['x-pos center [px] (upper)']
+    YC_upper = circle_fit_data['y-pos center [px] (upper)']
+    XC_lower = circle_fit_data['x-pos center [px] (lower)'] 
+    YC_lower = circle_fit_data['y-pos center [px] (lower)']
+    R_upper = circle_fit_data['Radius [px] (upper)']
+    R_lower  = circle_fit_data['Radius [px] (lower)']   
+    
+    
+    # run main_tangent_calc function
+    tangent_data = main_calc_tangents(x_top, x_bottom, y_top, y_bottom,
+                                          XC_upper, YC_upper, XC_lower, YC_lower, R_upper, R_lower)
+
+    tx_top_left = tangent_data['tx top left']    
+    tx_top_right = tangent_data['tx top right'] 
+    tx_bottom_right = tangent_data['tx bottom right'] 
+    tx_bottom_left = tangent_data['tx bottom left'] 
+    
+    ty_top_left = tangent_data['ty top left']    
+    ty_top_right = tangent_data['ty top right'] 
+    ty_bottom_right = tangent_data['ty bottom right'] 
+    ty_bottom_left = tangent_data['ty bottom left']   
+    
+    
+    # run main_TEM_circles
+    TEM_data = main_TEM_circles(R_upper, R_lower, 
+                                tx_top_left, ty_top_left, tx_top_right, ty_top_right, tx_bottom_right, ty_bottom_right, tx_bottom_left, ty_bottom_left,
+                                Fx_top_left, Fy_top_left, Fx_top_right, Fy_top_right, Fx_bottom_right, Fy_bottom_right, Fx_bottom_left, Fy_bottom_left,
+                                pixelsize)
+    
+    landa_top_left = TEM_data['line tension top left']
+    landa_top_right = TEM_data['line tension top right']
+    landa_bottom_left = TEM_data['line tension bottom left']
+    landa_bottom_right = TEM_data['line tension bottom right']
+
+    ellipse_data = main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
+                                       R_upper, R_lower,
+                                       XC_upper, YC_upper, XC_lower, YC_lower,
+                                       tx_top_left, ty_top_left, tx_top_right, ty_top_right,
+                                       tx_bottom_right, ty_bottom_right, tx_bottom_left, ty_bottom_left,
+                                       landa_top_left, landa_top_right, landa_bottom_left, landa_bottom_right,
+                                       sigma_x, pixelsize)
+    
+    CM_data = {'circle_fit_data': circle_fit_data,
+               'tangent_data': tangent_data,
+               'TEM_data': TEM_data,
+               'ellipse_data': ellipse_data}
+
+    with open(outputpath, 'wb') as outfile: pickle.dump(CM_data, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+
+    
+if __name__ == '__main__':
+    pixelsize = 0.108*1e-6 # in m
+    
+    path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1d_fullstim_long"    
+    main(path+".dat", path+"_CM_data.dat", pixelsize)
+    
+    path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1s_fullstim_long"    
+    main(path+".dat", path+"_CM_data.dat", pixelsize)
+    
+    path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1d_fullstim_short"    
+    main(path+".dat", path+"_CM_data.dat", pixelsize)
+    
+    path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1s_fullstim_short"    
+    main(path+".dat", path+"_CM_data.dat", pixelsize)
+    
+    path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to2d_halfstim"    
+    main(path+".dat", path+"_CM_data.dat", pixelsize)
+    
+    path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1d_halfstim"    
+    main(path+".dat", path+"_CM_data.dat", pixelsize)
+    
+    path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1s_halfstim"    
+    main(path+".dat", path+"_CM_data.dat", pixelsize)
+    
+    path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR2to1d_halfstim"    
+    main(path+".dat", path+"_CM_data.dat", pixelsize)
+    
+    
+    # # run main_ellipse_approx
+    # if do_ellipse_approx is True:
+    #     main_ellipse_approx(directory)
+    # else:
+    #     print("main_ellipse_approx is not called!")
+    
+    # # run main_ellipse_fit
+    # if do_ellipse_fit is True:
+    #     main_ellipse_fit(directory)
+    # else:
+    #     print("main_ellipse_fit is not called!")
+
