@@ -16,7 +16,6 @@ from scipy.stats import normaltest, shapiro
 from statannot import add_stat_annotation
 
 # mpl.rcParams['pdf.fonttype'] = 42
-# mpl.rcParams['font.size']=14
 mpl.rcParams['font.size'] = 8
 
 
@@ -202,8 +201,8 @@ titleoffset = 3                                 # adjusts distance of title to t
 #Generate first panel
 ##############################################################################
 ymin = 500
-ymax = 1500
-stat_annotation_offset = .265
+ymax = 2000
+stat_annotation_offset = 0.2
 
 # the grid spec is rows, then columns
 fig_ax = fig.add_subplot(gs[0,0])
@@ -257,7 +256,7 @@ fig_ax.set_ylim(ymax=ymax)
 ##############################################################################
 ymin = 0
 ymax = 2
-stat_annotation_offset = 0.03 # adjust y-position of statistical annotation
+stat_annotation_offset = -0.1 # adjust y-position of statistical annotation
 
 # the grid spec is rows, then columns
 fig_ax = fig.add_subplot(gs[0,1])
@@ -310,7 +309,7 @@ fig_ax.set_ylim(ymax=ymax)
 ##############################################################################
 ymin = 0
 ymax = 90
-stat_annotation_offset = 0.057 # adjust y-position of statistical annotation
+stat_annotation_offset = 0.037 # adjust y-position of statistical annotation
 
 # the grid spec is rows, then columns
 fig_ax = fig.add_subplot(gs[0,2])

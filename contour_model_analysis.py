@@ -445,8 +445,8 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
     for c in range(R_upper.shape[1]):
         for frame in np.arange(R_upper.shape[0]):
             print("Ellipse approximation: cell "+ str(c+1) + " frame " + str(frame))
-            R_u = R_upper[frame,c]
-            R_l = R_lower[frame,c]
+            R_u = R_upper[frame,c]*pixelsize # convert to m
+            R_l = R_lower[frame,c]*pixelsize
 
             curvature_u = (1/R_u).item()
             curvature_l = (1/R_l).item()
@@ -484,8 +484,8 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
 
             def k_top(x, sigma_y):
                 phi = phi_top
-                landa = landa_top  # nN
-                sigma_x = sigma_x_av  # nN/um
+                landa = landa_top  # N
+                sigma_x = sigma_x_av  # N/m
                 # print("phi ", phi)
                 # print("landa ", landa)
                 # print("sigma_x ", sigma_x)
@@ -500,8 +500,8 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
 
             def k_bottom(x, sigma_y):
                 phi = phi_bottom
-                landa = landa_bottom  # nN
-                sigma_x = sigma_x_av  # nN/um
+                landa = landa_bottom  # N
+                sigma_x = sigma_x_av  # N/m
                 b_square = (landa/sigma_x)**2 * (1+(sigma_x/sigma_y) * np.tan(phi)**2)/(1+np.tan(phi)**2)
                 a_square = (landa)**2/(sigma_x*sigma_y) * (1+(sigma_x/sigma_y)*np.tan(phi)**2)/(1+np.tan(phi)**2)
                 a = np.sqrt(a_square)
@@ -979,78 +979,99 @@ def main_ellipse_fit(directory):
 
     return None
 
-def main(inputpath, outputpath, pixelsize):
+def calculate_various_stuff(circle_fit_data, tangent_data, TEM_data, ellipse_data):
+    sigma_y = (ellipse_data["sigma y top"]+ellipse_data["sigma y bottom"])/2
+    sigma_y_baseline = np.nanmean(sigma_y[0:19,:], axis=0)
     
-    # load data
-    data = pickle.load(open(inputpath, "rb"))
-   
-    # pull needed data for analysis out of dataset
-    x_top = data['shape_data']['Xtop']
-    x_bottom = data['shape_data']['Xbottom']
+    ellipse_data['sigma_y'] = sigma_y
+    ellipse_data['sigma_y_baseline'] = sigma_y_baseline
     
-    y_top = data['shape_data']['Ytop']
-    y_bottom = data['shape_data']['Ybottom']
-    
-    Fx_top_left = data['TFM_data']['Fx_topleft']    
-    Fx_top_right = data['TFM_data']['Fx_topright'] 
-    Fx_bottom_right = data['TFM_data']['Fx_bottomright'] 
-    Fx_bottom_left = data['TFM_data']['Fx_bottomleft'] 
-    
-    Fy_top_left = data['TFM_data']['Fy_topleft']    
-    Fy_top_right = data['TFM_data']['Fy_topright'] 
-    Fy_bottom_right = data['TFM_data']['Fy_bottomright'] 
-    Fy_bottom_left = data['TFM_data']['Fy_bottomleft'] 
-    
-    sigma_x = data['MSM_data']['sigma_xx_average'] 
+    return circle_fit_data, tangent_data, TEM_data, ellipse_data
 
-    # remove the loaded dataset to save memory    
-    del data
-
-    # run circle_fit function
-    circle_fit_data = main_circle_fit(x_top, x_bottom, y_top, y_bottom)
+def main(inputpath, outputpath, pixelsize, shortcut=False):
+    if shortcut == False:
+        # load data
+        data = pickle.load(open(inputpath, "rb"))
        
+        # pull needed data for analysis out of dataset
+        x_top = data['shape_data']['Xtop']
+        x_bottom = data['shape_data']['Xbottom']
+        
+        y_top = data['shape_data']['Ytop']
+        y_bottom = data['shape_data']['Ybottom']
+        
+        Fx_top_left = data['TFM_data']['Fx_topleft']    
+        Fx_top_right = data['TFM_data']['Fx_topright'] 
+        Fx_bottom_right = data['TFM_data']['Fx_bottomright'] 
+        Fx_bottom_left = data['TFM_data']['Fx_bottomleft'] 
+        
+        Fy_top_left = data['TFM_data']['Fy_topleft']    
+        Fy_top_right = data['TFM_data']['Fy_topright'] 
+        Fy_bottom_right = data['TFM_data']['Fy_bottomright'] 
+        Fy_bottom_left = data['TFM_data']['Fy_bottomleft'] 
+        
+        sigma_x = data['MSM_data']['sigma_xx_average'] 
     
-    XC_upper = circle_fit_data['x-pos center [px] (upper)']
-    YC_upper = circle_fit_data['y-pos center [px] (upper)']
-    XC_lower = circle_fit_data['x-pos center [px] (lower)'] 
-    YC_lower = circle_fit_data['y-pos center [px] (lower)']
-    R_upper = circle_fit_data['Radius [px] (upper)']
-    R_lower  = circle_fit_data['Radius [px] (lower)']   
+        # remove the loaded dataset to save memory    
+        del data
     
+        # run circle_fit function
+        circle_fit_data = main_circle_fit(x_top, x_bottom, y_top, y_bottom)
+           
+        
+        XC_upper = circle_fit_data['x-pos center [px] (upper)']
+        YC_upper = circle_fit_data['y-pos center [px] (upper)']
+        XC_lower = circle_fit_data['x-pos center [px] (lower)'] 
+        YC_lower = circle_fit_data['y-pos center [px] (lower)']
+        R_upper = circle_fit_data['Radius [px] (upper)']
+        R_lower  = circle_fit_data['Radius [px] (lower)']   
+        
+        
+        # run main_tangent_calc function
+        tangent_data = main_calc_tangents(x_top, x_bottom, y_top, y_bottom,
+                                              XC_upper, YC_upper, XC_lower, YC_lower, R_upper, R_lower)
     
-    # run main_tangent_calc function
-    tangent_data = main_calc_tangents(x_top, x_bottom, y_top, y_bottom,
-                                          XC_upper, YC_upper, XC_lower, YC_lower, R_upper, R_lower)
-
-    tx_top_left = tangent_data['tx top left']    
-    tx_top_right = tangent_data['tx top right'] 
-    tx_bottom_right = tangent_data['tx bottom right'] 
-    tx_bottom_left = tangent_data['tx bottom left'] 
+        tx_top_left = tangent_data['tx top left']    
+        tx_top_right = tangent_data['tx top right'] 
+        tx_bottom_right = tangent_data['tx bottom right'] 
+        tx_bottom_left = tangent_data['tx bottom left'] 
+        
+        ty_top_left = tangent_data['ty top left']    
+        ty_top_right = tangent_data['ty top right'] 
+        ty_bottom_right = tangent_data['ty bottom right'] 
+        ty_bottom_left = tangent_data['ty bottom left']   
+        
+        
+        # run main_TEM_circles
+        TEM_data = main_TEM_circles(R_upper, R_lower, 
+                                    tx_top_left, ty_top_left, tx_top_right, ty_top_right, tx_bottom_right, ty_bottom_right, tx_bottom_left, ty_bottom_left,
+                                    Fx_top_left, Fy_top_left, Fx_top_right, Fy_top_right, Fx_bottom_right, Fy_bottom_right, Fx_bottom_left, Fy_bottom_left,
+                                    pixelsize)
+        
+        landa_top_left = TEM_data['line tension top left']
+        landa_top_right = TEM_data['line tension top right']
+        landa_bottom_left = TEM_data['line tension bottom left']
+        landa_bottom_right = TEM_data['line tension bottom right']
     
-    ty_top_left = tangent_data['ty top left']    
-    ty_top_right = tangent_data['ty top right'] 
-    ty_bottom_right = tangent_data['ty bottom right'] 
-    ty_bottom_left = tangent_data['ty bottom left']   
+        ellipse_data = main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
+                                           R_upper, R_lower,
+                                           XC_upper, YC_upper, XC_lower, YC_lower,
+                                           tx_top_left, ty_top_left, tx_top_right, ty_top_right,
+                                           tx_bottom_right, ty_bottom_right, tx_bottom_left, ty_bottom_left,
+                                           landa_top_left, landa_top_right, landa_bottom_left, landa_bottom_right,
+                                           sigma_x, pixelsize)
+        
+        circle_fit_data, tangent_data, TEM_data, ellipse_data = calculate_various_stuff(circle_fit_data, tangent_data, TEM_data, ellipse_data)
     
-    
-    # run main_TEM_circles
-    TEM_data = main_TEM_circles(R_upper, R_lower, 
-                                tx_top_left, ty_top_left, tx_top_right, ty_top_right, tx_bottom_right, ty_bottom_right, tx_bottom_left, ty_bottom_left,
-                                Fx_top_left, Fy_top_left, Fx_top_right, Fy_top_right, Fx_bottom_right, Fy_bottom_right, Fx_bottom_left, Fy_bottom_left,
-                                pixelsize)
-    
-    landa_top_left = TEM_data['line tension top left']
-    landa_top_right = TEM_data['line tension top right']
-    landa_bottom_left = TEM_data['line tension bottom left']
-    landa_bottom_right = TEM_data['line tension bottom right']
-
-    ellipse_data = main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
-                                       R_upper, R_lower,
-                                       XC_upper, YC_upper, XC_lower, YC_lower,
-                                       tx_top_left, ty_top_left, tx_top_right, ty_top_right,
-                                       tx_bottom_right, ty_bottom_right, tx_bottom_left, ty_bottom_left,
-                                       landa_top_left, landa_top_right, landa_bottom_left, landa_bottom_right,
-                                       sigma_x, pixelsize)
+    # load previously analysed data to make some additional calculations
+    elif shortcut:
+        CM_data = pickle.load(open(outputpath, "rb"))
+        circle_fit_data = CM_data["circle_fit_data"]
+        tangent_data = CM_data["tangent_data"] 
+        TEM_data = CM_data["TEM_data"]
+        ellipse_data = CM_data["ellipse_data"]
+        
+        circle_fit_data, tangent_data, TEM_data, ellipse_data = calculate_various_stuff(circle_fit_data, tangent_data, TEM_data, ellipse_data)    
     
     CM_data = {'circle_fit_data': circle_fit_data,
                'tangent_data': tangent_data,
@@ -1062,30 +1083,31 @@ def main(inputpath, outputpath, pixelsize):
     
 if __name__ == '__main__':
     pixelsize = 0.108*1e-6 # in m
+    shortcut = False
     
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1d_fullstim_long"    
-    main(path+".dat", path+"_CM_data.dat", pixelsize)
+    main(path+".dat", path+"_CM_data.dat", pixelsize, shortcut)
     
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1s_fullstim_long"    
-    main(path+".dat", path+"_CM_data.dat", pixelsize)
+    main(path+".dat", path+"_CM_data.dat", pixelsize, shortcut)
     
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1d_fullstim_short"    
-    main(path+".dat", path+"_CM_data.dat", pixelsize)
+    main(path+".dat", path+"_CM_data.dat", pixelsize, shortcut)
     
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1s_fullstim_short"    
-    main(path+".dat", path+"_CM_data.dat", pixelsize)
+    main(path+".dat", path+"_CM_data.dat", pixelsize, shortcut)
     
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to2d_halfstim"    
-    main(path+".dat", path+"_CM_data.dat", pixelsize)
+    main(path+".dat", path+"_CM_data.dat", pixelsize, shortcut)
     
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1d_halfstim"    
-    main(path+".dat", path+"_CM_data.dat", pixelsize)
+    main(path+".dat", path+"_CM_data.dat", pixelsize, shortcut)
     
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1s_halfstim"    
-    main(path+".dat", path+"_CM_data.dat", pixelsize)
+    main(path+".dat", path+"_CM_data.dat", pixelsize, shortcut)
     
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR2to1d_halfstim"    
-    main(path+".dat", path+"_CM_data.dat", pixelsize)
+    main(path+".dat", path+"_CM_data.dat", pixelsize, shortcut)
     
     
     # # run main_ellipse_approx
