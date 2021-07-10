@@ -9,6 +9,7 @@ import circle_fit as cf
 from lmfit import Minimizer, Parameter, Model, report_fit
 from scipy import optimize
 import time
+import pickle
 
 ''' Main Analysis Script for TFM-Opto Experiment for Cells on H-shaped Micropattern (Artur Ruppel, Dennis Wörthmüller)
 
@@ -22,19 +23,11 @@ import time
 # The the only things that should and have to be changed in this script are in the "-----" marked domain
 # -------------------------------------------------------------------------------------------------------------------------------
 
-# Number of cells for each condition (just a little look up table)
-# AR1to1:29
-# AR1to2 43
-# AR2to1 18  
-# AR1to1_singlets 41
-
-# adjust this number
-noCells = 2
-noFrames = 60
-
 # location where all the data input data sits and where the output data is written to 
 # adjust this path to specifiy read directory (read and save direactory are the same)
-directory = "C:/Users/Balland/Desktop/sigma_xx_averages/AR2to1 doublets half stim/"
+folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
+    
+data = pickle.load(open(folder + "analysed_data/AR1to1d_fullstim_long.dat", "rb"))
 
 # here you can specify which task to perform, default is that script performs all tasks
 # which operations should be performed in the script

@@ -60,14 +60,14 @@ def load_fibertracking_data(folder, fibertrackingshape, noCells):
         for t in range(t_end):
             # a little messy way of getting masks from fibertracks
             img1 = np.zeros((1000, 1000), dtype=bool)
-            c = np.concatenate((Xtop[:,0],Xright[:,0],Xbottom[:,0],Xleft[:,0]))
-            r = np.concatenate((Ytop[:,0],Yright[:,0],Ybottom[:,0],Yleft[:,0]))
+            c = np.concatenate((Xtop[:,t],Xright[:,t],Xbottom[:,t],Xleft[:,t]))
+            r = np.concatenate((Ytop[:,t],Yright[:,t],Ybottom[:,t],Yleft[:,t]))
             rr, cc = polygon(r, c)
             img1[rr, cc] = 1
             
             img2 = np.zeros((1000, 1000), dtype=bool)
-            c = np.flip(np.concatenate((Xtop[:,0],Xright[:,0],Xbottom[:,0],Xleft[:,0])),axis=0)
-            r = np.flip(np.concatenate((Ytop[:,0],Yright[:,0],Ybottom[:,0],Yleft[:,0])),axis=0)
+            c = np.flip(np.concatenate((Xtop[:,t],Xright[:,t],Xbottom[:,t],Xleft[:,t])),axis=0)
+            r = np.flip(np.concatenate((Ytop[:,t],Yright[:,t],Ybottom[:,t],Yleft[:,t])),axis=0)
             rr, cc = polygon(r, c)
             img2[rr, cc] = 1
             img2 = np.flip(img2,axis=0)
@@ -251,14 +251,14 @@ if __name__ == "__main__":
     
     
     main("D:/2021_OPTO H2000 stimulate all for 10 minutes/doublets", folder, "AR1to1 doublets full stim long",42,60)  
-    # main("D:/2021_OPTO H2000 stimulate all for 10 minutes/singlets", folder, "AR1to1 singlets full stim long",17,60)
-    # main("D:/2021_OPTO H2000 stimulate all for 3 minutes/doublets", folder, "AR1to1 doublets full stim short",35,50)  
-    # main("D:/2021_OPTO H2000 stimulate all for 3 minutes/singlets", folder, "AR1to1 singlets full stim short",14,50)
+    main("D:/2021_OPTO H2000 stimulate all for 10 minutes/singlets", folder, "AR1to1 singlets full stim long",17,60)
+    main("D:/2021_OPTO H2000 stimulate all for 3 minutes/doublets", folder, "AR1to1 doublets full stim short",35,50)  
+    main("D:/2021_OPTO H2000 stimulate all for 3 minutes/singlets", folder, "AR1to1 singlets full stim short",14,50)
 
-    # main("D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_doublets/AR1to2", folder, "AR1to2 doublets half stim",43,60)
-    # main("D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_doublets/AR1to1", folder, "AR1to1 doublets half stim",29,60)
-    # main("D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_singlets", folder, "AR1to1 singlets half stim",41,60)
-    # main("D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_doublets/AR2to1", folder, "AR2to1 doublets half stim",18,60)
+    main("D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_doublets/AR1to2", folder, "AR1to2 doublets half stim",43,60)
+    main("D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_doublets/AR1to1", folder, "AR1to1 doublets half stim",29,60)
+    main("D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_singlets", folder, "AR1to1 singlets half stim",41,60)
+    main("D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_doublets/AR2to1", folder, "AR2to1 doublets half stim",18,60)
     
     
 # old functions that are not needed anymore

@@ -12,7 +12,6 @@ import os
 from sklearn.linear_model import LinearRegression
 import moviepy.video.io.ImageSequenceClip
 from skimage.morphology import closing, dilation, disk
-# 
 import pickle
 
 
@@ -25,6 +24,9 @@ def analyse_TFM_data(folder, stressmappixelsize):
     Dy = np.load(folder+"/Dy.npy")
     Tx = np.load(folder+"/Tx.npy") 
     Ty = np.load(folder+"/Ty.npy")
+    
+    # calculate force amplitude
+    T = np.sqrt(Tx**2+Ty**2)
     
     x_end = np.shape(Dx)[1]
     y_end = np.shape(Dx)[0]
@@ -61,7 +63,67 @@ def analyse_TFM_data(folder, stressmappixelsize):
     Fx_righthalf = np.nansum(Tx[:,x_half:x_end,:,:], axis=(0,1))*(stressmappixelsize**2)     
     F_cellcell = Fx_lefthalf-Fx_righthalf
     
+    # calculate corneraverages
+    Fx_topleft = np.zeros((t_end,cell_end))
+    Fx_topright = np.zeros((t_end,cell_end))
+    Fx_bottomright = np.zeros((t_end,cell_end))
+    Fx_bottomleft = np.zeros((t_end,cell_end))
+    Fy_topleft = np.zeros((t_end,cell_end))
+    Fy_topright = np.zeros((t_end,cell_end))
+    Fy_bottomright = np.zeros((t_end,cell_end))
+    Fy_bottomleft = np.zeros((t_end,cell_end))
+    
+    # find peak and sum up all values within radius r
+    r = 12 #~10 uM
+    x = np.arange(0, x_half)
+    y = np.arange(0, y_half)
+    for cell in np.arange(cell_end):
+        # find peak in first frame
+        T_topleft = T[0:x_half,0:y_half,0,cell]
+        T_topleft_max = np.where(T_topleft == np.amax(T_topleft))
+        
+        T_topright = T[x_half:x_end,0:y_half,0,cell]
+        T_topright_max = np.where(T_topright == np.amax(T_topright))    
+        
+        T_bottomleft = T[0:x_half,y_half:y_end,0,cell]
+        T_bottomleft_max = np.where(T_bottomleft == np.amax(T_bottomleft))
+    
+        T_bottomright = T[x_half:x_end,y_half:y_end,0,cell]
+        T_bottomright_max = np.where(T_bottomright == np.amax(T_bottomright))
+        for t in np.arange(t_end):
+            
+            mask_topleft = (x[np.newaxis,:]-T_topleft_max[1])**2 + (y[:,np.newaxis]-T_topleft_max[0])**2 < r**2            
+            Fx_topleft[t,cell] = np.nansum(Tx[0:x_half,0:y_half,t,cell]*mask_topleft)*stressmappixelsize**2
+            Fy_topleft[t,cell] = np.nansum(Ty[0:x_half,0:y_half,t,cell]*mask_topleft)*stressmappixelsize**2
+            
+            
+            mask_topright = (x[np.newaxis,:]-T_topright_max[1])**2 + (y[:,np.newaxis]-T_topright_max[0])**2 < r**2
+            Fx_topright[t,cell] = np.nansum(Tx[0:x_half,0:y_half,t,cell]*mask_topright)*stressmappixelsize**2
+            Fy_topright[t,cell] = np.nansum(Ty[0:x_half,0:y_half,t,cell]*mask_topright)*stressmappixelsize**2
+            
+            mask_bottomleft = (x[np.newaxis,:]-T_bottomleft_max[1])**2 + (y[:,np.newaxis]-T_bottomleft_max[0])**2 < r**2
+            Fx_bottomleft[t,cell] = np.nansum(Tx[0:x_half,0:y_half,t,cell]*mask_bottomleft)*stressmappixelsize**2
+            Fy_bottomleft[t,cell] = np.nansum(Ty[0:x_half,0:y_half,t,cell]*mask_bottomleft)*stressmappixelsize**2
+            
+            mask_bottomright = (x[np.newaxis,:]-T_bottomright_max[1])**2 + (y[:,np.newaxis]-T_bottomright_max[0])**2 < r**2
+            Fx_bottomright[t,cell] = np.nansum(Tx[0:x_half,0:y_half,t,cell]*mask_bottomright)*stressmappixelsize**2
+            Fy_bottomright[t,cell] = np.nansum(Ty[0:x_half,0:y_half,t,cell]*mask_bottomright)*stressmappixelsize**2
+            
+            # mask_corneraverages = np.zeros((x_end,y_end))
+            # mask_corneraverages[0:x_half,0:y_half] = mask_topleft
+            # mask_corneraverages[x_half:x_end,0:y_half] = mask_topright
+            # mask_corneraverages[0:x_half,y_half:y_end,] = mask_bottomleft
+            # mask_corneraverages[x_half:x_end,y_half:y_end,] = mask_bottomright
+            
+            # if t == 0:
+            #     plt.figure()
+            #     plt.imshow(T[:,:,t,cell]*mask_corneraverages)
+            #     plt.show()
+            
+    
     data={"Dx": Dx,"Dy": Dy, "Tx": Tx,"Ty": Ty,
+          "Fx_topleft": Fx_topleft,"Fx_topright": Fx_topright, "Fx_bottomright": Fx_bottomright,"Fx_bottomleft": Fx_bottomleft,
+          "Fy_topleft": Fy_topleft,"Fy_topright": Fy_topright, "Fy_bottomright": Fy_bottomright,"Fy_bottomleft": Fy_bottomleft,
           "Es": Es, "Es_lefthalf": Es_lefthalf, "Es_righthalf": Es_righthalf, "Es_baseline": Es_baseline,
           "relEs": relEs, "relEs_lefthalf": relEs_lefthalf, "relEs_righthalf": relEs_righthalf,
           "Fx": Fx, "Fy": Fy, "force_angle": force_angle, "force_angle_baseline": force_angle_baseline,"F_cellcell": F_cellcell}
@@ -119,18 +181,26 @@ def analyse_MSM_data(folder):
     return data
 
 def analyse_shape_data(folder, pixelsize):
-    masks = np.load(folder+"/mask.npy") 
+    Xtop = np.load(folder+"/Xtop.npy") 
+    Xright = np.load(folder+"/Xright.npy") 
+    Xbottom = np.load(folder+"/Xbottom.npy") 
+    Xleft = np.load(folder+"/Xleft.npy") 
     
-    x_end = np.shape(masks)[1]
-    y_end = np.shape(masks)[0]
-    t_end = np.shape(masks)[2]
-    cell_end = np.shape(masks)[3]
+    Ytop = np.load(folder+"/Ytop.npy") 
+    Yright = np.load(folder+"/Yright.npy") 
+    Ybottom = np.load(folder+"/Ybottom.npy") 
+    Yleft = np.load(folder+"/Yleft.npy") 
+    
+    
+    masks = np.load(folder+"/mask.npy")     
   
     spreadingsize = (pixelsize**2)*np.nansum(masks,axis=(0,1))
     
     spreadingsize_baseline = np.nanmean(spreadingsize[0:20,:],axis=0)
     
-    data={"spreadingsize": spreadingsize, "spreadingsize_baseline": spreadingsize_baseline}
+    data={"Xtop": Xtop, "Xright": Xright, "Xbottom": Xbottom, "Xleft": Xleft,
+          "Ytop": Ytop, "Yright": Yright, "Ybottom": Ybottom, "Yleft": Yleft,
+          "spreadingsize": spreadingsize, "spreadingsize_baseline": spreadingsize_baseline}
     
     return data
 
@@ -224,119 +294,140 @@ if __name__ == "__main__":
     # This is the folder where all the data is stored
     folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
     
+    AR1to1dfsl = "AR1to1 doublets full stim long"
+    AR1to1sfsl = "AR1to1 singlets full stim long"
+    AR1to1dfss = "AR1to1 doublets full stim short"
+    AR1to1sfss = "AR1to1 singlets full stim short"
+    AR1to2dhs = "AR1to2 doublets half stim"
+    AR1to1dhs = "AR1to1 doublets half stim"
+    AR1to1shs = "AR1to1 singlets half stim"
+    AR2to1dhs = "AR2to1 doublets half stim"
+    
     # # These functions perform a series of analyses and assemble a dictionary of dictionaries containing all the data that was used for plotting
-    # AR1to1d_fullstim_long = main_meta_analysis(folder, "AR1to1 doublets full stim long",42,60)
-    AR1to1s_fullstim_long = main_meta_analysis(folder, "AR1to1 singlets full stim long",17,60)
-    # AR1to1d_fullstim_short = main_meta_analysis(folder, "AR1to1 doublets full stim short",35,50)
-    # AR1to1s_fullstim_short = main_meta_analysis(folder, "AR1to1 singlets full stim short",14,50)
-    # AR1to2d_halfstim = main_meta_analysis(folder, "AR1to2 doublets half stim",43,60)
-    # AR1to1d_halfstim = main_meta_analysis(folder, "AR1to1 doublets half stim",29,60)
-    # AR1to1s_halfstim = main_meta_analysis(folder, "AR1to1 singlets half stim",41,60)
-    # AR2to1d_halfstim = main_meta_analysis(folder, "AR2to1 doublets half stim",18,60)
-    
-    savefolder = 'C:/Users\Balland/Desktop/sigma_xx_averages'
-    
-    if not os.path.exists(folder + "analysed_data"):
-        os.mkdir(folder + "analysed_data")
-    
-    
-    # np.save(savefolder+'/AR1to1 doublets full stim long/sigma_xx.npy', AR1to1d_fullstim_long['MSM_data']['sigma_xx_average'])
-    np.save(savefolder+'/AR1to1 singlets full stim long/sigma_xx.npy', AR1to1s_fullstim_long['MSM_data']['sigma_xx_average'])
-    # np.save(savefolder+'/AR1to1 doublets full stim short/sigma_xx.npy', AR1to1d_fullstim_short['MSM_data']['sigma_xx_average'])
-    # np.save(savefolder+'/AR1to1 singlets full stim short/sigma_xx.npy', AR1to1s_fullstim_short['MSM_data']['sigma_xx_average'])
-    # np.save(savefolder+'/AR1to2 doublets half stim/sigma_xx.npy', AR1to2d_halfstim['MSM_data']['sigma_xx_average'])
-    # np.save(savefolder+'/AR1to1 doublets half stim/sigma_xx.npy', AR1to1d_halfstim['MSM_data']['sigma_xx_average'])
-    # np.save(savefolder+'/AR1to1 singlets half stim/sigma_xx.npy', AR1to1s_halfstim['MSM_data']['sigma_xx_average'])
-    # np.save(savefolder+'/AR2to1 doublets half stim/sigma_xx.npy', AR2to1d_halfstim['MSM_data']['sigma_xx_average'])
-    # np.save()
-    
+    AR1to1d_fullstim_long = main_meta_analysis(folder, AR1to1dfsl, 42,60)
+    AR1to1s_fullstim_long = main_meta_analysis(folder, AR1to1sfsl, 17,60)
+    AR1to1d_fullstim_short = main_meta_analysis(folder,AR1to1dfss, 35,50)
+    AR1to1s_fullstim_short = main_meta_analysis(folder, AR1to1sfss, 14,50)
+    AR1to2d_halfstim = main_meta_analysis(folder, AR1to2dhs, 43,60)
+    # AR1to1d_halfstim = main_meta_analysis(folder, AR1to1dhs, 29,60)
+    # AR1to1s_halfstim = main_meta_analysis(folder, AR1to1shs, 41,60)
+    # AR2to1d_halfstim = main_meta_analysis(folder, AR2to1dhs ,18,60)  
+   
+
     # save dictionaries to a file using pickle
     if not os.path.exists(folder + "analysed_data"):
         os.mkdir(folder + "analysed_data")
     
-    # with open(folder + "analysed_data/AR1to1d_fullstim_long.dat", 'wb') as outfile: pickle.dump(AR1to1d_fullstim_long, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(folder + "analysed_data/AR1to1d_fullstim_long.dat", 'wb') as outfile: pickle.dump(AR1to1d_fullstim_long, outfile, protocol=pickle.HIGHEST_PROTOCOL)
     with open(folder + "analysed_data/AR1to1s_fullstim_long.dat", 'wb') as outfile: pickle.dump(AR1to1s_fullstim_long, outfile, protocol=pickle.HIGHEST_PROTOCOL)
-    # with open(folder + "analysed_data/AR1to1d_fullstim_short.dat", 'wb') as outfile:pickle.dump(AR1to1d_fullstim_short, outfile, protocol=pickle.HIGHEST_PROTOCOL)
-    # with open(folder + "analysed_data/AR1to1s_fullstim_short.dat", 'wb') as outfile:pickle.dump(AR1to1s_fullstim_short, outfile, protocol=pickle.HIGHEST_PROTOCOL)
-    # with open(folder + "analysed_data/AR1to2d_halfstim.dat", 'wb') as outfile:      pickle.dump(AR1to2d_halfstim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(folder + "analysed_data/AR1to1d_fullstim_short.dat", 'wb') as outfile:pickle.dump(AR1to1d_fullstim_short, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(folder + "analysed_data/AR1to1s_fullstim_short.dat", 'wb') as outfile:pickle.dump(AR1to1s_fullstim_short, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(folder + "analysed_data/AR1to2d_halfstim.dat", 'wb') as outfile:      pickle.dump(AR1to2d_halfstim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
     # with open(folder + "analysed_data/AR1to1d_halfstim.dat", 'wb') as outfile:      pickle.dump(AR1to1d_halfstim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
     # with open(folder + "analysed_data/AR1to1s_halfstim.dat", 'wb') as outfile:      pickle.dump(AR1to1s_halfstim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
     # with open(folder + "analysed_data/AR2to1d_halfstim.dat", 'wb') as outfile:      pickle.dump(AR2to1d_halfstim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
 
+    # # save files that are necessary for the ellipsefit algorithm
+    # ellipsefolder = folder + "data_for_ellipsefit/"
     
+    # if not os.path.exists(ellipsefolder):
+    #     os.mkdir(ellipsefolder)
+    # if not os.path.exists(ellipsefolder+AR1to1dfsl):
+    #     os.mkdir(ellipsefolder+AR1to1dfsl)
+    # if not os.path.exists(ellipsefolder+AR1to1sfsl):
+    #     os.mkdir(ellipsefolder+AR1to1sfsl)        
+    # if not os.path.exists(ellipsefolder+AR1to1dfss):
+    #     os.mkdir(ellipsefolder+AR1to1dfss)    
+    # if not os.path.exists(ellipsefolder+AR1to1sfss):
+    #     os.mkdir(ellipsefolder+AR1to1sfss)       
+    # if not os.path.exists(ellipsefolder+AR1to2dhs):
+    #     os.mkdir(ellipsefolder+AR1to2dhs)     
+    # if not os.path.exists(ellipsefolder+AR1to1dhs):
+    #     os.mkdir(ellipsefolder+AR1to1dhs)        
+    # if not os.path.exists(ellipsefolder+AR1to1shs):
+    #     os.mkdir(ellipsefolder+AR1to1shs)        
+    # if not os.path.exists(ellipsefolder+AR2to1dhs):
+    #     os.mkdir(ellipsefolder+AR2to1dhs)        
+        
+    # np.save(ellipsefolder+AR1to1dfsl+'/Fx_topleft.npy', AR1to1d_fullstim_long['TFM_data']['Fx_topleft'])
+    # np.save(ellipsefolder+AR1to1sfsl+'/Fx_topleft.npy', AR1to1s_fullstim_long['TFM_data']['Fx_topleft'])
+    # np.save(ellipsefolder+AR1to1dfss+'/Fx_topleft.npy', AR1to1d_fullstim_short['TFM_data']['Fx_topleft'])
+    # np.save(ellipsefolder+AR1to1sfss+'/Fx_topleft.npy', AR1to1s_fullstim_short['TFM_data']['Fx_topleft'])
+    # np.save(ellipsefolder+AR1to2dhs+'/Fx_topleft.npy', AR1to2d_halfstim['TFM_data']['Fx_topleft'])
+    # np.save(ellipsefolder+AR1to1dhs+'/Fx_topleft.npy', AR1to1d_halfstim['TFM_data']['Fx_topleft'])
+    # np.save(ellipsefolder+AR1to1shs+'/Fx_topleft.npy', AR1to1s_halfstim['TFM_data']['Fx_topleft'])
+    # np.save(ellipsefolder+AR2to1dhs+'/Fx_topleft.npy', AR2to1d_halfstim['TFM_data']['Fx_topleft'])
     
+    # np.save(ellipsefolder+AR1to1dfsl+'/Fx_topright.npy', AR1to1d_fullstim_long['TFM_data']['Fx_topright'])
+    # np.save(ellipsefolder+AR1to1sfsl+'/Fx_topright.npy', AR1to1s_fullstim_long['TFM_data']['Fx_topright'])
+    # np.save(ellipsefolder+AR1to1dfss+'/Fx_topright.npy', AR1to1d_fullstim_short['TFM_data']['Fx_topright'])
+    # np.save(ellipsefolder+AR1to1sfss+'/Fx_topright.npy', AR1to1s_fullstim_short['TFM_data']['Fx_topright'])
+    # np.save(ellipsefolder+AR1to2dhs+'/Fx_topright.npy', AR1to2d_halfstim['TFM_data']['Fx_topright'])
+    # np.save(ellipsefolder+AR1to1dhs+'/Fx_topright.npy', AR1to1d_halfstim['TFM_data']['Fx_topright'])
+    # np.save(ellipsefolder+AR1to1shs+'/Fx_topright.npy', AR1to1s_halfstim['TFM_data']['Fx_topright'])
+    # np.save(ellipsefolder+AR2to1dhs+'/Fx_topright.npy', AR2to1d_halfstim['TFM_data']['Fx_topright'])
     
-# old functions that are not needed anymore
-
-
-# def load_MSM_and_TFM_data(folder, noCells, stressmapshape, stressmappixelsize):
-# # this function was used to load the TFM and stress maps that resulted from the TFM and MSM analysis. It takes those maps and a mask with the cell border, 
-# # centers the maps around the mask, sets all values outside to 0, crops all maps to a consistent size and saves them in a data structure. The result of this 
-# # process is going to be used as input for all subse
-#     x_end = stressmapshape[0]
-#     y_end = stressmapshape[1]
-#     t_end = stressmapshape[2] # nomber of frames
-#     cell_end = noCells
+    # np.save(ellipsefolder+AR1to1dfsl+'/Fx_bottomright.npy', AR1to1d_fullstim_long['TFM_data']['Fx_bottomright'])
+    # np.save(ellipsefolder+AR1to1sfsl+'/Fx_bottomright.npy', AR1to1s_fullstim_long['TFM_data']['Fx_bottomright'])
+    # np.save(ellipsefolder+AR1to1dfss+'/Fx_bottomright.npy', AR1to1d_fullstim_short['TFM_data']['Fx_bottomright'])
+    # np.save(ellipsefolder+AR1to1sfss+'/Fx_bottomright.npy', AR1to1s_fullstim_short['TFM_data']['Fx_bottomright'])
+    # np.save(ellipsefolder+AR1to2dhs+'/Fx_bottomright.npy', AR1to2d_halfstim['TFM_data']['Fx_bottomright'])
+    # np.save(ellipsefolder+AR1to1dhs+'/Fx_bottomright.npy', AR1to1d_halfstim['TFM_data']['Fx_bottomright'])
+    # np.save(ellipsefolder+AR1to1shs+'/Fx_bottomright.npy', AR1to1s_halfstim['TFM_data']['Fx_bottomright'])
+    # np.save(ellipsefolder+AR2to1dhs+'/Fx_bottomright.npy', AR2to1d_halfstim['TFM_data']['Fx_bottomright'])
     
-#     # initialize arrays to store stress maps
-#     Tx_all = np.zeros([x_end, y_end, t_end, cell_end])
-#     Ty_all = np.zeros([x_end, y_end, t_end, cell_end])
-#     Dx_all = np.zeros([x_end, y_end, t_end, cell_end])
-#     Dy_all = np.zeros([x_end, y_end, t_end, cell_end])
-#     sigma_xx_all = np.zeros([x_end, y_end, t_end, cell_end])
-#     sigma_yy_all = np.zeros([x_end, y_end, t_end, cell_end])
-#     sigma_xy_all = np.zeros([x_end, y_end, t_end, cell_end])
-#     sigma_yx_all = np.zeros([x_end, y_end, t_end, cell_end])
+    # np.save(ellipsefolder+AR1to1dfsl+'/Fx_bottomleft.npy', AR1to1d_fullstim_long['TFM_data']['Fx_bottomleft'])
+    # np.save(ellipsefolder+AR1to1sfsl+'/Fx_bottomleft.npy', AR1to1s_fullstim_long['TFM_data']['Fx_bottomleft'])
+    # np.save(ellipsefolder+AR1to1dfss+'/Fx_bottomleft.npy', AR1to1d_fullstim_short['TFM_data']['Fx_bottomleft'])
+    # np.save(ellipsefolder+AR1to1sfss+'/Fx_bottomleft.npy', AR1to1s_fullstim_short['TFM_data']['Fx_bottomleft'])
+    # np.save(ellipsefolder+AR1to2dhs+'/Fx_bottomleft.npy', AR1to2d_halfstim['TFM_data']['Fx_bottomleft'])
+    # np.save(ellipsefolder+AR1to1dhs+'/Fx_bottomleft.npy', AR1to1d_halfstim['TFM_data']['Fx_bottomleft'])
+    # np.save(ellipsefolder+AR1to1shs+'/Fx_bottomleft.npy', AR1to1s_halfstim['TFM_data']['Fx_bottomleft'])
+    # np.save(ellipsefolder+AR2to1dhs+'/Fx_bottomleft.npy', AR2to1d_halfstim['TFM_data']['Fx_bottomleft'])
     
+    # np.save(ellipsefolder+AR1to1dfsl+'/Fy_topleft.npy', AR1to1d_fullstim_long['TFM_data']['Fy_topleft'])
+    # np.save(ellipsefolder+AR1to1sfsl+'/Fy_topleft.npy', AR1to1s_fullstim_long['TFM_data']['Fy_topleft'])
+    # np.save(ellipsefolder+AR1to1dfss+'/Fy_topleft.npy', AR1to1d_fullstim_short['TFM_data']['Fy_topleft'])
+    # np.save(ellipsefolder+AR1to1sfss+'/Fy_topleft.npy', AR1to1s_fullstim_short['TFM_data']['Fy_topleft'])
+    # np.save(ellipsefolder+AR1to2dhs+'/Fy_topleft.npy', AR1to2d_halfstim['TFM_data']['Fy_topleft'])
+    # np.save(ellipsefolder+AR1to1dhs+'/Fy_topleft.npy', AR1to1d_halfstim['TFM_data']['Fy_topleft'])
+    # np.save(ellipsefolder+AR1to1shs+'/Fy_topleft.npy', AR1to1s_halfstim['TFM_data']['Fy_topleft'])
+    # np.save(ellipsefolder+AR2to1dhs+'/Fy_topleft.npy', AR2to1d_halfstim['TFM_data']['Fy_topleft'])
     
-#     # loop over all folders (one folder per cell/tissue)
-#     for cell in range(cell_end):
-#         # assemble paths to load stres smaps
-#         if cell < 9:
-#             foldercellpath = folder+"/cell0"+str(cell+1)
-#         else:
-#             foldercellpath = folder+"/cell"+str(cell+1)
-            
-#         # load masks, stress and displacement maps
-#         TFM_mat = scipy.io.loadmat(foldercellpath+"/Allresults2.mat")
-#         stresstensor = np.load(foldercellpath+"/stressmaps.npy")/stressmappixelsize # stressmaps are stored in N/pixel and have to be converted to N/m
-        
-#         # recover mask from stress maps
-#         mask = stresstensor[0,:,:,0] > 0
-#         mask_all = stresstensor[0,:,:,:] > 0
-        
-#         # mask has some holes that have to be closed, because MSM analysis gave NaN on some pixels.
-#         footprint = disk(10)
-#         for t in range(t_end):
-#             mask_all[:,:,t] = closing(mask_all[:,:,t],footprint)
-#         mask = mask_all[:,:,0]
-        
-#         # set TFM values outside of mask to 0
-#         Tx_new = TFM_mat["Tx"]*mask_all
-#         Ty_new = TFM_mat["Ty"]*mask_all
-#         Dx_new = TFM_mat["Dx"]*mask_all
-#         Dy_new = TFM_mat["Dy"]*mask_all
-        
-#         # find the center of the mask
-#         x_center, y_center = np.rint(ndimage.measurements.center_of_mass(mask))
-        
-#         # find the cropboundaries around the center, round and convert to integer
-#         x_crop_start = np.rint(x_center-x_end/2).astype(int)
-#         x_crop_end = np.rint(x_center+x_end/2).astype(int)
-#         y_crop_start = np.rint(y_center-y_end/2).astype(int)
-#         y_crop_end = np.rint(y_center+y_end/2).astype(int)
-        
-#         # crop and store in array
-#         Tx_all[:,:,:,cell] = Tx_new[x_crop_start:x_crop_end,y_crop_start:y_crop_end,:]
-#         Ty_all[:,:,:,cell] = Ty_new[x_crop_start:x_crop_end,y_crop_start:y_crop_end,:]
-#         Dx_all[:,:,:,cell] = Dx_new[x_crop_start:x_crop_end,y_crop_start:y_crop_end,:]
-#         Dy_all[:,:,:,cell] = Dy_new[x_crop_start:x_crop_end,y_crop_start:y_crop_end,:]
-#         sigma_xx_all[:,:,:,cell], sigma_yy_all[:,:,:,cell] = stresstensor[(0,1),x_crop_start:x_crop_end,y_crop_start:y_crop_end,:]
-        
-#         print("Data from cell "+str(cell)+" loaded")        
-        
-        
-#     return sigma_xx_all, sigma_yy_all, Tx_all, Ty_all, Dx_all, Dy_all  
-
-
-   
+    # np.save(ellipsefolder+AR1to1dfsl+'/Fy_topright.npy', AR1to1d_fullstim_long['TFM_data']['Fy_topright'])
+    # np.save(ellipsefolder+AR1to1sfsl+'/Fy_topright.npy', AR1to1s_fullstim_long['TFM_data']['Fy_topright'])
+    # np.save(ellipsefolder+AR1to1dfss+'/Fy_topright.npy', AR1to1d_fullstim_short['TFM_data']['Fy_topright'])
+    # np.save(ellipsefolder+AR1to1sfss+'/Fy_topright.npy', AR1to1s_fullstim_short['TFM_data']['Fy_topright'])
+    # np.save(ellipsefolder+AR1to2dhs+'/Fy_topright.npy', AR1to2d_halfstim['TFM_data']['Fy_topright'])
+    # np.save(ellipsefolder+AR1to1dhs+'/Fy_topright.npy', AR1to1d_halfstim['TFM_data']['Fy_topright'])
+    # np.save(ellipsefolder+AR1to1shs+'/Fy_topright.npy', AR1to1s_halfstim['TFM_data']['Fy_topright'])
+    # np.save(ellipsefolder+AR2to1dhs+'/Fy_topright.npy', AR2to1d_halfstim['TFM_data']['Fy_topright'])
+    
+    # np.save(ellipsefolder+AR1to1dfsl+'/Fy_bottomright.npy', AR1to1d_fullstim_long['TFM_data']['Fy_bottomright'])
+    # np.save(ellipsefolder+AR1to1sfsl+'/Fy_bottomright.npy', AR1to1s_fullstim_long['TFM_data']['Fy_bottomright'])
+    # np.save(ellipsefolder+AR1to1dfss+'/Fy_bottomright.npy', AR1to1d_fullstim_short['TFM_data']['Fy_bottomright'])
+    # np.save(ellipsefolder+AR1to1sfss+'/Fy_bottomright.npy', AR1to1s_fullstim_short['TFM_data']['Fy_bottomright'])
+    # np.save(ellipsefolder+AR1to2dhs+'/Fy_bottomright.npy', AR1to2d_halfstim['TFM_data']['Fy_bottomright'])
+    # np.save(ellipsefolder+AR1to1dhs+'/Fy_bottomright.npy', AR1to1d_halfstim['TFM_data']['Fy_bottomright'])
+    # np.save(ellipsefolder+AR1to1shs+'/Fy_bottomright.npy', AR1to1s_halfstim['TFM_data']['Fy_bottomright'])
+    # np.save(ellipsefolder+AR2to1dhs+'/Fy_bottomright.npy', AR2to1d_halfstim['TFM_data']['Fy_bottomright'])
+    
+    # np.save(ellipsefolder+AR1to1dfsl+'/Fy_bottomleft.npy', AR1to1d_fullstim_long['TFM_data']['Fy_bottomleft'])
+    # np.save(ellipsefolder+AR1to1sfsl+'/Fy_bottomleft.npy', AR1to1s_fullstim_long['TFM_data']['Fy_bottomleft'])
+    # np.save(ellipsefolder+AR1to1dfss+'/Fy_bottomleft.npy', AR1to1d_fullstim_short['TFM_data']['Fy_bottomleft'])
+    # np.save(ellipsefolder+AR1to1sfss+'/Fy_bottomleft.npy', AR1to1s_fullstim_short['TFM_data']['Fy_bottomleft'])
+    # np.save(ellipsefolder+AR1to2dhs+'/Fy_bottomleft.npy', AR1to2d_halfstim['TFM_data']['Fy_bottomleft'])
+    # np.save(ellipsefolder+AR1to1dhs+'/Fy_bottomleft.npy', AR1to1d_halfstim['TFM_data']['Fy_bottomleft'])
+    # np.save(ellipsefolder+AR1to1shs+'/Fy_bottomleft.npy', AR1to1s_halfstim['TFM_data']['Fy_bottomleft'])
+    # np.save(ellipsefolder+AR2to1dhs+'/Fy_bottomleft.npy', AR2to1d_halfstim['TFM_data']['Fy_bottomleft'])
+    
+    # np.save(ellipsefolder+AR1to1dfsl+'/sigma_xx_average.npy', AR1to1d_fullstim_long['MSM_data']['sigma_xx_average'])
+    # np.save(ellipsefolder+AR1to1sfsl+'/sigma_xx_average.npy', AR1to1s_fullstim_long['MSM_data']['sigma_xx_average'])
+    # np.save(ellipsefolder+AR1to1dfss+'/sigma_xx_average.npy', AR1to1d_fullstim_short['MSM_data']['sigma_xx_average'])
+    # np.save(ellipsefolder+AR1to1sfss+'/sigma_xx_average.npy', AR1to1s_fullstim_short['MSM_data']['sigma_xx_average'])
+    # np.save(ellipsefolder+AR1to2dhs+'/sigma_xx_average.npy', AR1to2d_halfstim['MSM_data']['sigma_xx_average'])
+    # np.save(ellipsefolder+AR1to1dhs+'/sigma_xx_average.npy', AR1to1d_halfstim['MSM_data']['sigma_xx_average'])
+    # np.save(ellipsefolder+AR1to1shs+'/sigma_xx_average.npy', AR1to1s_halfstim['MSM_data']['sigma_xx_average'])
+    # np.save(ellipsefolder+AR2to1dhs+'/sigma_xx_average.npy', AR2to1d_halfstim['MSM_data']['sigma_xx_average'])
+    # np.save()
+  
