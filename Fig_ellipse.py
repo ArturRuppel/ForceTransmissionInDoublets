@@ -36,7 +36,7 @@ def test_if_gaussian(data1, data2, title):
     return gaussian
 
 
-
+colors_parent = ['#026473','#E3CC69','#77C8A6','#D96248'];
 #%% load data for plotting
 folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
     
@@ -61,7 +61,7 @@ AR2to1d_halfstim_CM =        pickle.load(open(folder + "analysed_data/AR2to1d_ha
 
 colors_parent = ['#026473','#E3CC69','#77C8A6','#D96248'];
 
-#%% Plot panel X
+#%% Plot panel X1
 
 # prepare data first
 
@@ -95,34 +95,64 @@ keys = np.concatenate((keys1to1d,keys1to1s,keys1to2d,keys2to1d))
 data = {'keys': keys, 'sigma_y_MSM_baseline': sigma_y_MSM_baseline, 'sigma_y_CM_baseline': sigma_y_CM_baseline}
 # Creates DataFrame.
 df = pd.DataFrame(data)
-sns.scatterplot(data=df, x='sigma_y_MSM_baseline', y='sigma_y_CM_baseline')
-corr, _ = pearsonr(data['sigma_yy_baseline'], data['sigma_yy_ellipse'])
-# # define plot parameters
-# fig = plt.figure(2, figsize=(5.5, 2))          # figuresize in inches
-# gs = gridspec.GridSpec(1,3)                     # sets up subplotgrid rows by columns
-# gs.update(wspace=0.4, hspace=0.25)              # adjusts space in between the boxes in the grid
-# colors = [colors_parent[1],colors_parent[2]];   # defines colors
-# sns.set_palette(sns.color_palette(colors))      # sets colors
-# linewidth_bp = 0.7                              # linewidth of boxplot borders
-# width = 0.3                                     # width of boxplots
-# dotsize = 2                                     # size of datapoints in swarmplot
-# linewidth_sw = 0.3                              # linewidth of boxplot borders
-# alpha_sw = 1                                    # transparency of dots in swarmplot
-# alpha_bp = 0.8                                  # transparency of boxplots
-# ylabeloffset = 1                                # adjusts distance of ylabel to the plot
-# titleoffset = 3                                 # adjusts distance of title to the plot
+sns.scatterplot(data=df, x='sigma_y_MSM_baseline', y='sigma_y_CM_baseline',hue='keys')
+corr, _ = pearsonr(data['sigma_y_MSM_baseline'], data['sigma_y_CM_baseline'])
+plt.savefig(folder+'fig_yycorrleation.png', dpi=300, bbox_inches="tight")
+plt.close()
+#%% plot std
 
-# ##############################################################################
-# #Generate first panel
-# ##############################################################################
-# ymin = 500
-# ymax = 2000
+# prepare data first
+
+# concatenate data from different experiments for boxplots
+std_circle_1to1d   = np.concatenate((AR1to1d_halfstim_CM["circle_fit_data"]["std_baseline"], AR1to1d_fullstim_short_CM["circle_fit_data"]["std_baseline"], AR1to1d_fullstim_long_CM["circle_fit_data"]["std_baseline"]))
+std_ellipse_1to1d   = np.concatenate((AR1to1d_halfstim_CM["ellipse_data"]["std_baseline"], AR1to1d_fullstim_short_CM["ellipse_data"]["std_baseline"], AR1to1d_fullstim_long_CM["ellipse_data"]["std_baseline"]))# sigma_y_MSM_1to1s   = np.concatenate((AR1to1s_halfstim["MSM_data"]["sigma_yy_baseline"], AR1to1s_fullstim_short["MSM_data"]["sigma_yy_baseline"], AR1to1s_fullstim_long["MSM_data"]["sigma_yy_baseline"]))
+std_circle_1to1s   = np.concatenate((AR1to1s_halfstim_CM["circle_fit_data"]["std_baseline"], AR1to1s_fullstim_short_CM["circle_fit_data"]["std_baseline"], AR1to1s_fullstim_long_CM["circle_fit_data"]["std_baseline"]))
+std_ellipse_1to1s   = np.concatenate((AR1to1s_halfstim_CM["ellipse_data"]["std_baseline"], AR1to1s_fullstim_short_CM["ellipse_data"]["std_baseline"], AR1to1s_fullstim_long_CM["ellipse_data"]["std_baseline"]))# sigma_y_MSM_1to1s   = np.concatenate((AR1to1s_halfstim["MSM_data"]["sigma_yy_baseline"], AR1to1s_fullstim_short["MSM_data"]["sigma_yy_baseline"], AR1to1s_fullstim_long["MSM_data"]["sigma_yy_baseline"]))
+
+
+# set up pandas data frame to use with seaborn for box- and swarmplots
+std_circle = np.concatenate((std_circle_1to1d,std_circle_1to1s))*1e6 #convert to µm for plotting
+std_ellipse = np.concatenate((std_ellipse_1to1d,std_ellipse_1to1s))*1e6
+
+n_1to1d = std_circle_1to1d.shape[0]
+n_1to1s = std_circle_1to1s.shape[0]
+
+keys1to1d = ['AR1to1d' for i in range(n_1to1d)]
+keys1to1s = ['AR1to1s' for i in range(n_1to1s)]
+
+keys = np.concatenate((keys1to1d,keys1to1s))
+
+data = {'keys': keys, 'std_circle': std_circle, 'std_ellipse': std_ellipse}
+# Creates DataFrame.
+df = pd.DataFrame(data)
+
+
+
+# define plot parameters
+fig = plt.figure(2, figsize=(5.5, 2))          # figuresize in inches
+gs = gridspec.GridSpec(1,2)                     # sets up subplotgrid rows by columns
+gs.update(wspace=0.4, hspace=0.25)              # adjusts space in between the boxes in the grid
+colors = [colors_parent[1],colors_parent[1]];   # defines colors
+sns.set_palette(sns.color_palette(colors))      # sets colors
+linewidth_bp = 0.7                              # linewidth of boxplot borders
+width = 0.3                                     # width of boxplots
+dotsize = 2                                     # size of datapoints in swarmplot
+linewidth_sw = 0.3                              # linewidth of boxplot borders
+alpha_sw = 1                                    # transparency of dots in swarmplot
+alpha_bp = 0.8                                  # transparency of boxplots
+ylabeloffset = 1                                # adjusts distance of ylabel to the plot
+titleoffset = 3                                 # adjusts distance of title to the plot
+##############################################################################
+#Generate first panel
+##############################################################################
+ymin = 0
+ymax = 1
 # stat_annotation_offset = 0.2
 
-# # the grid spec is rows, then columns
-# fig_ax = fig.add_subplot(gs[0,0])
+# the grid spec is rows, then columns
+fig_ax = fig.add_subplot(gs[0,0])
 
-# # set plot variables
+# set plot variables
 # x = 'keys'
 # y = 'spreadingsize'
 # if test_if_gaussian(spreadingsize_baseline_1to1d,spreadingsize_baseline_1to1s,'Spreading size'):
@@ -130,7 +160,62 @@ corr, _ = pearsonr(data['sigma_yy_baseline'], data['sigma_yy_ellipse'])
 # else:
 #     test = 'Mann-Whitney'
 
-# # create box- and swarmplots
+# create box- and swarmplots
+sns.swarmplot(data=df, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
+bp = sns.boxplot(data=df, ax=fig_ax,linewidth=linewidth_bp,notch=True, showfliers = False, width=width)
+
+# order = ['std_circle', 'st_ellipse']
+# test_results = add_stat_annotation(bp, data=df, x=x, y=y, order=order, line_offset_to_box=stat_annotation_offset, box_pairs=[('AR1to1d', 'AR1to1s')],                      
+#                                    test=test, text_format='star', loc='inside', verbose=2)
+
+# make boxplots transparent
+for patch in bp.artists:
+    r, g, b, a = patch.get_facecolor()
+    patch.set_facecolor((r, g, b, alpha_bp))
+
+plt.setp(bp.artists, edgecolor = 'k')
+plt.setp(bp.lines, color='k')
+     
+# set labels
+# fig_ax.set_xticklabels(['doublet', 'singlet'])
+# fig_ax.set_xlabel(xlabel=None)
+fig_ax.set_ylabel(ylabel='std [$\mathrm{\mu m}$]', labelpad=ylabeloffset)
+fig_ax.set_title(label='Standard deviation', pad=titleoffset)
+fig_ax.set()
+
+# Define where you want ticks
+yticks = np.arange(0,1.1,0.5)
+plt.yticks(yticks)
+
+# provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in',which='minor', length=3, bottom=False, top=False, left=True, right=True)
+plt.tick_params(direction='in',which='major', length=6, bottom=False, top=False, left=True, right=True)
+
+# set limits
+fig_ax.set_ylim(ymin=ymin)
+fig_ax.set_ylim(ymax=ymax)
+
+plt.savefig(folder+'fig_std.png', dpi=300, bbox_inches="tight")
+
+# ##############################################################################
+# #Generate second panel
+# ##############################################################################
+# ymin = 0
+# ymax = 2
+# stat_annotation_offset = -0.1 # adjust y-position of statistical annotation
+
+# # the grid spec is rows, then columns
+# fig_ax = fig.add_subplot(gs[0,1])
+
+# # set plot variables
+# x = 'keys'
+# y = 'strain_energy'
+# # if test_if_gaussian(Es_baseline_1to1d,Es_baseline_1to1s,'Strain energy'):
+# #     test = 't-test_ind'
+# # else:
+# #     test = 'Mann-Whitney'
+
 # sns.swarmplot(x=x, y=y, data=df, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
 # bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax,linewidth=linewidth_bp,notch=True, showfliers = False, width=width)
 
@@ -149,15 +234,15 @@ corr, _ = pearsonr(data['sigma_yy_baseline'], data['sigma_yy_ellipse'])
 # # set labels
 # fig_ax.set_xticklabels(['doublet', 'singlet'])
 # fig_ax.set_xlabel(xlabel=None)
-# fig_ax.set_ylabel(ylabel='A [$\mathrm{\mu m^2}$]', labelpad=ylabeloffset)
-# fig_ax.set_title(label='Spreading size', pad=titleoffset)
+# fig_ax.set_ylabel(ylabel='$\mathrm{E_s}$ [pJ]', labelpad=ylabeloffset)
+# fig_ax.set_title(label='Strain energy', pad=titleoffset)
 # fig_ax.set()
 
 # # Define where you want ticks
-# yticks = np.arange(500,1501,250)
+# yticks = np.arange(0,2.1,0.5)
 # plt.yticks(yticks)
 
-# # provide info on tick parameters
+# #provide info on tick parameters
 # plt.minorticks_on()
 # plt.tick_params(direction='in',which='minor', length=3, bottom=False, top=False, left=True, right=True)
 # plt.tick_params(direction='in',which='major', length=6, bottom=False, top=False, left=True, right=True)
@@ -165,3 +250,4 @@ corr, _ = pearsonr(data['sigma_yy_baseline'], data['sigma_yy_ellipse'])
 # # set limits
 # fig_ax.set_ylim(ymin=ymin)
 # fig_ax.set_ylim(ymax=ymax)
+#%% Plot panel X2

@@ -32,7 +32,6 @@ def main_circle_fit(x_top, x_bottom, y_top, y_bottom):
         Output: circle_fit (n).csv -> contains: 
     
     '''
-    
 
     def fit_data_in_file(x_data, y_data, arc='left'):
 
@@ -71,23 +70,13 @@ def main_circle_fit(x_top, x_bottom, y_top, y_bottom):
     
     
     for c in range(x_top.shape[2]):
-        # remove lines with 0 first
-        x_top_current = x_top[:,:,c]
-        x_bottom_current = x_bottom[:,:,c]
-        y_top_current = y_top[:,:,c]
-        y_bottom_current = y_bottom[:,:,c]
+        # c starts from 0 but file numbers (actual cell number) starts from 1
         
-        x_top_current = x_top_current[~np.all(x_top_current == 0, axis=1)]
-        x_bottom_current = x_bottom_current[~np.all(x_bottom_current == 0, axis=1)]
-        y_top_current = y_top_current[~np.all(y_top_current == 0, axis=1)]
-        y_bottom_current = y_bottom_current[~np.all(y_bottom_current == 0, axis=1)]
 
         # for each cell return fitted data (as list with entries meaning the frame) for all arcs of all frames 
-        xc_up[:,c], yc_up[:,c], R_up[:,c], error_up[:,c] = fit_data_in_file(x_top_current,y_top_current, 'top')
-        xc_lo[:,c], yc_lo[:,c], R_lo[:,c], error_lo[:,c] = fit_data_in_file(x_bottom_current,y_bottom_current, 'bottom')
+        xc_up[:,c], yc_up[:,c], R_up[:,c], error_up[:,c] = fit_data_in_file(x_top[:,:,c],y_top[:,:,c], 'top')
+        xc_lo[:,c], yc_lo[:,c], R_lo[:,c], error_lo[:,c] = fit_data_in_file(x_bottom[:,:,c],y_bottom[:,:,c], 'bottom')
 
-    std = (error_up+error_lo)/2*0.108*1e-6
-    std_baseline = np.nanmean(std[0:20,:],axis=0)
     # create data dictionary
     data_dict = {'Radius [px] (upper)': R_up,
                  'Radius Std [px] (upper)': error_up,
@@ -96,9 +85,7 @@ def main_circle_fit(x_top, x_bottom, y_top, y_bottom):
                  'Radius [px] (lower)': R_lo,
                  'Radius Std [px] (lower)': error_lo,
                  'x-pos center [px] (lower)': xc_lo,
-                 'y-pos center [px] (lower)': yc_lo,
-                 'std': std,
-                 'std_baseline': std_baseline}
+                 'y-pos center [px] (lower)': yc_lo}
 
 
     print("Circle Fit terminated successfully!")
@@ -138,21 +125,19 @@ def main_calc_tangents(x_top, x_bottom, y_top, y_bottom,
     def calc_tangent(X, Y, XC, YC, R, pos='tl'):
         '''caluclate the tangents of point (X,Y) but also return closest point on circle (x,y)'''
         theta = np.arctan((Y-YC)/(X-XC))
-        
 
-        if pos == 'tr' or pos == 'br':
+        if pos == 'bl':
             theta = theta + np.pi
-        # elif pos == 'tl':
-        #     theta = np.pi+theta
-        theta_degree = theta*180/np.pi
-        
+        elif pos == 'tl':
+            theta = np.pi+theta
+
         x = XC + R*np.cos(theta)
         y = YC + R*np.sin(theta)
-        tx = np.cos(theta)
+        tx = -np.cos(theta)
         ty = np.sin(theta)
 
-        # if pos == 'tl' or pos == 'tr':
-        #     ty = -ty
+        if pos == 'tl' or pos == 'tr':
+            ty = -ty
 
   
         return tx, ty, x, y
@@ -227,14 +212,14 @@ def main_calc_tangents(x_top, x_bottom, y_top, y_bottom,
                  'ty bottom left': ty_bottom_left,
                  'tx bottom right': tx_bottom_right,
                  'ty bottom right': ty_bottom_right,
-                 'xTouch top left': x_top_left,
-                 'yTouch top left': y_top_left,
-                 'xTouch top right': x_top_right,
-                 'yTouch top right': y_top_right,
-                 'xTouch bottom left': x_bottom_left,
-                 'yTouch bottom left': y_bottom_left,
-                 'xTouch bottom right': x_bottom_right,
-                 'yTouch bottom right': y_bottom_right}
+                 'xTouch top left': X_top_left,
+                 'yTouch top left': Y_top_left,
+                 'xTouch top right': X_top_right,
+                 'yTouch top right': Y_top_right,
+                 'xTouch bottom left': X_bottom_left,
+                 'yTouch bottom left': Y_bottom_left,
+                 'xTouch bottom right': X_bottom_right,
+                 'yTouch bottom right': Y_bottom_right}
 
     print("Calculating tangents terminated successfully!")
     return data_dict
@@ -251,8 +236,8 @@ def main_TEM_circles(R_upper, R_lower, tx_top_left, ty_top_left, tx_top_right, t
     '''Desciption'''
     # calculate forces coming from free (landa) and adherent fiber (f)
     def calc_landa_and_f(tx, ty, Fx, Fy):
-        landa = Fx + Fy*np.abs(tx)
-        f = Fy*np.abs(ty)
+        landa = Fx/np.abs(tx)
+        f = Fy - Fx*ty/tx
         return landa, f
     
     landa_top_left = np.zeros((R_upper.shape[0],R_upper.shape[1])) # initialize array with noFrames by noCells
@@ -265,10 +250,10 @@ def main_TEM_circles(R_upper, R_lower, tx_top_left, ty_top_left, tx_top_right, t
     f_bottom_left = np.zeros((R_upper.shape[0],R_upper.shape[1]))
     f_bottom_right = np.zeros((R_upper.shape[0],R_upper.shape[1]))
     
-    # sigma_top_left = np.zeros((R_upper.shape[0],R_upper.shape[1]))
-    # sigma_top_right = np.zeros((R_upper.shape[0],R_upper.shape[1]))
-    # sigma_bottom_left = np.zeros((R_upper.shape[0],R_upper.shape[1]))
-    # sigma_bottom_right = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    sigma_top_left = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    sigma_top_right = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    sigma_bottom_left = np.zeros((R_upper.shape[0],R_upper.shape[1]))
+    sigma_bottom_right = np.zeros((R_upper.shape[0],R_upper.shape[1]))
     
     for c in range(R_upper.shape[1]):
         landa_top_left[:,c], f_top_left[:,c] = calc_landa_and_f(tx_top_left[:,c], ty_top_left[:,c], Fx_top_left[:,c], Fy_top_left[:,c])  # in N
@@ -276,17 +261,12 @@ def main_TEM_circles(R_upper, R_lower, tx_top_left, ty_top_left, tx_top_right, t
         landa_bottom_left[:,c], f_bottom_left[:,c] = calc_landa_and_f(tx_bottom_left[:,c], ty_bottom_left[:,c], Fx_bottom_left[:,c], Fy_bottom_left[:,c])
         landa_bottom_right[:,c], f_bottom_right[:,c] = calc_landa_and_f(tx_bottom_right[:,c], ty_bottom_right[:,c], Fx_bottom_right[:,c], Fy_bottom_right[:,c])
 
-        # sigma_top_left[:,c] = landa_top_left[:,c]/(R_upper[:,c]*pixelsize)  # convert radius to m to obtain N/m
-        # sigma_top_right[:,c] = -landa_top_right[:,c]/(R_upper[:,c]*pixelsize) 
-        # sigma_bottom_left[:,c] = landa_bottom_left[:,c]/(R_lower[:,c]*pixelsize) 
-        # sigma_bottom_right[:,c] = -landa_bottom_right[:,c]/(R_lower[:,c]*pixelsize) 
+        sigma_top_left[:,c] = landa_top_left[:,c]/(R_upper[:,c]*pixelsize)  # convert radius to m to obtain N/m
+        sigma_top_right[:,c] = -landa_top_right[:,c]/(R_upper[:,c]*pixelsize) 
+        sigma_bottom_left[:,c] = landa_bottom_left[:,c]/(R_lower[:,c]*pixelsize) 
+        sigma_bottom_right[:,c] = -landa_bottom_right[:,c]/(R_lower[:,c]*pixelsize) 
 
-    # # make some calculations
-    f_adherent_baseline = np.nanmean((f_top_left[0:20,:]+f_top_right[0:20,:]-f_bottom_left[0:20,:]-f_bottom_right[0:20,:])/4,axis=0)
-    landa_baseline = np.nanmean((landa_top_left[0:20,:]-landa_top_right[0:20,:]+landa_bottom_left[0:20,:]-landa_bottom_right[0:20,:])/4,axis=0)
-    # f_adherent_baseline = np.nanmean(f_bottom_left[0:20,:],axis=0)
-    # landa_baseline = np.nanmean(f_bottom_left[0:20,:],axis=0)
-   
+
     data_dict = {'line tension top left': landa_top_left,
                  'f top left': f_top_left,
                  'line tension top right': landa_top_right,
@@ -295,13 +275,10 @@ def main_TEM_circles(R_upper, R_lower, tx_top_left, ty_top_left, tx_top_right, t
                  'f bottom left': f_bottom_left,
                  'line tension bottom right': landa_bottom_right,
                  'f bottom right': f_bottom_right,
-                 'line tension baseline': landa_baseline,
-                 'fa adherent baseline': f_adherent_baseline,}
-                 # 'f bottom right': f_bottom_right,
-                 # 'surface tension top left': sigma_top_left,
-                 # 'surface tension top right': sigma_top_right,
-                 # 'surface tension bottom left': sigma_bottom_left,
-                 # 'surface tension bottom right': sigma_bottom_right}
+                 'surface tension top left': sigma_top_left,
+                 'surface tension top right': sigma_top_right,
+                 'surface tension bottom left': sigma_bottom_left,
+                 'surface tension bottom right': sigma_bottom_right}
 
     print("TEM circle analysis terminated successfully!")
     return data_dict
@@ -319,7 +296,8 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
                         sigma_x, pixelsize):
     '''Description'''
 
-
+    theta_max = 15  # in degree
+    theta_max_rad = theta_max/180*np.pi
     
     def return_results(sigma_y, landa, phi, sigma_x, R, xc, yc, arc='top'):
 
@@ -356,12 +334,11 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
 
 
         # first index gives position and second index gives frame/time
-        x_data_top = x_top[~np.all(x_top == 0, axis=1)]
-        y_data_top = y_top[~np.all(y_top == 0, axis=1)]
-        x_data_bottom = x_bottom[~np.all(x_bottom == 0, axis=1)]
-        y_data_bottom = y_bottom[~np.all(y_bottom == 0, axis=1)]
+        x_data_top = x_top[~np.all(x_top == 0, axis=1)]*pixelsize
+        y_data_top = y_top[~np.all(y_top == 0, axis=1)]*pixelsize
+        x_data_bottom = x_bottom[~np.all(x_bottom == 0, axis=1)]*pixelsize
+        y_data_bottom = y_bottom[~np.all(y_bottom == 0, axis=1)]*pixelsize
 
-        
 
         a_u = a_top
         b_u = b_top
@@ -450,22 +427,6 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
         px, py = rx * np.cos(theta), ry * np.sin(theta)
         return ((x - px) ** 2 + (y - py) ** 2) ** .5
     
-    theta_max = 15  # in degree
-    theta_max_rad = theta_max/180*np.pi
-    
-    # convert everything to m
-    x_top*=pixelsize 
-    x_bottom*=pixelsize 
-    y_top*=pixelsize 
-    y_bottom*=pixelsize 
-    
-    R_upper*=pixelsize 
-    R_lower*=pixelsize  
-    xc_upper*=pixelsize 
-    yc_upper*=pixelsize  
-    xc_lower*=pixelsize 
-    yc_lower*=pixelsize 
-    
     # initialize arrays with noFrames by noCells
     a_top_all = np.zeros((R_upper.shape[0],R_upper.shape[1])) 
     b_top_all = np.zeros((R_upper.shape[0],R_upper.shape[1]))
@@ -484,8 +445,9 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
     for c in range(R_upper.shape[1]):
         print("Ellipse approximation: cell "+ str(c+1))
         for frame in np.arange(R_upper.shape[0]):
-            R_u = R_upper[frame,c] # convert to µm
-            R_l = R_lower[frame,c]
+            print('.', end =" ")
+            R_u = R_upper[frame,c]*pixelsize # convert to m
+            R_l = R_lower[frame,c]*pixelsize
 
             curvature_u = (1/R_u).item()
             curvature_l = (1/R_l).item()
@@ -588,19 +550,15 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
             xc_bottom_all[frame, c]  = xc_bottom
             yc_bottom_all[frame, c]  = yc_bottom
        
-        # estimate std for each cell
-        std_t, std_b = estimate_ellipse_approx_std(x_top[:,:,c], x_bottom[:,:,c], y_top[:,:,c], y_bottom[:,:,c],
+            # estimate std for each cell
+            std_t, std_b = estimate_ellipse_approx_std(x_top[:,:,c], x_bottom[:,:,c], y_top[:,:,c], y_bottom[:,:,c],
                                                        R_upper[:,c], R_lower[:,c], xc_upper[:,c], yc_upper[:,c], xc_lower[:,c], yc_lower[:,c],
                                                        a_top_all[:,c], b_top_all[:,c], xc_top_all[:,c], yc_top_all[:,c], 
                                                        a_bottom_all[:,c], b_bottom_all[:,c], xc_bottom_all[:,c], yc_bottom_all[:,c],
                                                        pixelsize)
-        std_top_all[:,c] = std_t
-        std_bottom_all[:,c] = std_b
+            std_top_all[:,c] = std_t
+            std_bottom_all[:,c] = std_b
 
-    # do some calculations
-    std = (std_bottom_all+std_bottom_all)/2
-    std_baseline = np.nanmean(std[0:20,:],axis=0)
-    
     data_dict = {'sigma x': sigma_x,
                   'sigma y top': sigma_y_top_all,
                   'a top': a_top_all,
@@ -613,9 +571,7 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
                   'b bottom': b_bottom_all,
                   'xc bottom': xc_bottom_all,
                   'yc bottom': yc_bottom_all,
-                  'std bottom': std_bottom_all,
-                  'std': std,
-                  'std_baseline': std_baseline}
+                  'std bottom': std_bottom_all,}
 
 
     print("Ellipse approximation terminated successfully!")
@@ -1039,11 +995,11 @@ def main(inputpath, outputpath, pixelsize, shortcut=False):
         data = pickle.load(open(inputpath, "rb"))
        
         # pull needed data for analysis out of dataset
-        x_top = data['shape_data']['Xtop']#*pixelsize
-        x_bottom = data['shape_data']['Xbottom']#*pixelsize
+        x_top = data['shape_data']['Xtop']
+        x_bottom = data['shape_data']['Xbottom']
         
-        y_top = data['shape_data']['Ytop']#*pixelsize
-        y_bottom = data['shape_data']['Ybottom']#*pixelsize
+        y_top = data['shape_data']['Ytop']
+        y_bottom = data['shape_data']['Ybottom']
         
         Fx_top_left = data['TFM_data']['Fx_topleft']    
         Fx_top_right = data['TFM_data']['Fx_topright'] 
@@ -1090,7 +1046,8 @@ def main(inputpath, outputpath, pixelsize, shortcut=False):
         # run main_TEM_circles
         TEM_data = main_TEM_circles(R_upper, R_lower, 
                                     tx_top_left, ty_top_left, tx_top_right, ty_top_right, tx_bottom_right, ty_bottom_right, tx_bottom_left, ty_bottom_left,
-                                    Fx_top_left, Fy_top_left, Fx_top_right, Fy_top_right, Fx_bottom_right, Fy_bottom_right, Fx_bottom_left, Fy_bottom_left, pixelsize)
+                                    Fx_top_left, Fy_top_left, Fx_top_right, Fy_top_right, Fx_bottom_right, Fy_bottom_right, Fx_bottom_left, Fy_bottom_left,
+                                    pixelsize)
         
         landa_top_left = TEM_data['line tension top left']
         landa_top_right = TEM_data['line tension top right']

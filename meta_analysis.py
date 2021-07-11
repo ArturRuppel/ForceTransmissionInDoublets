@@ -94,8 +94,7 @@ def analyse_TFM_data(folder, stressmappixelsize):
             
             mask_topleft = (x[np.newaxis,:]-T_topleft_max[1])**2 + (y[:,np.newaxis]-T_topleft_max[0])**2 < r**2            
             Fx_topleft[t,cell] = np.nansum(Tx[0:y_half,0:x_half,t,cell]*mask_topleft)*stressmappixelsize**2
-            Fy_topleft[t,cell] = np.nansum(Ty[0:y_half,0:x_half,t,cell]*mask_topleft)*stressmappixelsize**2
-            
+            Fy_topleft[t,cell] = np.nansum(Ty[0:y_half,0:x_half,t,cell]*mask_topleft)*stressmappixelsize**2            
             
             mask_topright = (x[np.newaxis,:]-T_topright_max[1])**2 + (y[:,np.newaxis]-T_topright_max[0])**2 < r**2
             Fx_topright[t,cell] = np.nansum(Tx[0:y_half,x_half:x_end,t,cell]*mask_topright)*stressmappixelsize**2
@@ -108,6 +107,19 @@ def analyse_TFM_data(folder, stressmappixelsize):
             mask_bottomright = (x[np.newaxis,:]-T_bottomright_max[1])**2 + (y[:,np.newaxis]-T_bottomright_max[0])**2 < r**2
             Fx_bottomright[t,cell] = np.nansum(Tx[y_half:y_end,x_half:x_end,t,cell]*mask_bottomright)*stressmappixelsize**2
             Fy_bottomright[t,cell] = np.nansum(Ty[y_half:y_end,x_half:x_end,t,cell]*mask_bottomright)*stressmappixelsize**2
+            
+                  
+            # Fx_topleft[t,cell] = np.nansum(Tx[0:y_half,0:x_half,t,cell])*stressmappixelsize**2
+            # Fy_topleft[t,cell] = np.nansum(Ty[0:y_half,0:x_half,t,cell])*stressmappixelsize**2            
+            
+            # Fx_topright[t,cell] = np.nansum(Tx[0:y_half,x_half:x_end,t,cell])*stressmappixelsize**2
+            # Fy_topright[t,cell] = np.nansum(Ty[0:y_half,x_half:x_end,t,cell])*stressmappixelsize**2
+            
+            # Fx_bottomleft[t,cell] = np.nansum(Tx[y_half:y_end,0:x_half,t,cell])*stressmappixelsize**2
+            # Fy_bottomleft[t,cell] = np.nansum(Ty[y_half:y_end,0:x_half,t,cell])*stressmappixelsize**2
+            
+            # Fx_bottomright[t,cell] = np.nansum(Tx[y_half:y_end,x_half:x_end,t,cell])*stressmappixelsize**2
+            # Fy_bottomright[t,cell] = np.nansum(Ty[y_half:y_end,x_half:x_end,t,cell])*stressmappixelsize**2
             
             # mask_corneraverages = np.zeros((x_end,y_end))
             # mask_corneraverages[0:x_half,0:y_half] = mask_topleft
@@ -133,11 +145,16 @@ def analyse_TFM_data(folder, stressmappixelsize):
 def analyse_MSM_data(folder):
     sigma_xx = np.load(folder+"/sigma_xx.npy") 
     sigma_yy = np.load(folder+"/sigma_yy.npy")
-
+    
+    # replace 0 with NaN to not mess up average calculations
+    sigma_xx[sigma_xx==0]='nan'
+    sigma_yy[sigma_yy==0]='nan'
+    
     x_end = np.shape(sigma_xx)[1]    
     x_half = np.rint(x_end/2).astype(int)
     
     # average over whole cell and then over left and right half
+    # sigma_xx_average = np.nanmean(sigma_xx, axis=(0,1))
     sigma_xx_average = np.nanmean(sigma_xx, axis=(0,1))
     sigma_xx_lefthalf_average = np.nanmean(sigma_xx[:,0:x_half,:,:], axis=(0,1)) # maps are coming from matlab calculations where x and y-axes are inverted
     sigma_xx_righthalf_average = np.nanmean(sigma_xx[:,x_half:x_end,:,:], axis=(0,1))    
