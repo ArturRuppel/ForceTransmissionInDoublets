@@ -36,7 +36,7 @@ def test_if_gaussian(data1, data2, title):
     
     return gaussian
 
-
+# def create_dataframe_allstim()
 
 #%% load data for plotting
 folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
@@ -53,6 +53,46 @@ AR1to1s_halfstim =        pickle.load(open(folder + "analysed_data/AR1to1s_halfs
 
 colors_parent = ['#026473','#E3CC69','#77C8A6','#D96248'];
 
+#%% prepare dataframe for boxplots
+
+# initialize empty dictionaries
+concatenated_data_1to1d = {}
+concatenated_data_1to1s = {}
+concatenated_data = {}
+
+# loop over all keys
+for key1 in AR1to1d_fullstim_long: # keys are the same for all dictionaries so I'm just taking one example here
+    for key2 in AR1to1d_fullstim_long[key1]:
+        if AR1to1d_fullstim_long[key1][key2].ndim == 1: # only 1D data can be stored in the data frame
+        
+            # concatenate values from different experiments
+            concatenated_data_1to1d[key2] = np.concatenate((AR1to1d_halfstim[key1][key2], AR1to1d_fullstim_short[key1][key2], AR1to1d_fullstim_long[key1][key2]))
+            concatenated_data_1to1s[key2] = np.concatenate((AR1to1s_halfstim[key1][key2], AR1to1s_fullstim_short[key1][key2], AR1to1s_fullstim_long[key1][key2]))
+            
+            # concatenate doublet and singlet data to create pandas dataframe
+            concatenated_data[key2] = np.concatenate((concatenated_data_1to1d[key2],concatenated_data_1to1s[key2]))
+
+# get number of elements for both condition
+n_doublets = concatenated_data_1to1d[key2].shape[0]
+n_singlets = concatenated_data_1to1s[key2].shape[0]
+
+# create a list of keys with the same dimensions as the data
+keys1to1d = ['AR1to1d' for i in range(n_doublets)]
+keys1to1s = ['AR1to1s' for i in range(n_singlets)]
+keys = np.concatenate((keys1to1d,keys1to1s))
+
+# add keys to dictionary with concatenated data
+concatenated_data['keys'] = keys
+
+# Creates DataFrame
+df = pd.DataFrame(concatenated_data)
+
+# convert to more convenient units for plotting
+df_plot_units = df # all units here are in SI units
+df_plot_units['Es_baseline'] *= 1e12 # convert to fJ
+df_plot_units['spreadingsize_baseline'] *= 1e12 # convert to µm²
+df_plot_units['sigma_xx_baseline'] *= 1e3 # convert to mN/m
+df_plot_units['sigma_yy_baseline'] *= 1e3 # convert to mN/m
 
 #%% plot figure 1C
 
@@ -156,34 +196,8 @@ plt.close()
 
 #%% Plot figure 1D
 
-# prepare data first
-
-# concatenate data from different experiments for boxplots
-spreadingsize_baseline_1to1d = np.concatenate((AR1to1d_halfstim["shape_data"]["spreadingsize_baseline"], AR1to1d_fullstim_short["shape_data"]["spreadingsize_baseline"], AR1to1d_fullstim_long["shape_data"]["spreadingsize_baseline"]))
-spreadingsize_baseline_1to1s = np.concatenate((AR1to1s_halfstim["shape_data"]["spreadingsize_baseline"], AR1to1s_fullstim_short["shape_data"]["spreadingsize_baseline"], AR1to1s_fullstim_long["shape_data"]["spreadingsize_baseline"]))
-Es_baseline_1to1d = np.concatenate((AR1to1d_halfstim["TFM_data"]["Es_baseline"], AR1to1d_fullstim_short["TFM_data"]["Es_baseline"], AR1to1d_fullstim_long["TFM_data"]["Es_baseline"]))
-Es_baseline_1to1s = np.concatenate((AR1to1s_halfstim["TFM_data"]["Es_baseline"], AR1to1s_fullstim_short["TFM_data"]["Es_baseline"], AR1to1s_fullstim_long["TFM_data"]["Es_baseline"]))
-force_angle_baseline_1to1d = np.concatenate((AR1to1d_halfstim["TFM_data"]["force_angle_baseline"], AR1to1d_fullstim_short["TFM_data"]["force_angle_baseline"], AR1to1d_fullstim_long["TFM_data"]["force_angle_baseline"]))
-force_angle_baseline_1to1s = np.concatenate((AR1to1s_halfstim["TFM_data"]["force_angle_baseline"], AR1to1s_fullstim_short["TFM_data"]["force_angle_baseline"], AR1to1s_fullstim_long["TFM_data"]["force_angle_baseline"]))
-
-# set up pandas data frame to use with seaborn for box- and swarmplots
-spreadingsize_baseline = np.concatenate((spreadingsize_baseline_1to1d,spreadingsize_baseline_1to1s))*1e12
-Es_baseline = np.concatenate((Es_baseline_1to1d,Es_baseline_1to1s))*1e12
-force_angle_baseline = np.concatenate((force_angle_baseline_1to1d,force_angle_baseline_1to1s))
-
-n_doublets = Es_baseline_1to1d.shape[0]
-n_singlets = Es_baseline_1to1s.shape[0]
-
-keys1to1d = ['AR1to1d' for i in range(n_doublets)]
-keys1to1s = ['AR1to1s' for i in range(n_singlets)]
-keys = np.concatenate((keys1to1d,keys1to1s))
-
-data = {'keys': keys, 'spreadingsize': spreadingsize_baseline, 'strain_energy': Es_baseline, 'force_angle': force_angle_baseline}
-# Creates DataFrame.
-df = pd.DataFrame(data)
-
 # define plot parameters
-fig = plt.figure(2, figsize=(5.5, 2))          # figuresize in inches
+fig = plt.figure(2, figsize=(5.5, 2))           # figuresize in inches
 gs = gridspec.GridSpec(1,3)                     # sets up subplotgrid rows by columns
 gs.update(wspace=0.4, hspace=0.25)              # adjusts space in between the boxes in the grid
 colors = [colors_parent[1],colors_parent[2]];   # defines colors
@@ -209,19 +223,19 @@ fig_ax = fig.add_subplot(gs[0,0])
 
 # set plot variables
 x = 'keys'
-y = 'spreadingsize'
-if test_if_gaussian(spreadingsize_baseline_1to1d,spreadingsize_baseline_1to1s,'Spreading size'):
-    test = 't-test_ind'
-else:
-    test = 'Mann-Whitney'
+y = 'spreadingsize_baseline'
+# if test_if_gaussian(spreadingsize_baseline_1to1d,spreadingsize_baseline_1to1s,'Spreading size'):
+#     test = 't-test_ind'
+# else:
+#     test = 'Mann-Whitney'
 
 # create box- and swarmplots
 sns.swarmplot(x=x, y=y, data=df, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
 bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax,linewidth=linewidth_bp,notch=True, showfliers = False, width=width)
 
 order = ['AR1to1d', 'AR1to1s']
-test_results = add_stat_annotation(bp, data=df, x=x, y=y, order=order, line_offset_to_box=stat_annotation_offset, box_pairs=[('AR1to1d', 'AR1to1s')],                      
-                                   test=test, text_format='star', loc='inside', verbose=2)
+# test_results = add_stat_annotation(bp, data=df, x=x, y=y, order=order, line_offset_to_box=stat_annotation_offset, box_pairs=[('AR1to1d', 'AR1to1s')],                      
+#                                    test=test, text_format='star', loc='inside', verbose=2)
 
 # make boxplots transparent
 for patch in bp.artists:
@@ -252,8 +266,9 @@ fig_ax.set_ylim(ymin=ymin)
 fig_ax.set_ylim(ymax=ymax)
 
 ##############################################################################
-#Generate second panel
+# Generate second panel
 ##############################################################################
+
 ymin = 0
 ymax = 2
 stat_annotation_offset = -0.1 # adjust y-position of statistical annotation
@@ -264,17 +279,17 @@ fig_ax = fig.add_subplot(gs[0,1])
 # set plot variables
 x = 'keys'
 y = 'strain_energy'
-if test_if_gaussian(Es_baseline_1to1d,Es_baseline_1to1s,'Strain energy'):
-    test = 't-test_ind'
-else:
-    test = 'Mann-Whitney'
+# if test_if_gaussian(Es_baseline_1to1d,Es_baseline_1to1s,'Strain energy'):
+#     test = 't-test_ind'
+# else:
+#     test = 'Mann-Whitney'
 
 sns.swarmplot(x=x, y=y, data=df, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
 bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax,linewidth=linewidth_bp,notch=True, showfliers = False, width=width)
 
 order = ['AR1to1d', 'AR1to1s']
-test_results = add_stat_annotation(bp, data=df, x=x, y=y, order=order, line_offset_to_box=stat_annotation_offset, box_pairs=[('AR1to1d', 'AR1to1s')],                      
-                                   test=test, text_format='star', loc='inside', verbose=2)
+# test_results = add_stat_annotation(bp, data=df, x=x, y=y, order=order, line_offset_to_box=stat_annotation_offset, box_pairs=[('AR1to1d', 'AR1to1s')],                      
+#                                     test=test, text_format='star', loc='inside', verbose=2)
 
 # make boxplots transparent
 for patch in bp.artists:
@@ -317,18 +332,18 @@ fig_ax = fig.add_subplot(gs[0,2])
 # set plot variables
 x = 'keys'
 y = 'force_angle'
-if test_if_gaussian(force_angle_baseline_1to1d,force_angle_baseline_1to1s,'Force angles'):
-    test = 't-test_ind'
-else:
-    test = 'Mann-Whitney'
+# if test_if_gaussian(force_angle_baseline_1to1d,force_angle_baseline_1to1s,'Force angles'):
+#     test = 't-test_ind'
+# else:
+#     test = 'Mann-Whitney'
 
 # create box- and swarmplots
 sns.swarmplot(x=x, y=y, data=df, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
 bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax,linewidth=linewidth_bp,notch=True, showfliers = False, width=width)
 
 order = ['AR1to1d', 'AR1to1s']
-test_results = add_stat_annotation(bp, data=df, x=x, y=y, order=order, line_offset_to_box=stat_annotation_offset, box_pairs=[('AR1to1d', 'AR1to1s')],                      
-                                   test=test, text_format='star', loc='inside', verbose=2)
+# test_results = add_stat_annotation(bp, data=df, x=x, y=y, order=order, line_offset_to_box=stat_annotation_offset, box_pairs=[('AR1to1d', 'AR1to1s')],                      
+#                                     test=test, text_format='star', loc='inside', verbose=2)
 
 # make boxplots transparent
 for patch in bp.artists:
@@ -515,38 +530,41 @@ plt.close()
 #%% plot figure 1G
 # prepare data first
 
-# concatenate data from different experiments for boxplots
-spreadingsize_baseline_1to1d = np.concatenate((AR1to1d_halfstim["shape_data"]["spreadingsize_baseline"], AR1to1d_fullstim_short["shape_data"]["spreadingsize_baseline"], AR1to1d_fullstim_long["shape_data"]["spreadingsize_baseline"]))
-spreadingsize_baseline_1to1s = np.concatenate((AR1to1s_halfstim["shape_data"]["spreadingsize_baseline"], AR1to1s_fullstim_short["shape_data"]["spreadingsize_baseline"], AR1to1s_fullstim_long["shape_data"]["spreadingsize_baseline"]))
-Es_baseline_1to1d = np.concatenate((AR1to1d_halfstim["TFM_data"]["Es_baseline"], AR1to1d_fullstim_short["TFM_data"]["Es_baseline"], AR1to1d_fullstim_long["TFM_data"]["Es_baseline"]))
-Es_baseline_1to1s = np.concatenate((AR1to1s_halfstim["TFM_data"]["Es_baseline"], AR1to1s_fullstim_short["TFM_data"]["Es_baseline"], AR1to1s_fullstim_long["TFM_data"]["Es_baseline"]))
-force_angle_baseline_1to1d = np.concatenate((AR1to1d_halfstim["TFM_data"]["force_angle_baseline"], AR1to1d_fullstim_short["TFM_data"]["force_angle_baseline"], AR1to1d_fullstim_long["TFM_data"]["force_angle_baseline"]))
-force_angle_baseline_1to1s = np.concatenate((AR1to1s_halfstim["TFM_data"]["force_angle_baseline"], AR1to1s_fullstim_short["TFM_data"]["force_angle_baseline"], AR1to1s_fullstim_long["TFM_data"]["force_angle_baseline"]))
-sigma_xx_baseline_1to1d = np.concatenate((AR1to1d_halfstim["MSM_data"]["sigma_xx_baseline"], AR1to1d_fullstim_short["MSM_data"]["sigma_xx_baseline"], AR1to1d_fullstim_long["MSM_data"]["sigma_xx_baseline"]))
-sigma_xx_baseline_1to1s = np.concatenate((AR1to1s_halfstim["MSM_data"]["sigma_xx_baseline"], AR1to1s_fullstim_short["MSM_data"]["sigma_xx_baseline"], AR1to1s_fullstim_long["MSM_data"]["sigma_xx_baseline"]))
-sigma_yy_baseline_1to1d = np.concatenate((AR1to1d_halfstim["MSM_data"]["sigma_yy_baseline"], AR1to1d_fullstim_short["MSM_data"]["sigma_yy_baseline"], AR1to1d_fullstim_long["MSM_data"]["sigma_yy_baseline"]))
-sigma_yy_baseline_1to1s = np.concatenate((AR1to1s_halfstim["MSM_data"]["sigma_yy_baseline"], AR1to1s_fullstim_short["MSM_data"]["sigma_yy_baseline"], AR1to1s_fullstim_long["MSM_data"]["sigma_yy_baseline"]))
+# # concatenate data from different experiments for boxplots
+# spreadingsize_baseline_1to1d = np.concatenate((AR1to1d_halfstim["shape_data"]["spreadingsize_baseline"], AR1to1d_fullstim_short["shape_data"]["spreadingsize_baseline"], AR1to1d_fullstim_long["shape_data"]["spreadingsize_baseline"]))
+# spreadingsize_baseline_1to1s = np.concatenate((AR1to1s_halfstim["shape_data"]["spreadingsize_baseline"], AR1to1s_fullstim_short["shape_data"]["spreadingsize_baseline"], AR1to1s_fullstim_long["shape_data"]["spreadingsize_baseline"]))
+# Es_baseline_1to1d = np.concatenate((AR1to1d_halfstim["TFM_data"]["Es_baseline"], AR1to1d_fullstim_short["TFM_data"]["Es_baseline"], AR1to1d_fullstim_long["TFM_data"]["Es_baseline"]))
+# Es_baseline_1to1s = np.concatenate((AR1to1s_halfstim["TFM_data"]["Es_baseline"], AR1to1s_fullstim_short["TFM_data"]["Es_baseline"], AR1to1s_fullstim_long["TFM_data"]["Es_baseline"]))
+# # force_angle_baseline_1to1d = np.concatenate((AR1to1d_halfstim["TFM_data"]["force_angle_baseline"], AR1to1d_fullstim_short["TFM_data"]["force_angle_baseline"], AR1to1d_fullstim_long["TFM_data"]["force_angle_baseline"]))
+# # force_angle_baseline_1to1s = np.concatenate((AR1to1s_halfstim["TFM_data"]["force_angle_baseline"], AR1to1s_fullstim_short["TFM_data"]["force_angle_baseline"], AR1to1s_fullstim_long["TFM_data"]["force_angle_baseline"]))
+# sigma_xx_baseline_1to1d = np.concatenate((AR1to1d_halfstim["MSM_data"]["sigma_xx_baseline"], AR1to1d_fullstim_short["MSM_data"]["sigma_xx_baseline"], AR1to1d_fullstim_long["MSM_data"]["sigma_xx_baseline"]))
+# sigma_xx_baseline_1to1s = np.concatenate((AR1to1s_halfstim["MSM_data"]["sigma_xx_baseline"], AR1to1s_fullstim_short["MSM_data"]["sigma_xx_baseline"], AR1to1s_fullstim_long["MSM_data"]["sigma_xx_baseline"]))
+# sigma_yy_baseline_1to1d = np.concatenate((AR1to1d_halfstim["MSM_data"]["sigma_yy_baseline"], AR1to1d_fullstim_short["MSM_data"]["sigma_yy_baseline"], AR1to1d_fullstim_long["MSM_data"]["sigma_yy_baseline"]))
+# sigma_yy_baseline_1to1s = np.concatenate((AR1to1s_halfstim["MSM_data"]["sigma_yy_baseline"], AR1to1s_fullstim_short["MSM_data"]["sigma_yy_baseline"], AR1to1s_fullstim_long["MSM_data"]["sigma_yy_baseline"]))
+# AIC_baseline_1to1d = np.concatenate((AR1to1d_halfstim["MSM_data"]["AIC_baseline"], AR1to1d_fullstim_short["MSM_data"]["AIC_baseline"], AR1to1d_fullstim_long["MSM_data"]["AIC_baseline"]))
+# AIC_baseline_1to1s = np.concatenate((AR1to1s_halfstim["MSM_data"]["AIC_baseline"], AR1to1s_fullstim_short["MSM_data"]["AIC_baseline"], AR1to1s_fullstim_long["MSM_data"]["AIC_baseline"]))
 
-# set up pandas data frame to use with seaborn for box- and swarmplots
-spreadingsize_baseline = np.concatenate((spreadingsize_baseline_1to1d,spreadingsize_baseline_1to1s))*1e12 # convert to µm²
-Es_baseline = np.concatenate((Es_baseline_1to1d,Es_baseline_1to1s))*1e12 # convert to pJ
-force_angle_baseline = np.concatenate((force_angle_baseline_1to1d,force_angle_baseline_1to1s))
-sigma_xx_baseline = np.concatenate((sigma_xx_baseline_1to1d,sigma_xx_baseline_1to1s))*1e3 # convert to mN/m
-sigma_yy_baseline = np.concatenate((sigma_yy_baseline_1to1d,sigma_yy_baseline_1to1s))*1e3
+# # set up pandas data frame to use with seaborn for box- and swarmplots
+# spreadingsize_baseline = np.concatenate((spreadingsize_baseline_1to1d,spreadingsize_baseline_1to1s))*1e12 # convert to µm²
+# Es_baseline = np.concatenate((Es_baseline_1to1d,Es_baseline_1to1s))*1e12 # convert to pJ
+# # force_angle_baseline = np.concatenate((force_angle_baseline_1to1d,force_angle_baseline_1to1s))
+# sigma_xx_baseline = np.concatenate((sigma_xx_baseline_1to1d,sigma_xx_baseline_1to1s))*1e3 # convert to mN/m
+# sigma_yy_baseline = np.concatenate((sigma_yy_baseline_1to1d,sigma_yy_baseline_1to1s))*1e3
+# AIC_baseline = np.concatenate((AIC_baseline_1to1d,AIC_baseline_1to1s))
 
-n_doublets = Es_baseline_1to1d.shape[0]
-n_singlets = Es_baseline_1to1s.shape[0]
+# n_doublets = Es_baseline_1to1d.shape[0]
+# n_singlets = Es_baseline_1to1s.shape[0]
 
-keys1to1d = ['AR1to1d' for i in range(n_doublets)]
-keys1to1s = ['AR1to1s' for i in range(n_singlets)]
-keys = np.concatenate((keys1to1d,keys1to1s))
+# keys1to1d = ['AR1to1d' for i in range(n_doublets)]
+# keys1to1s = ['AR1to1s' for i in range(n_singlets)]
+# keys = np.concatenate((keys1to1d,keys1to1s))
 
-data = {'keys': keys, 'spreadingsize': spreadingsize_baseline, 'strain_energy': Es_baseline, 'force_angle': force_angle_baseline, 'sigma_xx_baseline': sigma_xx_baseline, 'sigma_yy_baseline': sigma_yy_baseline}
-# Creates DataFrame.
-df = pd.DataFrame(data)
+# data = {'keys': keys, 'spreadingsize': spreadingsize_baseline, 'strain_energy': Es_baseline, 'sigma_xx_baseline': sigma_xx_baseline, 'sigma_yy_baseline': sigma_yy_baseline, 'AIC_baseline': AIC_baseline}
+# # Creates DataFrame.
+# df = pd.DataFrame(data)
 
 # define plot parameters
-fig = plt.figure(2, figsize=(9, 2))          # figuresize in inches
+fig = plt.figure(2, figsize=(9, 2))             # figuresize in inches
 gs = gridspec.GridSpec(1,5)                     # sets up subplotgrid rows by columns
 gs.update(wspace=0.4, hspace=0.25)              # adjusts space in between the boxes in the grid
 colors = [colors_parent[1],colors_parent[2]];   # defines colors
@@ -572,11 +590,11 @@ fig_ax = fig.add_subplot(gs[0,0])
 
 # set plot variables
 x = 'keys'
-y = 'spreadingsize'
-if test_if_gaussian(spreadingsize_baseline_1to1d,spreadingsize_baseline_1to1s,'Spreading size'):
-    test = 't-test_ind'
-else:
-    test = 'Mann-Whitney'
+y = 'spreadingsize_baseline'
+# if test_if_gaussian(spreadingsize_baseline_1to1d,spreadingsize_baseline_1to1s,'Spreading size'):
+#     test = 't-test_ind'
+# else:
+#     test = 'Mann-Whitney'
 
 # create box- and swarmplots
 sns.swarmplot(x=x, y=y, data=df, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
@@ -626,11 +644,11 @@ fig_ax = fig.add_subplot(gs[0,1])
 
 # set plot variables
 x = 'keys'
-y = 'strain_energy'
-if test_if_gaussian(Es_baseline_1to1d,Es_baseline_1to1s,'Strain energy'):
-    test = 't-test_ind'
-else:
-    test = 'Mann-Whitney'
+y = 'Es_baseline'
+# if test_if_gaussian(Es_baseline_1to1d,Es_baseline_1to1s,'Strain energy'):
+#     test = 't-test_ind'
+# else:
+#     test = 'Mann-Whitney'
 
 sns.swarmplot(x=x, y=y, data=df, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
 bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax,linewidth=linewidth_bp,notch=True, showfliers = False, width=width)
@@ -667,78 +685,78 @@ plt.tick_params(direction='in',which='major', length=6, bottom=False, top=False,
 fig_ax.set_ylim(ymin=ymin)
 fig_ax.set_ylim(ymax=ymax)
 
-##############################################################################
-#Generate third panel
-##############################################################################
-ymin = 0
-ymax = 90
-stat_annotation_offset = 0.057 # adjust y-position of statistical annotation
+# ##############################################################################
+# #Generate third panel
+# ##############################################################################
+# ymin = 0
+# ymax = 90
+# stat_annotation_offset = 0.057 # adjust y-position of statistical annotation
 
-# the grid spec is rows, then columns
-fig_ax = fig.add_subplot(gs[0,2])
+# # the grid spec is rows, then columns
+# fig_ax = fig.add_subplot(gs[0,2])
 
-# set plot variables
-x = 'keys'
-y = 'force_angle'
-if test_if_gaussian(force_angle_baseline_1to1d,force_angle_baseline_1to1s,'Force angles'):
-    test = 't-test_ind'
-else:
-    test = 'Mann-Whitney'
+# # set plot variables
+# x = 'keys'
+# y = 'force_angle'
+# if test_if_gaussian(force_angle_baseline_1to1d,force_angle_baseline_1to1s,'Force angles'):
+#     test = 't-test_ind'
+# else:
+#     test = 'Mann-Whitney'
 
-# create box- and swarmplots
-sns.swarmplot(x=x, y=y, data=df, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
-bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax,linewidth=linewidth_bp,notch=True, showfliers = False, width=width)
+# # create box- and swarmplots
+# sns.swarmplot(x=x, y=y, data=df, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
+# bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax,linewidth=linewidth_bp,notch=True, showfliers = False, width=width)
 
-order = ['AR1to1d', 'AR1to1s']
-# test_results = add_stat_annotation(bp, data=df, x=x, y=y, order=order, line_offset_to_box=stat_annotation_offset, box_pairs=[('AR1to1d', 'AR1to1s')],                      
-#                                    test=test, text_format='star', loc='inside', verbose=2)
+# order = ['AR1to1d', 'AR1to1s']
+# # test_results = add_stat_annotation(bp, data=df, x=x, y=y, order=order, line_offset_to_box=stat_annotation_offset, box_pairs=[('AR1to1d', 'AR1to1s')],                      
+# #                                    test=test, text_format='star', loc='inside', verbose=2)
 
-# make boxplots transparent
-for patch in bp.artists:
-    r, g, b, a = patch.get_facecolor()
-    patch.set_facecolor((r, g, b, alpha_bp))
+# # make boxplots transparent
+# for patch in bp.artists:
+#     r, g, b, a = patch.get_facecolor()
+#     patch.set_facecolor((r, g, b, alpha_bp))
 
-plt.setp(bp.artists, edgecolor = 'k')
-plt.setp(bp.lines, color='k')
+# plt.setp(bp.artists, edgecolor = 'k')
+# plt.setp(bp.lines, color='k')
 
      
-# set labels
-fig_ax.set_xticklabels(['doublet', 'singlet'])
-fig_ax.set_xlabel(xlabel=None)
-fig_ax.set_ylabel(ylabel=r'$\mathrm{\vartheta}$ [°]', labelpad=ylabeloffset)
-fig_ax.set_title(label='Force angles', pad=titleoffset)
-fig_ax.set()
+# # set labels
+# fig_ax.set_xticklabels(['doublet', 'singlet'])
+# fig_ax.set_xlabel(xlabel=None)
+# fig_ax.set_ylabel(ylabel=r'$\mathrm{\vartheta}$ [°]', labelpad=ylabeloffset)
+# fig_ax.set_title(label='Force angles', pad=titleoffset)
+# fig_ax.set()
 
-# Define where you want ticks
-yticks = np.arange(0,91,15)
-plt.yticks(yticks)
+# # Define where you want ticks
+# yticks = np.arange(0,91,15)
+# plt.yticks(yticks)
 
-#provide info on tick parameters
-plt.minorticks_on()
-plt.tick_params(direction='in',which='minor', length=3, bottom=False, top=False, left=True, right=True)
-plt.tick_params(direction='in',which='major', length=6, bottom=False, top=False, left=True, right=True)
+# #provide info on tick parameters
+# plt.minorticks_on()
+# plt.tick_params(direction='in',which='minor', length=3, bottom=False, top=False, left=True, right=True)
+# plt.tick_params(direction='in',which='major', length=6, bottom=False, top=False, left=True, right=True)
 
-# set limits
-fig_ax.set_ylim(ymin=ymin)
-fig_ax.set_ylim(ymax=ymax)
+# # set limits
+# fig_ax.set_ylim(ymin=ymin)
+# fig_ax.set_ylim(ymax=ymax)
 
 ##############################################################################
-#Generate fourth panel
+#Generate third panel
 ##############################################################################
 ymin = 0
 ymax = 14
 stat_annotation_offset = 0.21 # adjust y-position of statistical annotation
 
 # the grid spec is rows, then columns
-fig_ax = fig.add_subplot(gs[0,3])
+fig_ax = fig.add_subplot(gs[0,2])
 
 # set plot variables
 x = 'keys'
 y = 'sigma_xx_baseline'
-if test_if_gaussian(sigma_xx_baseline_1to1d,sigma_xx_baseline_1to1s,'sigma_xx_baseline'):
-    test = 't-test_ind'
-else:
-    test = 'Mann-Whitney'
+# if test_if_gaussian(sigma_xx_baseline_1to1d,sigma_xx_baseline_1to1s,'sigma_xx_baseline'):
+#     test = 't-test_ind'
+# else:
+#     test = 'Mann-Whitney'
 
 sns.swarmplot(x=x, y=y, data=df, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
 bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax,linewidth=linewidth_bp,notch=True, showfliers = False, width=width)
@@ -777,22 +795,22 @@ fig_ax.set_ylim(ymax=ymax)
 
 
 ##############################################################################
-#Generate fifth panel
+#Generate fourth panel
 ##############################################################################
 ymin = 0
 ymax = 14
 stat_annotation_offset = 1.55 # adjust y-position of statistical annotation
 
 # the grid spec is rows, then columns
-fig_ax = fig.add_subplot(gs[0,4])
+fig_ax = fig.add_subplot(gs[0,3])
 
 # set plot variables
 x = 'keys'
 y = 'sigma_yy_baseline'
-if test_if_gaussian(sigma_xx_baseline_1to1d,sigma_xx_baseline_1to1s,'sigma_yy_baseline'):
-    test = 't-test_ind'
-else:
-    test = 'Mann-Whitney'
+# if test_if_gaussian(sigma_xx_baseline_1to1d,sigma_xx_baseline_1to1s,'sigma_yy_baseline'):
+#     test = 't-test_ind'
+# else:
+#     test = 'Mann-Whitney'
 
 sns.swarmplot(x=x, y=y, data=df, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
 bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax,linewidth=linewidth_bp,notch=True, showfliers = False, width=width)
@@ -818,6 +836,59 @@ fig_ax.set()
 
 # Define where you want ticks
 yticks = np.arange(0,15,2)
+plt.yticks(yticks)
+
+#provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in',which='minor', length=3, bottom=False, top=False, left=True, right=True)
+plt.tick_params(direction='in',which='major', length=6, bottom=False, top=False, left=True, right=True)
+
+# set limits
+fig_ax.set_ylim(ymin=ymin)
+fig_ax.set_ylim(ymax=ymax)
+
+##############################################################################
+#Generate fifth panel
+##############################################################################
+ymin = -1
+ymax = 1
+stat_annotation_offset = 1.55 # adjust y-position of statistical annotation
+
+# the grid spec is rows, then columns
+fig_ax = fig.add_subplot(gs[0,4])
+
+# set plot variables
+x = 'keys'
+y = 'AIC_baseline'
+# if test_if_gaussian(AIC_baseline_1to1d,AIC_baseline_1to1s,y):
+#     test = 't-test_ind'
+# else:
+#     test = 'Mann-Whitney'
+
+sns.swarmplot(x=x, y=y, data=df, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
+bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax,linewidth=linewidth_bp,notch=True, showfliers = False, width=width)
+
+order = ['AR1to1d', 'AR1to1s']
+# test_results = add_stat_annotation(bp, data=df, x=x, y=y, order=order, line_offset_to_box=stat_annotation_offset, box_pairs=[('AR1to1d', 'AR1to1s')],                      
+#                                     test=test, text_format='star', loc='inside', verbose=2)
+
+# make boxplots transparent
+for patch in bp.artists:
+    r, g, b, a = patch.get_facecolor()
+    patch.set_facecolor((r, g, b, alpha_bp))
+
+plt.setp(bp.artists, edgecolor = 'k')
+plt.setp(bp.lines, color='k')
+     
+# set labels
+fig_ax.set_xticklabels(['doublet', 'singlet'])
+fig_ax.set_xlabel(xlabel=None)
+fig_ax.set_ylabel(ylabel='$\mathrm{\sigma _{yy}}$ [mN/m]', labelpad=ylabeloffset)
+fig_ax.set_title(label='AIC', pad=titleoffset)
+fig_ax.set()
+
+# Define where you want ticks
+yticks = np.arange(-1,1.1,0.2)
 plt.yticks(yticks)
 
 #provide info on tick parameters

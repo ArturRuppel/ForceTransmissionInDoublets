@@ -192,7 +192,7 @@ def analyse_MSM_data(folder):
           "relsigma_xx_average": relsigma_xx_average,"relsigma_yy_average": relsigma_yy_average,
           "relsigma_xx_lefthalf_average": relsigma_xx_lefthalf_average,"relsigma_yy_lefthalf_average": relsigma_yy_lefthalf_average,
           "relsigma_xx_righthalf_average": relsigma_xx_righthalf_average,"relsigma_yy_righthalf_average": relsigma_yy_righthalf_average,
-          "AIC": AIC, "AIC_left": AIC_left, "AIC_right": AIC_right,\
+          "AIC_baseline": AIC_baseline, "AIC": AIC, "AIC_left": AIC_left, "AIC_right": AIC_right,\
           "relAIC": relAIC, "relAIC_left": relAIC_left, "relAIC_right": relAIC_right}
     
     return data
@@ -283,8 +283,8 @@ def main_meta_analysis(folder, title, noCells, noFrames):
     shape_data = analyse_shape_data(folder, pixelsize)
     
     # stack arrays together that will be used to determine the cells' baseline stability
-    filterdata = np.dstack((TFM_data["relEs_lefthalf"][0:20,:],TFM_data["relEs_righthalf"][0:20,:],\
-                            MSM_data["relsigma_yy_lefthalf_average"][0:20,:],MSM_data["relsigma_yy_righthalf_average"][0:20,:],\
+    filterdata = np.dstack((TFM_data["relEs_lefthalf"][0:20,:],TFM_data["relEs_righthalf"][0:20,:],
+                            MSM_data["relsigma_yy_lefthalf_average"][0:20,:],MSM_data["relsigma_yy_righthalf_average"][0:20,:],
                             MSM_data["relsigma_xx_lefthalf_average"][0:20,:],MSM_data["relsigma_xx_righthalf_average"][0:20,:]))
     
     # identifiy cells with unstable baselines
