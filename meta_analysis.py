@@ -73,6 +73,9 @@ def analyse_TFM_data(folder, stressmappixelsize):
     Fy_bottomright = np.zeros((t_end,cell_end))
     Fy_bottomleft = np.zeros((t_end,cell_end))
     
+    # calculate relative energy increase
+    REI = relEs[33,:]-relEs[20,:]
+    
     # find peak and sum up all values within radius r
     r = 12 #~10 uM
     x = np.arange(0, x_half)
@@ -135,9 +138,9 @@ def analyse_TFM_data(folder, stressmappixelsize):
     
     data={"Dx": Dx,"Dy": Dy, "Tx": Tx,"Ty": Ty,
           "Fx_topleft": Fx_topleft,"Fx_topright": Fx_topright, "Fx_bottomright": Fx_bottomright,"Fx_bottomleft": Fx_bottomleft,
-          "Fy_topleft": Fy_topleft,"Fy_topright": Fy_topright, "Fy_bottomright": Fy_bottomright,"Fy_bottomleft": Fy_bottomleft,
+          "Fy_topleft": Fy_topleft,"Fy_topright": Fy_topright, "Fy_bottomright": Fy_bottomright,"Fy_bottomleft": Fy_bottomleft,          
           "Es": Es, "Es_lefthalf": Es_lefthalf, "Es_righthalf": Es_righthalf, "Es_baseline": Es_baseline,
-          "relEs": relEs, "relEs_lefthalf": relEs_lefthalf, "relEs_righthalf": relEs_righthalf,
+          "relEs": relEs, "relEs_lefthalf": relEs_lefthalf, "relEs_righthalf": relEs_righthalf, "REI": REI,
           "Fx": Fx, "Fy": Fy, "force_angle": force_angle, "force_angle_baseline": force_angle_baseline,"F_cellcell": F_cellcell}
     
     return data
@@ -154,7 +157,6 @@ def analyse_MSM_data(folder):
     x_half = np.rint(x_end/2).astype(int)
     
     # average over whole cell and then over left and right half
-    # sigma_xx_average = np.nanmean(sigma_xx, axis=(0,1))
     sigma_xx_average = np.nanmean(sigma_xx, axis=(0,1))
     sigma_xx_lefthalf_average = np.nanmean(sigma_xx[:,0:x_half,:,:], axis=(0,1)) # maps are coming from matlab calculations where x and y-axes are inverted
     sigma_xx_righthalf_average = np.nanmean(sigma_xx[:,x_half:x_end,:,:], axis=(0,1))    

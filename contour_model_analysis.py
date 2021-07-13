@@ -22,7 +22,7 @@ import pickle
 
 
 
-#####################################################################################
+#%%####################################################################################
 # Step 1: fit circles to ellipses
 
 def main_circle_fit(x_top, x_bottom, y_top, y_bottom):
@@ -105,7 +105,7 @@ def main_circle_fit(x_top, x_bottom, y_top, y_bottom):
     return data_dict
 
 
-####################################################################################
+#%%###################################################################################
 # Step 2: calculate tangents of circles at fibertrack start and end point
 
 def main_calc_tangents(x_top, x_bottom, y_top, y_bottom,
@@ -241,7 +241,7 @@ def main_calc_tangents(x_top, x_bottom, y_top, y_bottom,
 
 
 
-###################################################################################
+#%%###################################################################################
 # Step 3: perform a tfm analysis based on the circle fits 
 
 def main_TEM_circles(R_upper, R_lower, tx_top_left, ty_top_left, tx_top_right, ty_top_right,
@@ -307,7 +307,7 @@ def main_TEM_circles(R_upper, R_lower, tx_top_left, ty_top_left, tx_top_right, t
     return data_dict
 
 
-####################################################################################
+#%%###################################################################################
 # Step 4: given TEM_circle data and sigma_x contribution estimate ellipse based on curvature of circle
 
 def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
@@ -623,7 +623,7 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
 
 
 
-####################################################################################
+#%%###################################################################################
 # Step 5: given Ellipse approximation data as initial minimization values, fit ellipse to arc and minimize std 
 # Input files needed, tangents (n).csv, sigma_contribution.mat,TEM_circles (n).csv,ellipse_approx (n).csv, Output ellipse_data_fit (n).csv
 
@@ -702,23 +702,23 @@ def main_ellipse_fit(directory):
         return std_u_list, std_l_list
 
     def ellipe_tan_dot(rx, ry, px, py, theta):
-        '''Dot product of the equation of the line formed by the point
-           with another point on the ellipse's boundary and the tangent of the ellipse
-           at that point on the boundary.
-        '''
+        # Dot product of the equation of the line formed by the point
+        # with another point on the ellipse's boundary and the tangent of the ellipse
+        # at that point on the boundary.
+
         return ((rx ** 2 - ry ** 2) * np.cos(theta) * np.sin(theta) - px * rx * np.sin(theta) + py * ry * np.cos(theta))
 
     def ellipe_tan_dot_derivative(rx, ry, px, py, theta):
-        '''derivative of ellipe_tan_dot.
-        '''
+        # derivative of ellipse_tan_dot.
+
         return ((rx ** 2 - ry ** 2) * (np.cos(theta) ** 2 - np.sin(theta) ** 2) - px * rx * np.cos(theta) - py * ry * np.sin(theta))
 
     def estimate_distance(x, y, rx, ry, x0=0, y0=0, angle=0, error=1e-5):
-        '''Given a point (x, y), and an ellipse with major - minor axis (rx, ry),
-           its center at (x0, y0), and with a counter clockwise rotation of
-           `angle` degrees, will return the distance between the ellipse and the
-           closest point on the ellipses boundary.
-        '''
+        # '''Given a point (x, y), and an ellipse with major - minor axis (rx, ry),
+        #    its center at (x0, y0), and with a counter clockwise rotation of
+        #    `angle` degrees, will return the distance between the ellipse and the
+        #    closest point on the ellipses boundary.
+        # '''
         x -= x0
         y -= y0
         if angle:
@@ -927,7 +927,7 @@ def main_ellipse_fit(directory):
                 phi = phi_bottom
                 landa = landa_bottom  # nN
 
-                sigma_y, xc, yc = p
+                sigma_y, xc, yc = p # add sigma x here maybe
 
                 b = np.sqrt((landa/sigma_x)**2 * (1+(sigma_x/sigma_y)* np.tan(phi)**2)/(1+np.tan(phi)**2))
                 a = np.sqrt((landa)**2/(sigma_x*sigma_y) * (1+(sigma_x/sigma_y)*np.tan(phi)**2)/(1+np.tan(phi)**2))
@@ -944,15 +944,16 @@ def main_ellipse_fit(directory):
 
                 return np.sum(dist_container_l)
 
-            params0_top = [sigma_y_top_estimate, xc_top_ellipse_estimate, yc_top_ellipse_estimate]
+            params0_top = [sigma_y_top_estimate, xc_top_ellipse_estimate, yc_top_ellipse_estimate] # add sigma x here maybe
             params0_bottom = [sigma_y_bottom_estimate, xc_bottom_ellipse_estimate, yc_bottom_ellipse_estimate]
 
             # perform the fit
+            # add sigma x here maybe
             result_top = optimize.minimize(dist_top, params0_top, method='Nelder-Mead', options={'disp': True, 'adaptive': True})  # options={'maxiter': 10000, 'disp': True}
             result_bottom = optimize.minimize(dist_bottom, params0_bottom, method='Nelder-Mead', options={'disp': True, 'adaptive': True})
 
             # print(result.fit_report())
-            sigma_y_top, xc_ellipse_top, yc_ellipse_top = result_top.x
+            sigma_y_top, xc_ellipse_top, yc_ellipse_top = result_top.x# add sigma x here maybe
             a_top, b_top, sigma_isotrop_top, sigma_anisotrop_x_top, sigma_anisotrop_y_top = return_results(sigma_y_top, landa_top, phi_top, sigma_x_estimate, R_u, xc_u, yc_u, arc='top')
             print('sigma_x ', sigma_x_estimate)
             print('sigma_y_top ', sigma_y_top)
@@ -987,7 +988,7 @@ def main_ellipse_fit(directory):
             yc_list_b.append(yc_ellipse_bottom)
 
             sigma_x_list.append(sigma_x_estimate)
-
+        # add sigma x here maybe
         data_dict = {'sigma x [nN/um]': sigma_x_list,
                      'sigma y top [nN/um]': sigma_y_list_t,
                      'a top [um]': a_list_t,
