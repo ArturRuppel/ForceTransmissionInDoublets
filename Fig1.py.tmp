@@ -99,7 +99,7 @@ df_plot_units['sigma_xx_baseline'] *= 1e3 # convert to mN/m
 df_plot_units['sigma_yy_baseline'] *= 1e3 # convert to mN/m
 
 #%% plot figure 1C, force maps
-
+pylustrator.start()
 # prepare data first
 
 # concatenate TFM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
@@ -173,6 +173,12 @@ axes[1,1].quiver(xq[::n,::n], yq[::n,::n], Tx_1to1s_average_crop[::n,::n],Ty_1to
 # adjust space in between plots
 plt.subplots_adjust(wspace=0.02, hspace=-0.02)
 
+# # add annotations
+# plt.text(-40.5,58.5,'n=1',color = 'white')
+# plt.text(-40.5,125,'n=1',color = 'white')
+# plt.text(22,58.5,'n='+str(n_doublets),color = 'white')
+# plt.text(23.5,125,'n='+str(n_singlets),color = 'white')
+
 # remove axes
 for ax in axes.flat:
     ax.axis('off')
@@ -186,31 +192,34 @@ cbar = fig.colorbar(im, ax=axes.ravel().tolist())
 cbar.ax.set_title('kPa')
 
 # add title
-plt.suptitle('Traction forces',y=0.94, x=0.44)
+plt.suptitle('TFM',y=0.94, x=0.44)
 
+# save figure
 
 #% start: automatic generated code from pylustrator
 plt.figure(1).ax_dict = {ax.get_label(): ax for ax in plt.figure(1).axes}
-
+import matplotlib as mpl
 plt.figure(1).axes[0].set_position([0.125000, 0.505253, 0.306931, 0.368181])
 plt.figure(1).axes[1].set_position([0.438069, 0.505253, 0.306931, 0.368181])
 plt.figure(1).axes[2].set_position([0.125000, 0.131566, 0.306931, 0.368181])
 plt.figure(1).axes[3].set_position([0.438069, 0.131396, 0.306931, 0.368521])
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure,color='w')  # id=plt.figure(1).texts[1].new
+plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[1].new
+plt.figure(1).texts[1].set_fontname("DejaVu Sans")
 plt.figure(1).texts[1].set_position([0.252433, 0.838137])
+plt.figure(1).texts[1].set_style("normal")
 plt.figure(1).texts[1].set_text("n=1")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure,color='w')  # id=plt.figure(1).texts[2].new
+plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[2].new
 plt.figure(1).texts[2].set_position([0.252433, 0.464523])
 plt.figure(1).texts[2].set_text("n=1")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure,color='w')  # id=plt.figure(1).texts[3].new
+plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[3].new
 plt.figure(1).texts[3].set_position([0.557647, 0.464523])
 plt.figure(1).texts[3].set_text('n='+str(n_singlets))
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure,color='w')  # id=plt.figure(1).texts[4].new
+plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[4].new
 plt.figure(1).texts[4].set_position([0.549791, 0.838137])
 plt.figure(1).texts[4].set_text('n='+str(n_doublets))
 #% end: automatic generated code from pylustrator
 plt.show()
-fig.savefig(figfolder+'C.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder+'C.svg', dpi=300, bbox_inches="tight")
 
 #%% plot figure 1D_1, xx-stress maps
 
@@ -267,6 +276,12 @@ axes[1,1].imshow(sigma_xx_1to1s_average_crop, cmap=plt.get_cmap("turbo"), interp
 # adjust space in between plots
 plt.subplots_adjust(wspace=0.02, hspace=-0.02)
 
+# add annotations
+plt.text(-40.5,58.5,'n=1',color = 'white')
+plt.text(-40.5,125,'n=1',color = 'white')
+plt.text(22,58.5,'n='+str(n_doublets),color = 'white')
+plt.text(23.5,125,'n='+str(n_singlets),color = 'white')
+
 # remove axes
 for ax in axes.flat:
     ax.axis('off')
@@ -280,32 +295,10 @@ cbar = fig.colorbar(im, ax=axes.ravel().tolist())
 cbar.ax.set_title('mN/m')
 
 # add title
-plt.suptitle('xx-Stress',y=0.94, x=0.44)
-
-
-#% start: automatic generated code from pylustrator
-plt.figure(1).ax_dict = {ax.get_label(): ax for ax in plt.figure(1).axes}
-
-plt.figure(1).axes[0].set_position([0.125000, 0.505253, 0.306931, 0.368181])
-plt.figure(1).axes[1].set_position([0.438069, 0.505253, 0.306931, 0.368181])
-plt.figure(1).axes[2].set_position([0.125000, 0.131566, 0.306931, 0.368181])
-plt.figure(1).axes[3].set_position([0.438069, 0.131396, 0.306931, 0.368521])
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure,color='w')  # id=plt.figure(1).texts[1].new
-plt.figure(1).texts[1].set_position([0.252433, 0.838137])
-plt.figure(1).texts[1].set_text("n=1")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure,color='w')  # id=plt.figure(1).texts[2].new
-plt.figure(1).texts[2].set_position([0.252433, 0.464523])
-plt.figure(1).texts[2].set_text("n=1")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure,color='w')  # id=plt.figure(1).texts[3].new
-plt.figure(1).texts[3].set_position([0.557647, 0.464523])
-plt.figure(1).texts[3].set_text('n='+str(n_singlets))
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure,color='w')  # id=plt.figure(1).texts[4].new
-plt.figure(1).texts[4].set_position([0.549791, 0.838137])
-plt.figure(1).texts[4].set_text('n='+str(n_doublets))
-#% end: automatic generated code from pylustrator
+plt.suptitle('$\mathrm{\sigma _{xx}}$',y=0.94, x=0.44)
 
 # save figure
-fig.savefig(figfolder+'D1.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder+'D1.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 #%% plot figure 1D_2, yy-stress maps
@@ -363,7 +356,11 @@ axes[1,1].imshow(sigma_yy_1to1s_average_crop, cmap=plt.get_cmap("turbo"), interp
 # adjust space in between plots
 plt.subplots_adjust(wspace=0.02, hspace=-0.02)
 
-
+# add annotations
+plt.text(-40.5,58.5,'n=1',color = 'white')
+plt.text(-40.5,125,'n=1',color = 'white')
+plt.text(22,58.5,'n='+str(n_doublets),color = 'white')
+plt.text(23.5,125,'n='+str(n_singlets),color = 'white')
 
 # remove axes
 for ax in axes.flat:
@@ -378,31 +375,10 @@ cbar = fig.colorbar(im, ax=axes.ravel().tolist())
 cbar.ax.set_title('mN/m')
 
 # add title
-plt.suptitle('yy-Stress',y=0.94, x=0.44)
-
-#% start: automatic generated code from pylustrator
-plt.figure(1).ax_dict = {ax.get_label(): ax for ax in plt.figure(1).axes}
-
-plt.figure(1).axes[0].set_position([0.125000, 0.505253, 0.306931, 0.368181])
-plt.figure(1).axes[1].set_position([0.438069, 0.505253, 0.306931, 0.368181])
-plt.figure(1).axes[2].set_position([0.125000, 0.131566, 0.306931, 0.368181])
-plt.figure(1).axes[3].set_position([0.438069, 0.131396, 0.306931, 0.368521])
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure,color='w')  # id=plt.figure(1).texts[1].new
-plt.figure(1).texts[1].set_position([0.252433, 0.838137])
-plt.figure(1).texts[1].set_text("n=1")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure,color='w')  # id=plt.figure(1).texts[2].new
-plt.figure(1).texts[2].set_position([0.252433, 0.464523])
-plt.figure(1).texts[2].set_text("n=1")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure,color='w')  # id=plt.figure(1).texts[3].new
-plt.figure(1).texts[3].set_position([0.557647, 0.464523])
-plt.figure(1).texts[3].set_text('n='+str(n_singlets))
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure,color='w')  # id=plt.figure(1).texts[4].new
-plt.figure(1).texts[4].set_position([0.549791, 0.838137])
-plt.figure(1).texts[4].set_text('n='+str(n_doublets))
-#% end: automatic generated code from pylustrator
+plt.suptitle('$\mathrm{\sigma _{yy}}$',y=0.94, x=0.44)
 
 # save figure
-fig.savefig(figfolder+'D2.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder+'D2.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 #%% plot figure 1E boxplots
@@ -720,7 +696,7 @@ fig_ax.set_ylim(ymin=ymin)
 fig_ax.set_ylim(ymax=ymax)
 
 # save plot to file
-plt.savefig(figfolder+'E.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder+'E.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 #%%
@@ -907,5 +883,5 @@ plt.show()
 
 
 # # save plot to file
-# plt.savefig(folder+'fig1D.png', dpi=300, bbox_inches="tight")
+# plt.savefig(folder+'fig1D.svg', dpi=300, bbox_inches="tight")
 # plt.close()

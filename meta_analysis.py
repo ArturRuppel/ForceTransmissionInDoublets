@@ -177,6 +177,7 @@ def analyse_MSM_data(folder):
     relsigma_yy_lefthalf_average = np.divide(sigma_yy_lefthalf_average,sigma_yy_baseline)
     relsigma_yy_righthalf_average = np.divide(sigma_yy_righthalf_average,sigma_yy_baseline)
     
+    # calculate anisotropy coefficient
     AIC = (sigma_xx_average-sigma_yy_average)/(sigma_xx_average+sigma_yy_average)
     AIC_left = (sigma_xx_lefthalf_average-sigma_yy_lefthalf_average)/(sigma_xx_lefthalf_average+sigma_yy_lefthalf_average)
     AIC_right = (sigma_xx_righthalf_average-sigma_yy_righthalf_average)/(sigma_xx_righthalf_average+sigma_yy_righthalf_average)
@@ -186,6 +187,15 @@ def analyse_MSM_data(folder):
     relAIC_left = AIC_left-AIC_baseline
     relAIC_right = AIC_right-AIC_baseline
     
+    # calculate relative stress increase
+    RSI_xx = relsigma_xx_average[33,:]-relsigma_xx_average[20,:]
+    RSI_xx_left = relsigma_xx_lefthalf_average[33,:]-relsigma_xx_lefthalf_average[20,:]
+    RSI_xx_right = relsigma_xx_righthalf_average[33,:]-relsigma_xx_righthalf_average[20,:]
+    
+    RSI_yy = relsigma_yy_average[33,:]-relsigma_yy_average[20,:]
+    RSI_yy_left = relsigma_yy_lefthalf_average[33,:]-relsigma_yy_lefthalf_average[20,:]
+    RSI_yy_right = relsigma_yy_righthalf_average[33,:]-relsigma_yy_righthalf_average[20,:]
+    
     data={"sigma_xx": sigma_xx,"sigma_yy": sigma_yy,
           "sigma_xx_average": sigma_xx_average,"sigma_yy_average": sigma_yy_average,
           "sigma_xx_lefthalf_average": sigma_xx_lefthalf_average,"sigma_yy_lefthalf_average": sigma_yy_lefthalf_average,
@@ -194,8 +204,10 @@ def analyse_MSM_data(folder):
           "relsigma_xx_average": relsigma_xx_average,"relsigma_yy_average": relsigma_yy_average,
           "relsigma_xx_lefthalf_average": relsigma_xx_lefthalf_average,"relsigma_yy_lefthalf_average": relsigma_yy_lefthalf_average,
           "relsigma_xx_righthalf_average": relsigma_xx_righthalf_average,"relsigma_yy_righthalf_average": relsigma_yy_righthalf_average,
-          "AIC_baseline": AIC_baseline, "AIC": AIC, "AIC_left": AIC_left, "AIC_right": AIC_right,\
-          "relAIC": relAIC, "relAIC_left": relAIC_left, "relAIC_right": relAIC_right}
+          "AIC_baseline": AIC_baseline, "AIC": AIC, "AIC_left": AIC_left, "AIC_right": AIC_right,
+          "relAIC": relAIC, "relAIC_left": relAIC_left, "relAIC_right": relAIC_right,
+          "RSI_xx": RSI_xx, "RSI_xx_left": RSI_xx_left, "RSI_xx_right": RSI_xx_right,
+          "RSI_yy": RSI_yy, "RSI_yy_left": RSI_yy_left, "RSI_yy_right": RSI_yy_right}
     
     return data
 
