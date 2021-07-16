@@ -62,27 +62,47 @@ AR1to1s_halfstim_CM =        pickle.load(open(folder + "analysed_data/AR1to1s_ha
 colors_parent = ['#026473','#E3CC69','#77C8A6','#D96248'];
 
 
+#%% test
+plt.figure()
+y = np.concatenate((AR1to1d_fullstim_long_CM["ellipse_data"]["sigma_x_baseline"],AR1to1d_fullstim_short_CM["ellipse_data"]["sigma_x_baseline"],AR1to1s_fullstim_long_CM["ellipse_data"]["sigma_x_baseline"],AR1to1s_fullstim_short_CM["ellipse_data"]["sigma_x_baseline"]))
+x = np.concatenate((AR1to1d_fullstim_long["MSM_data"]["sigma_xx_baseline"],AR1to1d_fullstim_short["MSM_data"]["sigma_xx_baseline"],AR1to1s_fullstim_long["MSM_data"]["sigma_xx_baseline"],AR1to1s_fullstim_short["MSM_data"]["sigma_xx_baseline"]))*1e3
+plt.plot(x,y, marker='x',linestyle = 'None')
+plt.plot([0,10],[0,10])
+plt.show()
 
-#%% Plot figure 1D
+plt.figure()
+y = np.concatenate((AR1to1d_fullstim_long_CM["ellipse_data"]["sigma_y_baseline"],AR1to1d_fullstim_short_CM["ellipse_data"]["sigma_y_baseline"],AR1to1s_fullstim_long_CM["ellipse_data"]["sigma_y_baseline"],AR1to1s_fullstim_short_CM["ellipse_data"]["sigma_y_baseline"]))
+x = np.concatenate((AR1to1d_fullstim_long["MSM_data"]["sigma_yy_baseline"],AR1to1d_fullstim_short["MSM_data"]["sigma_yy_baseline"],AR1to1s_fullstim_long["MSM_data"]["sigma_yy_baseline"],AR1to1s_fullstim_short["MSM_data"]["sigma_yy_baseline"]))*1e3
+plt.plot(x,y, marker='x',linestyle = 'None')
+plt.plot([0,10],[0,10])
+plt.show()
+#%%
 
 # prepare data first
 
 # concatenate data from different experiments for boxplots
-linetension_baseline_1to1d = np.concatenate((AR1to1d_halfstim_CM["TEM_data"]["line tension baseline"], AR1to1d_fullstim_short_CM["TEM_data"]["line tension baseline"], AR1to1d_fullstim_long_CM["TEM_data"]["line tension baseline"]))
-linetension_baseline_1to1s = np.concatenate((AR1to1s_halfstim_CM["TEM_data"]["line tension baseline"], AR1to1s_fullstim_short_CM["TEM_data"]["line tension baseline"], AR1to1s_fullstim_long_CM["TEM_data"]["line tension baseline"]))
-f_adherent_baseline_1to1d = np.concatenate((AR1to1d_halfstim_CM["TEM_data"]["fa adherent baseline"], AR1to1d_fullstim_short_CM["TEM_data"]["fa adherent baseline"], AR1to1d_fullstim_long_CM["TEM_data"]["fa adherent baseline"]))
-f_adherent_baseline_1to1s = np.concatenate((AR1to1s_halfstim_CM["TEM_data"]["fa adherent baseline"], AR1to1s_fullstim_short_CM["TEM_data"]["fa adherent baseline"], AR1to1s_fullstim_long_CM["TEM_data"]["fa adherent baseline"]))
+linetension_baseline_1to1d = np.concatenate((AR1to1d_halfstim_CM["TEM_data"]["line tension baseline [nN]"], AR1to1d_fullstim_short_CM["TEM_data"]["line tension baseline [nN]"], AR1to1d_fullstim_long_CM["TEM_data"]["line tension baseline [nN]"]))
+linetension_baseline_1to1s = np.concatenate((AR1to1s_halfstim_CM["TEM_data"]["line tension baseline [nN]"], AR1to1s_fullstim_short_CM["TEM_data"]["line tension baseline [nN]"], AR1to1s_fullstim_long_CM["TEM_data"]["line tension baseline [nN]"]))
+f_adherent_baseline_1to1d = np.concatenate((AR1to1d_halfstim_CM["TEM_data"]["fa adherent baseline [nN]"], AR1to1d_fullstim_short_CM["TEM_data"]["fa adherent baseline [nN]"], AR1to1d_fullstim_long_CM["TEM_data"]["fa adherent baseline [nN]"]))
+f_adherent_baseline_1to1s = np.concatenate((AR1to1s_halfstim_CM["TEM_data"]["fa adherent baseline [nN]"], AR1to1s_fullstim_short_CM["TEM_data"]["fa adherent baseline [nN]"], AR1to1s_fullstim_long_CM["TEM_data"]["fa adherent baseline [nN]"]))
 
+sigma_x_CM_baseline_1to1d = np.concatenate((AR1to1d_halfstim_CM["ellipse_data"]["sigma_x_baseline"], AR1to1d_fullstim_short_CM["ellipse_data"]["sigma_x_baseline"], AR1to1d_fullstim_long_CM["ellipse_data"]["sigma_x_baseline"]))
+sigma_x_CM_baseline_1to1s = np.concatenate((AR1to1s_halfstim_CM["ellipse_data"]["sigma_x_baseline"], AR1to1s_fullstim_short_CM["ellipse_data"]["sigma_x_baseline"], AR1to1s_fullstim_long_CM["ellipse_data"]["sigma_x_baseline"]))
 sigma_y_CM_baseline_1to1d = np.concatenate((AR1to1d_halfstim_CM["ellipse_data"]["sigma_y_baseline"], AR1to1d_fullstim_short_CM["ellipse_data"]["sigma_y_baseline"], AR1to1d_fullstim_long_CM["ellipse_data"]["sigma_y_baseline"]))
 sigma_y_CM_baseline_1to1s = np.concatenate((AR1to1s_halfstim_CM["ellipse_data"]["sigma_y_baseline"], AR1to1s_fullstim_short_CM["ellipse_data"]["sigma_y_baseline"], AR1to1s_fullstim_long_CM["ellipse_data"]["sigma_y_baseline"]))
 
+sigma_x_MSM_baseline_1to1d = np.concatenate((AR1to1d_halfstim["MSM_data"]["sigma_xx_baseline"], AR1to1d_fullstim_short["MSM_data"]["sigma_xx_baseline"], AR1to1d_fullstim_long["MSM_data"]["sigma_xx_baseline"]))
+sigma_x_MSM_baseline_1to1s = np.concatenate((AR1to1s_halfstim["MSM_data"]["sigma_xx_baseline"], AR1to1s_fullstim_short["MSM_data"]["sigma_xx_baseline"], AR1to1s_fullstim_long["MSM_data"]["sigma_xx_baseline"]))
 sigma_y_MSM_baseline_1to1d = np.concatenate((AR1to1d_halfstim["MSM_data"]["sigma_yy_baseline"], AR1to1d_fullstim_short["MSM_data"]["sigma_yy_baseline"], AR1to1d_fullstim_long["MSM_data"]["sigma_yy_baseline"]))
 sigma_y_MSM_baseline_1to1s = np.concatenate((AR1to1s_halfstim["MSM_data"]["sigma_yy_baseline"], AR1to1s_fullstim_short["MSM_data"]["sigma_yy_baseline"], AR1to1s_fullstim_long["MSM_data"]["sigma_yy_baseline"]))
 
 # set up pandas data frame to use with seaborn for box- and swarmplots
-linetension_baseline = np.concatenate((linetension_baseline_1to1d,linetension_baseline_1to1s))*1e9 # convert to nN for plotting
-f_adherent_baseline = np.concatenate((f_adherent_baseline_1to1d,f_adherent_baseline_1to1s))*1e9
-sigma_y_CM_baseline = np.concatenate((sigma_y_CM_baseline_1to1d,sigma_y_CM_baseline_1to1s))*1e3 # convert to mN/m for plotting
+linetension_baseline = np.concatenate((linetension_baseline_1to1d,linetension_baseline_1to1s))#*1e9 # convert to nN for plotting
+f_adherent_baseline = np.concatenate((f_adherent_baseline_1to1d,f_adherent_baseline_1to1s))#*1e9
+
+sigma_x_CM_baseline = np.concatenate((sigma_x_CM_baseline_1to1d,sigma_x_CM_baseline_1to1s))
+sigma_y_CM_baseline = np.concatenate((sigma_y_CM_baseline_1to1d,sigma_y_CM_baseline_1to1s))
+sigma_x_MSM_baseline = np.concatenate((sigma_x_MSM_baseline_1to1d,sigma_x_MSM_baseline_1to1s))*1e3 # convert to mN/m for plotting
 sigma_y_MSM_baseline = np.concatenate((sigma_y_MSM_baseline_1to1d,sigma_y_MSM_baseline_1to1s))*1e3
 
 n_doublets = linetension_baseline_1to1d.shape[0]
@@ -92,10 +112,18 @@ keys1to1d = ['AR1to1d' for i in range(n_doublets)]
 keys1to1s = ['AR1to1s' for i in range(n_singlets)]
 keys = np.concatenate((keys1to1d,keys1to1s))
 
-data = {'keys': keys, 'linetension': linetension_baseline, 'f_adherent': f_adherent_baseline, 'sigma_y_CM': sigma_y_CM_baseline, 'sigma_y_MSM': sigma_y_MSM_baseline}
+data = {'keys': keys, 'linetension': linetension_baseline, 'f_adherent': f_adherent_baseline, 'sigma_x_CM': sigma_x_CM_baseline, 'sigma_x_MSM': sigma_x_MSM_baseline, 'sigma_y_CM': sigma_y_CM_baseline, 'sigma_y_MSM': sigma_y_MSM_baseline}
 # Creates DataFrame.
 df = pd.DataFrame(data)
+#%%
+sns.scatterplot(data=df, x='sigma_x_MSM', y='sigma_x_CM',hue='keys')
+plt.plot([0,10],[0,10])
+plt.show()
 
+sns.scatterplot(data=df, x='sigma_y_MSM', y='sigma_y_CM',hue='keys')
+plt.plot([0,10],[0,10])
+plt.show()
+#%%
 # define plot parameters
 fig = plt.figure(2, figsize=(5.5, 2))          # figuresize in inches
 gs = gridspec.GridSpec(1,3)                     # sets up subplotgrid rows by columns
@@ -276,7 +304,7 @@ fig_ax.set_ylim(ymax=ymax)
 
 # # save plot to file
 plt.savefig(folder+'fig2C.png', dpi=300, bbox_inches="tight")
-# plt.close()
+plt.show()
 #%% plot figure 1E
 
 # prepare data first
@@ -350,7 +378,7 @@ plt.suptitle('$\mathrm{\sigma _{xx}}$',y=0.94, x=0.44)
 
 # save figure
 fig.savefig(folder+'fig1E.png', dpi=300, bbox_inches="tight")
-plt.close()
+plt.show()
 
 #%% plot figure 1F
 

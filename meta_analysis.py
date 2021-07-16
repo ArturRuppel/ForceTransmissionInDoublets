@@ -297,12 +297,13 @@ def main_meta_analysis(folder, title, noCells, noFrames):
     shape_data = analyse_shape_data(folder, pixelsize)
     
     # stack arrays together that will be used to determine the cells' baseline stability
-    filterdata = np.dstack((TFM_data["relEs_lefthalf"][0:20,:],TFM_data["relEs_righthalf"][0:20,:],
-                            MSM_data["relsigma_yy_lefthalf_average"][0:20,:],MSM_data["relsigma_yy_righthalf_average"][0:20,:],
-                            MSM_data["relsigma_xx_lefthalf_average"][0:20,:],MSM_data["relsigma_xx_righthalf_average"][0:20,:]))
+    filterdata = np.dstack((TFM_data["relEs"][0:20,:],TFM_data["relEs"][0:20,:]))
+    # filterdata = np.dstack((TFM_data["relEs_lefthalf"][0:20,:],TFM_data["relEs_righthalf"][0:20,:],
+    #                         MSM_data["relsigma_yy_lefthalf_average"][0:20,:],MSM_data["relsigma_yy_righthalf_average"][0:20,:],
+    #                         MSM_data["relsigma_xx_lefthalf_average"][0:20,:],MSM_data["relsigma_xx_righthalf_average"][0:20,:]))
     
     # identifiy cells with unstable baselines
-    baselinefilter = create_filter(filterdata,0.01)
+    baselinefilter = create_filter(filterdata,0.005)
     
     # # plot average movies with filtered data
     # plot_TFM_and_MSM_average_movies(folder, stressmappixelsize, baselinefilter)

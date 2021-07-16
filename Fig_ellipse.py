@@ -99,6 +99,7 @@ sns.scatterplot(data=df, x='sigma_y_MSM_baseline', y='sigma_y_CM_baseline',hue='
 corr, _ = pearsonr(data['sigma_y_MSM_baseline'], data['sigma_y_CM_baseline'])
 plt.savefig(folder+'fig_yycorrleation.png', dpi=300, bbox_inches="tight")
 plt.close()
+
 #%% plot std
 
 # prepare data first
