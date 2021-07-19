@@ -66,6 +66,47 @@ colors_parent = ['#026473','#E3CC69','#77C8A6','#D96248'];
 # prepare data first
 
 # concatenate data from different experiments for boxplots
+sigma_x_MSM_1to1d   = np.concatenate((AR1to1d_halfstim["MSM_data"]["sigma_xx_baseline"], AR1to1d_fullstim_short["MSM_data"]["sigma_xx_baseline"], AR1to1d_fullstim_long["MSM_data"]["sigma_xx_baseline"]))
+sigma_x_CM_1to1d    = np.concatenate((AR1to1d_halfstim_CM["ellipse_data"]["sigma_x_baseline"], AR1to1d_fullstim_short_CM["ellipse_data"]["sigma_x_baseline"], AR1to1d_fullstim_long_CM["ellipse_data"]["sigma_x_baseline"]))
+sigma_x_MSM_1to1s   = np.concatenate((AR1to1s_halfstim["MSM_data"]["sigma_xx_baseline"], AR1to1s_fullstim_short["MSM_data"]["sigma_xx_baseline"], AR1to1s_fullstim_long["MSM_data"]["sigma_xx_baseline"]))
+sigma_x_CM_1to1s    = np.concatenate((AR1to1s_halfstim_CM["ellipse_data"]["sigma_x_baseline"], AR1to1s_fullstim_short_CM["ellipse_data"]["sigma_x_baseline"], AR1to1s_fullstim_long_CM["ellipse_data"]["sigma_x_baseline"]))
+sigma_x_MSM_1to2d   = AR1to2d_halfstim["MSM_data"]["sigma_xx_baseline"]
+sigma_x_CM_1to2d    = AR1to2d_halfstim_CM["ellipse_data"]["sigma_x_baseline"]
+sigma_x_MSM_2to1d   = AR2to1d_halfstim["MSM_data"]["sigma_xx_baseline"]
+sigma_x_CM_2to1d    = AR2to1d_halfstim_CM["ellipse_data"]["sigma_x_baseline"]
+
+
+# set up pandas data frame to use with seaborn for box- and swarmplots
+sigma_x_MSM_baseline = np.concatenate((sigma_x_MSM_1to1d,sigma_x_MSM_1to1s,sigma_x_MSM_1to2d,sigma_x_MSM_2to1d))*1e3
+sigma_x_CM_baseline = np.concatenate((sigma_x_CM_1to1d,sigma_x_CM_1to1s,sigma_x_CM_1to2d,sigma_x_CM_2to1d))
+
+n_1to1d = sigma_x_MSM_1to1d.shape[0]
+n_1to1s = sigma_x_MSM_1to1s.shape[0]
+n_1to2d = sigma_x_MSM_1to2d.shape[0]
+n_2to1d = sigma_x_MSM_2to1d.shape[0]
+
+keys1to1d = ['AR1to1d' for i in range(n_1to1d)]
+keys1to1s = ['AR1to1s' for i in range(n_1to1s)]
+keys1to2d = ['AR1to2d' for i in range(n_1to2d)]
+keys2to1d = ['AR2to1d' for i in range(n_2to1d)]
+
+keys = np.concatenate((keys1to1d,keys1to1s,keys1to2d,keys2to1d))
+
+data = {'keys': keys, 'sigma_x_MSM_baseline': sigma_x_MSM_baseline, 'sigma_x_CM_baseline': sigma_x_CM_baseline}
+# Creates DataFrame.
+df = pd.DataFrame(data)
+# df=df.drop([174])
+# df=df.drop([183])
+sns.scatterplot(data=df, x='sigma_x_MSM_baseline', y='sigma_x_CM_baseline',hue='keys')
+corr, _ = pearsonr(df['sigma_x_MSM_baseline'], df['sigma_x_CM_baseline'])
+plt.savefig(folder+'fig_xxcorrleation.png', dpi=300, bbox_inches="tight")
+plt.show()
+
+#%% Plot panel X1
+
+# prepare data first
+
+# concatenate data from different experiments for boxplots
 sigma_y_MSM_1to1d   = np.concatenate((AR1to1d_halfstim["MSM_data"]["sigma_yy_baseline"], AR1to1d_fullstim_short["MSM_data"]["sigma_yy_baseline"], AR1to1d_fullstim_long["MSM_data"]["sigma_yy_baseline"]))
 sigma_y_CM_1to1d    = np.concatenate((AR1to1d_halfstim_CM["ellipse_data"]["sigma_y_baseline"], AR1to1d_fullstim_short_CM["ellipse_data"]["sigma_y_baseline"], AR1to1d_fullstim_long_CM["ellipse_data"]["sigma_y_baseline"]))
 sigma_y_MSM_1to1s   = np.concatenate((AR1to1s_halfstim["MSM_data"]["sigma_yy_baseline"], AR1to1s_fullstim_short["MSM_data"]["sigma_yy_baseline"], AR1to1s_fullstim_long["MSM_data"]["sigma_yy_baseline"]))
@@ -78,7 +119,7 @@ sigma_y_CM_2to1d    = AR2to1d_halfstim_CM["ellipse_data"]["sigma_y_baseline"]
 
 # set up pandas data frame to use with seaborn for box- and swarmplots
 sigma_y_MSM_baseline = np.concatenate((sigma_y_MSM_1to1d,sigma_y_MSM_1to1s,sigma_y_MSM_1to2d,sigma_y_MSM_2to1d))*1e3
-sigma_y_CM_baseline = np.concatenate((sigma_y_CM_1to1d,sigma_y_CM_1to1s,sigma_y_CM_1to2d,sigma_y_CM_2to1d))*1e3
+sigma_y_CM_baseline = np.concatenate((sigma_y_CM_1to1d,sigma_y_CM_1to1s,sigma_y_CM_1to2d,sigma_y_CM_2to1d))
 
 n_1to1d = sigma_y_MSM_1to1d.shape[0]
 n_1to1s = sigma_y_MSM_1to1s.shape[0]
@@ -95,25 +136,27 @@ keys = np.concatenate((keys1to1d,keys1to1s,keys1to2d,keys2to1d))
 data = {'keys': keys, 'sigma_y_MSM_baseline': sigma_y_MSM_baseline, 'sigma_y_CM_baseline': sigma_y_CM_baseline}
 # Creates DataFrame.
 df = pd.DataFrame(data)
+df=df.drop([174])
+df=df.drop([183])
 sns.scatterplot(data=df, x='sigma_y_MSM_baseline', y='sigma_y_CM_baseline',hue='keys')
-corr, _ = pearsonr(data['sigma_y_MSM_baseline'], data['sigma_y_CM_baseline'])
+corr, _ = pearsonr(df['sigma_y_MSM_baseline'], df['sigma_y_CM_baseline'])
 plt.savefig(folder+'fig_yycorrleation.png', dpi=300, bbox_inches="tight")
-plt.close()
+plt.show()
 
 #%% plot std
 
 # prepare data first
 
 # concatenate data from different experiments for boxplots
-std_circle_1to1d   = np.concatenate((AR1to1d_halfstim_CM["circle_fit_data"]["std_baseline"], AR1to1d_fullstim_short_CM["circle_fit_data"]["std_baseline"], AR1to1d_fullstim_long_CM["circle_fit_data"]["std_baseline"]))
+std_circle_1to1d   = np.concatenate((AR1to1d_halfstim_CM["circle_fit_data"]["std_baseline [px]"], AR1to1d_fullstim_short_CM["circle_fit_data"]["std_baseline [px]"], AR1to1d_fullstim_long_CM["circle_fit_data"]["std_baseline [px]"]))
 std_ellipse_1to1d   = np.concatenate((AR1to1d_halfstim_CM["ellipse_data"]["std_baseline"], AR1to1d_fullstim_short_CM["ellipse_data"]["std_baseline"], AR1to1d_fullstim_long_CM["ellipse_data"]["std_baseline"]))# sigma_y_MSM_1to1s   = np.concatenate((AR1to1s_halfstim["MSM_data"]["sigma_yy_baseline"], AR1to1s_fullstim_short["MSM_data"]["sigma_yy_baseline"], AR1to1s_fullstim_long["MSM_data"]["sigma_yy_baseline"]))
-std_circle_1to1s   = np.concatenate((AR1to1s_halfstim_CM["circle_fit_data"]["std_baseline"], AR1to1s_fullstim_short_CM["circle_fit_data"]["std_baseline"], AR1to1s_fullstim_long_CM["circle_fit_data"]["std_baseline"]))
+std_circle_1to1s   = np.concatenate((AR1to1s_halfstim_CM["circle_fit_data"]["std_baseline [px]"], AR1to1s_fullstim_short_CM["circle_fit_data"]["std_baseline [px]"], AR1to1s_fullstim_long_CM["circle_fit_data"]["std_baseline [px]"]))
 std_ellipse_1to1s   = np.concatenate((AR1to1s_halfstim_CM["ellipse_data"]["std_baseline"], AR1to1s_fullstim_short_CM["ellipse_data"]["std_baseline"], AR1to1s_fullstim_long_CM["ellipse_data"]["std_baseline"]))# sigma_y_MSM_1to1s   = np.concatenate((AR1to1s_halfstim["MSM_data"]["sigma_yy_baseline"], AR1to1s_fullstim_short["MSM_data"]["sigma_yy_baseline"], AR1to1s_fullstim_long["MSM_data"]["sigma_yy_baseline"]))
 
 
 # set up pandas data frame to use with seaborn for box- and swarmplots
-std_circle = np.concatenate((std_circle_1to1d,std_circle_1to1s))*1e6 #convert to µm for plotting
-std_ellipse = np.concatenate((std_ellipse_1to1d,std_ellipse_1to1s))*1e6
+std_circle = np.concatenate((std_circle_1to1d,std_circle_1to1s))*0.108 #convert to µm for plotting
+std_ellipse = np.concatenate((std_ellipse_1to1d,std_ellipse_1to1s))
 
 n_1to1d = std_circle_1to1d.shape[0]
 n_1to1s = std_circle_1to1s.shape[0]

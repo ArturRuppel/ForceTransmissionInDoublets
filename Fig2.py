@@ -12,7 +12,7 @@ import matplotlib as mpl
 import pickle
 import seaborn as sns
 import pandas as pd
-from scipy.stats import normaltest, shapiro
+from scipy.stats import normaltest, shapiro, pearsonr
 from statannot import add_stat_annotation
 
 # mpl.rcParams['pdf.fonttype'] = 42
@@ -62,20 +62,6 @@ AR1to1s_halfstim_CM =        pickle.load(open(folder + "analysed_data/AR1to1s_ha
 colors_parent = ['#026473','#E3CC69','#77C8A6','#D96248'];
 
 
-#%% test
-plt.figure()
-y = np.concatenate((AR1to1d_fullstim_long_CM["ellipse_data"]["sigma_x_baseline"],AR1to1d_fullstim_short_CM["ellipse_data"]["sigma_x_baseline"],AR1to1s_fullstim_long_CM["ellipse_data"]["sigma_x_baseline"],AR1to1s_fullstim_short_CM["ellipse_data"]["sigma_x_baseline"]))
-x = np.concatenate((AR1to1d_fullstim_long["MSM_data"]["sigma_xx_baseline"],AR1to1d_fullstim_short["MSM_data"]["sigma_xx_baseline"],AR1to1s_fullstim_long["MSM_data"]["sigma_xx_baseline"],AR1to1s_fullstim_short["MSM_data"]["sigma_xx_baseline"]))*1e3
-plt.plot(x,y, marker='x',linestyle = 'None')
-plt.plot([0,10],[0,10])
-plt.show()
-
-plt.figure()
-y = np.concatenate((AR1to1d_fullstim_long_CM["ellipse_data"]["sigma_y_baseline"],AR1to1d_fullstim_short_CM["ellipse_data"]["sigma_y_baseline"],AR1to1s_fullstim_long_CM["ellipse_data"]["sigma_y_baseline"],AR1to1s_fullstim_short_CM["ellipse_data"]["sigma_y_baseline"]))
-x = np.concatenate((AR1to1d_fullstim_long["MSM_data"]["sigma_yy_baseline"],AR1to1d_fullstim_short["MSM_data"]["sigma_yy_baseline"],AR1to1s_fullstim_long["MSM_data"]["sigma_yy_baseline"],AR1to1s_fullstim_short["MSM_data"]["sigma_yy_baseline"]))*1e3
-plt.plot(x,y, marker='x',linestyle = 'None')
-plt.plot([0,10],[0,10])
-plt.show()
 #%%
 
 # prepare data first
@@ -83,8 +69,8 @@ plt.show()
 # concatenate data from different experiments for boxplots
 linetension_baseline_1to1d = np.concatenate((AR1to1d_halfstim_CM["TEM_data"]["line tension baseline [nN]"], AR1to1d_fullstim_short_CM["TEM_data"]["line tension baseline [nN]"], AR1to1d_fullstim_long_CM["TEM_data"]["line tension baseline [nN]"]))
 linetension_baseline_1to1s = np.concatenate((AR1to1s_halfstim_CM["TEM_data"]["line tension baseline [nN]"], AR1to1s_fullstim_short_CM["TEM_data"]["line tension baseline [nN]"], AR1to1s_fullstim_long_CM["TEM_data"]["line tension baseline [nN]"]))
-f_adherent_baseline_1to1d = np.concatenate((AR1to1d_halfstim_CM["TEM_data"]["fa adherent baseline [nN]"], AR1to1d_fullstim_short_CM["TEM_data"]["fa adherent baseline [nN]"], AR1to1d_fullstim_long_CM["TEM_data"]["fa adherent baseline [nN]"]))
-f_adherent_baseline_1to1s = np.concatenate((AR1to1s_halfstim_CM["TEM_data"]["fa adherent baseline [nN]"], AR1to1s_fullstim_short_CM["TEM_data"]["fa adherent baseline [nN]"], AR1to1s_fullstim_long_CM["TEM_data"]["fa adherent baseline [nN]"]))
+f_adherent_baseline_1to1d = np.concatenate((AR1to1d_halfstim_CM["TEM_data"]["f adherent baseline [nN]"], AR1to1d_fullstim_short_CM["TEM_data"]["f adherent baseline [nN]"], AR1to1d_fullstim_long_CM["TEM_data"]["f adherent baseline [nN]"]))
+f_adherent_baseline_1to1s = np.concatenate((AR1to1s_halfstim_CM["TEM_data"]["f adherent baseline [nN]"], AR1to1s_fullstim_short_CM["TEM_data"]["f adherent baseline [nN]"], AR1to1s_fullstim_long_CM["TEM_data"]["f adherent baseline [nN]"]))
 
 sigma_x_CM_baseline_1to1d = np.concatenate((AR1to1d_halfstim_CM["ellipse_data"]["sigma_x_baseline"], AR1to1d_fullstim_short_CM["ellipse_data"]["sigma_x_baseline"], AR1to1d_fullstim_long_CM["ellipse_data"]["sigma_x_baseline"]))
 sigma_x_CM_baseline_1to1s = np.concatenate((AR1to1s_halfstim_CM["ellipse_data"]["sigma_x_baseline"], AR1to1s_fullstim_short_CM["ellipse_data"]["sigma_x_baseline"], AR1to1s_fullstim_long_CM["ellipse_data"]["sigma_x_baseline"]))
@@ -123,6 +109,120 @@ plt.show()
 sns.scatterplot(data=df, x='sigma_y_MSM', y='sigma_y_CM',hue='keys')
 plt.plot([0,10],[0,10])
 plt.show()
+
+#%% plot figure 6plus, Correlation plots
+
+# set plot parameters
+ylabeloffset = -5
+colors = [colors_parent[1],colors_parent[2]];   # defines colors for scatterplot
+colors_regplot = ['#000000','#000000','#000000','#000000']; # defines colors for linear regression plot
+
+fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(4, 1.8))
+
+
+############# first panel ####################x
+x = 'sigma_x_MSM'
+y = 'sigma_x_CM'
+hue = 'keys'
+xmin = 0
+xmax = 20
+ymin = 0
+ymax = 20
+xticks = np.arange(0,20.1,5)
+yticks = np.arange(0,20.1,5)
+xlabel = '$\mathrm{\sigma_{x, MSM}}$'
+ylabel = '$\mathrm{\sigma_{x, CM}}$'
+
+sns.set_palette(sns.color_palette(colors))  
+sns.scatterplot(data=df, x=x, y=y,hue=hue,ax=axes[0])
+sns.set_palette(sns.color_palette(colors_regplot))      # sets colors
+sns.regplot(data=df, x=x, y=y, scatter=False,ax=axes[0])
+
+# set labels
+axes[0].set_xlabel(xlabel=xlabel)
+axes[0].set_ylabel(ylabel=ylabel, labelpad=ylabeloffset)
+
+# remove legend
+axes[0].get_legend().remove()
+
+# set limits
+axes[0].set_xlim(xmin=xmin,xmax=xmax)
+axes[0].set_ylim(ymin=ymin,ymax=ymax)
+
+
+# Define where you want ticks
+plt.sca(axes[0])
+plt.xticks(xticks)
+plt.yticks(yticks)
+
+
+# provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in',which='minor', length=3, bottom=True, top=True, left=True, right=True)
+plt.tick_params(direction='in',which='major', length=6, bottom=True, top=True, left=True, right=True)
+
+corr,p = pearsonr(df['sigma_x_MSM'], df['sigma_x_CM'])
+
+corr = np.round(corr,decimals=4)
+# p = np.round(p,decimals=6)
+
+plt.text(5.2,2.5,'Pearson R = ' + str(corr))
+plt.text(5.2,1,'p = ' + '{:0.2e}'.format(p))
+
+############# second panel ####################
+x = 'sigma_y_MSM'
+y = 'sigma_y_CM'
+hue = 'keys'
+xmin = 0
+xmax = 20
+ymin = 0
+ymax = 20
+xticks = np.arange(0,20.1,5)
+yticks = np.arange(0,20.1,5)
+xlabel = '$\mathrm{\sigma_{y, MSM}}$'
+ylabel = '$\mathrm{\sigma_{y, CM}}$'
+
+sns.set_palette(sns.color_palette(colors))  
+sns.scatterplot(data=df, x=x, y=y,hue=hue,ax=axes[1])
+sns.set_palette(sns.color_palette(colors_regplot))      # sets colors
+sns.regplot(data=df, x=x, y=y, scatter=False,ax=axes[1])
+
+# set labels
+axes[1].set_xlabel(xlabel=xlabel)
+axes[1].set_ylabel(ylabel=ylabel, labelpad=ylabeloffset)
+
+# remove legend
+axes[1].get_legend().remove()
+
+# set limits
+axes[1].set_xlim(xmin=xmin,xmax=xmax)
+axes[1].set_ylim(ymin=ymin,ymax=ymax)
+
+
+# Define where you want ticks
+plt.sca(axes[1])
+plt.xticks(xticks)
+plt.yticks(yticks)
+
+
+# provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in',which='minor', length=3, bottom=True, top=True, left=True, right=True)
+plt.tick_params(direction='in',which='major', length=6, bottom=True, top=True, left=True, right=True)
+
+corr,p = pearsonr(df['sigma_y_MSM'], df['sigma_y_CM'])
+
+corr = np.round(corr,decimals=4)
+# p = np.round(p,decimals=6)
+
+plt.text(5.2,2.5,'Pearson R = ' + str(corr))
+plt.text(5.2,1,'p = ' + '{:0.2e}'.format(p))
+
+plt.subplots_adjust(wspace=0.4, hspace=0.4)
+
+plt.savefig(folder+'sup.png', dpi=300, bbox_inches="tight")
+plt.show()
+
 #%%
 # define plot parameters
 fig = plt.figure(2, figsize=(5.5, 2))          # figuresize in inches
@@ -142,7 +242,7 @@ titleoffset = 3                                 # adjusts distance of title to t
 ##############################################################################
 #Generate first panel
 ##############################################################################
-ymin = 0
+ymin = -100
 ymax = 500
 stat_annotation_offset = 0.2
 
@@ -196,7 +296,7 @@ fig_ax.set_ylim(ymax=ymax)
 ##############################################################################
 #Generate second panel
 ##############################################################################
-ymin = 0
+ymin = -100
 ymax = 500
 stat_annotation_offset = -0.1 # adjust y-position of statistical annotation
 

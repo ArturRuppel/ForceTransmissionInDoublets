@@ -1152,7 +1152,92 @@ plt.subplots_adjust(wspace=0.4, hspace=0.4)
 
 plt.savefig(figfolder+'D.png', dpi=300, bbox_inches="tight")
 plt.show()
+#%% plot figure 6plus, Correlation plots
 
+# set plot parameters
+ylabeloffset = -5
+colors = colors_parent;   # defines colors for scatterplot
+colors_regplot = ['#000000','#000000','#000000','#000000']; # defines colors for linear regression plot
+
+fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(4, 1.8))
+
+############# first panel ####################
+sns.set_palette(sns.color_palette(colors))  
+sns.scatterplot(data=df, x='RSI_xx_left', y='RSI_xx_right',hue='keys',ax=axes[0])
+sns.set_palette(sns.color_palette(colors_regplot))      # sets colors
+sns.regplot(data=df, x='RSI_xx_left', y='RSI_xx_right', scatter=False,ax=axes[0])
+
+# set labels
+axes[0].set_xlabel(xlabel='$\mathrm{RSI_{xx, left}$')
+axes[0].set_ylabel(ylabel='$\mathrm{RSI_{xx, right}}$', labelpad=ylabeloffset)
+
+# remove legend
+axes[0].get_legend().remove()
+
+# set limits
+axes[0].set_ylim(ymin=-0.2,ymax=0.2)
+
+# Define where you want ticks
+plt.sca(axes[0])
+yticks = np.arange(-0.2,0.21,0.1)
+plt.yticks(yticks)
+xticks = np.arange(-1,1.1,0.5)
+plt.xticks(xticks)
+
+# provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in',which='minor', length=3, bottom=True, top=True, left=True, right=True)
+plt.tick_params(direction='in',which='major', length=6, bottom=True, top=True, left=True, right=True)
+
+corr,p = pearsonr(df['RSI_xx_left'], df['RSI_xx_right'])
+
+corr = np.round(corr,decimals=3)
+p = np.round(p,decimals=3)
+
+plt.text(-0.9,-0.14,'Pearson R = ' + str(corr))
+plt.text(-0.9,-0.17,'p = ' + str(p))
+
+
+############# second panel ####################
+sns.set_palette(sns.color_palette(colors))  
+sns.scatterplot(data=df, x='RSI_yy_left', y='RSI_yy_right',hue='keys',ax=axes[1])
+sns.set_palette(sns.color_palette(colors_regplot))      # sets colors
+sns.regplot(data=df, x='RSI_yy_left', y='RSI_yy_right', scatter=False,ax=axes[1])
+
+# set labels
+axes[1].set_xlabel(xlabel='$\mathrm{RSI_{yy, left}}$')
+axes[1].set_ylabel(ylabel='$\mathrm{RSI_{yy, right}}$', labelpad=ylabeloffset)
+
+# remove legend
+axes[1].get_legend().remove()
+
+# set limits
+axes[1].set_ylim(ymin=-0.2,ymax=0.2)
+
+# Define where you want ticks
+plt.sca(axes[1])
+yticks = np.arange(-0.2,0.21,0.1)
+plt.yticks(yticks)
+xticks = np.arange(-1,1.1,0.5)
+plt.xticks(xticks)
+
+# provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in',which='minor', length=3, bottom=True, top=True, left=True, right=True)
+plt.tick_params(direction='in',which='major', length=6, bottom=True, top=True, left=True, right=True)
+
+corr, p = pearsonr(df['RSI_yy_left'], df['RSI_yy_right'])
+
+corr = np.round(corr,decimals=3)
+p = np.round(p,decimals=3)
+
+plt.text(-0.9,-0.14,'Pearson R = ' + str(corr))
+plt.text(-0.9,-0.17,'p = ' + str(p))
+
+plt.subplots_adjust(wspace=0.4, hspace=0.4)
+
+plt.savefig(figfolder+'sup.png', dpi=300, bbox_inches="tight")
+plt.show()
 # colors = colors_parent;   # defines colors
 # sns.set_palette(sns.color_palette(colors))      # sets colors
 # sns.scatterplot(data=df, x='AIC_baseline', y='RSI_yy_left',hue='keys')
