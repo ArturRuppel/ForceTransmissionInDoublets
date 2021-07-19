@@ -12,8 +12,7 @@ import matplotlib as mpl
 import pickle
 import seaborn as sns
 import pandas as pd
-from scipy.stats import normaltest, shapiro
-from statannot import add_stat_annotation
+import statannot
 import os
 
 # import pylustrator
@@ -21,24 +20,9 @@ import os
 # mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['font.size'] = 8
 
-
-def test_if_gaussian(data1, data2, title):
-    # test if data follows Gaussian distribution
-    stat, p_n1 = normaltest(data1)
-    stat, p_s1 = shapiro(data1)
-    stat, p_n2 = normaltest(data2)
-    stat, p_s2 = shapiro(data2)
-    print('#############################################')
-    # depending on the result of the Gaussian distribution test, perform either unpaired t-test or Mann-Whitney U test
-    if (p_n1 > 0.05 and p_s1 > 0.05 and p_n2 > 0.05 and p_s2 > 0.05):
-        gaussian = True
-        print(title + ': Probably Gaussian.')
-    else:
-        gaussian = False
-        print(title + ': Probably not Gaussian.')
-
-    return gaussian
-
+# chose an example for force maps
+doublet_example = 1
+singlet_example = 5
 
 # %% load data for plotting
 folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
@@ -124,10 +108,10 @@ Ty_1to1s_average = np.nanmean(np.concatenate((AR1to1s_halfstim["TFM_data"]["Ty"]
                               axis=(2, 3))
 
 # get one example
-Tx_1to1d_example = AR1to1d_halfstim["TFM_data"]["Tx"][:, :, 0, 0]
-Ty_1to1d_example = AR1to1d_halfstim["TFM_data"]["Ty"][:, :, 0, 0]
-Tx_1to1s_example = AR1to1s_halfstim["TFM_data"]["Tx"][:, :, 0, 0]
-Ty_1to1s_example = AR1to1s_halfstim["TFM_data"]["Ty"][:, :, 0, 0]
+Tx_1to1d_example = AR1to1d_halfstim["TFM_data"]["Tx"][:, :, 0, doublet_example]
+Ty_1to1d_example = AR1to1d_halfstim["TFM_data"]["Ty"][:, :, 0, doublet_example]
+Tx_1to1s_example = AR1to1s_halfstim["TFM_data"]["Tx"][:, :, 0, singlet_example]
+Ty_1to1s_example = AR1to1s_halfstim["TFM_data"]["Ty"][:, :, 0, singlet_example]
 
 # calculate amplitudes
 T_1to1d_average = np.sqrt(Tx_1to1d_average ** 2 + Ty_1to1d_average ** 2)
@@ -251,8 +235,8 @@ sigma_xx_1to1s_average = np.nanmean(np.concatenate((AR1to1s_halfstim["MSM_data"]
                                                    axis=3), axis=(2, 3))
 
 # get one example
-sigma_xx_1to1d_example = AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 0, 1]
-sigma_xx_1to1s_example = AR1to1s_halfstim["MSM_data"]["sigma_xx"][:, :, 0, 3]
+sigma_xx_1to1d_example = AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 0, doublet_example]
+sigma_xx_1to1s_example = AR1to1s_halfstim["MSM_data"]["sigma_xx"][:, :, 0, singlet_example]
 
 # convert NaN to 0 to have black background
 sigma_xx_1to1d_average[np.isnan(sigma_xx_1to1d_average)] = 0
@@ -358,8 +342,8 @@ sigma_yy_1to1s_average = np.nanmean(np.concatenate((AR1to1s_halfstim["MSM_data"]
                                                    axis=3), axis=(2, 3))
 
 # get one example
-sigma_yy_1to1d_example = AR1to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 0, 1]
-sigma_yy_1to1s_example = AR1to1s_halfstim["MSM_data"]["sigma_yy"][:, :, 0, 3]
+sigma_yy_1to1d_example = AR1to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 0, doublet_example]
+sigma_yy_1to1s_example = AR1to1s_halfstim["MSM_data"]["sigma_yy"][:, :, 0, singlet_example]
 
 # convert NaN to 0 to have black background
 sigma_yy_1to1d_average[np.isnan(sigma_yy_1to1d_average)] = 0
@@ -460,7 +444,7 @@ colors = [colors_parent[1], colors_parent[2]]  # defines colors
 sns.set_palette(sns.color_palette(colors))  # sets colors
 linewidth_bp = 0.7  # linewidth of boxplot borders
 width = 0.3  # width of boxplots
-dotsize = 2  # size of datapoints in swarmplot
+dotsize = 1.8  # size of datapoints in swarmplot
 linewidth_sw = 0.3  # linewidth of boxplot borders
 alpha_sw = 1  # transparency of dots in swarmplot
 alpha_bp = 0.8  # transparency of boxplots
@@ -474,10 +458,8 @@ titleoffset = 3  # adjusts distance of title to the plot
 # extract data from dataframe to test if their distribution is gaussian
 data_1to1d = df[df["keys"] == "AR1to1d"]["spreadingsize_baseline"].to_numpy()
 data_1to1s = df[df["keys"] == "AR1to1s"]["spreadingsize_baseline"].to_numpy()
-if test_if_gaussian(data_1to1d, data_1to1s, 'spreadingsize_baseline'):
-    test = 't-test_ind'
-else:
-    test = 'Mann-Whitney'
+
+test = 'Mann-Whitney'
 
 ymin = 500
 ymax = 2000
@@ -495,8 +477,8 @@ sns.swarmplot(x=x, y=y, data=df, ax=fig_ax, alpha=alpha_sw, linewidth=linewidth_
 bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax, linewidth=linewidth_bp, notch=True, showfliers=False, width=width)
 
 order = ['AR1to1d', 'AR1to1s']
-add_stat_annotation(bp, data=df, x=x, y=y, order=order, box_pairs=[('AR1to1d', 'AR1to1s')],
-                    line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
+statannot.add_stat_annotation(bp, data=df, x=x, y=y, order=order, box_pairs=[('AR1to1d', 'AR1to1s')],
+                              line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
 
 # make boxplots transparent
 for patch in bp.artists:
@@ -533,10 +515,8 @@ fig_ax.set_ylim(ymax=ymax)
 # extract data from dataframe to test if their distribution is gaussian
 data_1to1d = df[df["keys"] == "AR1to1d"]["Es_baseline"].to_numpy()
 data_1to1s = df[df["keys"] == "AR1to1s"]["Es_baseline"].to_numpy()
-if test_if_gaussian(data_1to1d, data_1to1s, 'Es_baseline'):
-    test = 't-test_ind'
-else:
-    test = 'Mann-Whitney'
+
+test = 'Mann-Whitney'
 
 ymin = 0
 ymax = 2
@@ -553,8 +533,8 @@ sns.swarmplot(x=x, y=y, data=df, ax=fig_ax, alpha=alpha_sw, linewidth=linewidth_
 bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax, linewidth=linewidth_bp, notch=True, showfliers=False, width=width)
 
 order = ['AR1to1d', 'AR1to1s']
-add_stat_annotation(bp, data=df, x=x, y=y, order=order, box_pairs=[('AR1to1d', 'AR1to1s')],
-                    line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
+statannot.add_stat_annotation(bp, data=df, x=x, y=y, order=order, box_pairs=[('AR1to1d', 'AR1to1s')],
+                              line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
 
 # make boxplots transparent
 for patch in bp.artists:
@@ -591,10 +571,8 @@ fig_ax.set_ylim(ymax=ymax)
 # extract data from dataframe to test if their distribution is gaussian
 data_1to1d = df[df["keys"] == "AR1to1d"]["sigma_xx_baseline"].to_numpy()
 data_1to1s = df[df["keys"] == "AR1to1s"]["sigma_xx_baseline"].to_numpy()
-if test_if_gaussian(data_1to1d, data_1to1s, 'sigma_xx_baseline'):
-    test = 't-test_ind'
-else:
-    test = 'Mann-Whitney'
+
+test = 'Mann-Whitney'
 
 ymin = 0
 ymax = 14
@@ -611,8 +589,8 @@ sns.swarmplot(x=x, y=y, data=df, ax=fig_ax, alpha=alpha_sw, linewidth=linewidth_
 bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax, linewidth=linewidth_bp, notch=True, showfliers=False, width=width)
 
 order = ['AR1to1d', 'AR1to1s']
-add_stat_annotation(bp, data=df, x=x, y=y, order=order, box_pairs=[('AR1to1d', 'AR1to1s')],
-                    line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
+statannot.add_stat_annotation(bp, data=df, x=x, y=y, order=order, box_pairs=[('AR1to1d', 'AR1to1s')],
+                              line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
 
 # make boxplots transparent
 for patch in bp.artists:
@@ -649,10 +627,8 @@ fig_ax.set_ylim(ymax=ymax)
 # extract data from dataframe to test if their distribution is gaussian
 data_1to1d = df[df["keys"] == "AR1to1d"]["sigma_yy_baseline"].to_numpy()
 data_1to1s = df[df["keys"] == "AR1to1s"]["sigma_yy_baseline"].to_numpy()
-if test_if_gaussian(data_1to1d, data_1to1s, 'sigma_yy_baseline'):
-    test = 't-test_ind'
-else:
-    test = 'Mann-Whitney'
+
+test = 'Mann-Whitney'
 
 ymin = 0
 ymax = 14
@@ -669,8 +645,8 @@ sns.swarmplot(x=x, y=y, data=df, ax=fig_ax, alpha=alpha_sw, linewidth=linewidth_
 bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax, linewidth=linewidth_bp, notch=True, showfliers=False, width=width)
 
 order = ['AR1to1d', 'AR1to1s']
-add_stat_annotation(bp, data=df, x=x, y=y, order=order, box_pairs=[('AR1to1d', 'AR1to1s')],
-                    line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
+statannot.add_stat_annotation(bp, data=df, x=x, y=y, order=order, box_pairs=[('AR1to1d', 'AR1to1s')],
+                              line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
 
 # make boxplots transparent
 for patch in bp.artists:
@@ -711,10 +687,8 @@ ylabeloffset = -2
 # extract data from dataframe to test if their distribution is gaussian
 data_1to1d = df[df["keys"] == "AR1to1d"]["AIC_baseline"].to_numpy()
 data_1to1s = df[df["keys"] == "AR1to1s"]["AIC_baseline"].to_numpy()
-if test_if_gaussian(data_1to1d, data_1to1s, 'AIC_baseline'):
-    test = 't-test_ind'
-else:
-    test = 'Mann-Whitney'
+
+test = 'Mann-Whitney'
 
 # the grid spec is rows, then columns
 fig_ax = fig.add_subplot(gs[0, 4])
@@ -727,8 +701,8 @@ sns.swarmplot(x=x, y=y, data=df, ax=fig_ax, alpha=alpha_sw, linewidth=linewidth_
 bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax, linewidth=linewidth_bp, notch=True, showfliers=False, width=width)
 
 order = ['AR1to1d', 'AR1to1s']
-add_stat_annotation(bp, data=df, x=x, y=y, order=order, box_pairs=[('AR1to1d', 'AR1to1s')],
-                    line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
+statannot.add_stat_annotation(bp, data=df, x=x, y=y, order=order, box_pairs=[('AR1to1d', 'AR1to1s')],
+                              line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
 
 # make boxplots transparent
 for patch in bp.artists:
@@ -761,190 +735,3 @@ fig_ax.set_ylim(ymax=ymax)
 # save plot to file
 plt.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")
 plt.show()
-
-# %%
-# pylustrator.load("plot2.py", offset=[1, 0])
-# # #%% Plot figure 1D
-
-# # define plot parameters
-# fig = plt.figure(2, figsize=(5.5, 2))           # figuresize in inches
-# gs = gridspec.GridSpec(1,3)                     # sets up subplotgrid rows by columns
-# gs.update(wspace=0.4, hspace=0.25)              # adjusts space in between the boxes in the grid
-# colors = [colors_parent[1],colors_parent[2]];   # defines colors
-# sns.set_palette(sns.color_palette(colors))      # sets colors
-# linewidth_bp = 0.7                              # linewidth of boxplot borders
-# width = 0.3                                     # width of boxplots
-# dotsize = 2                                     # size of datapoints in swarmplot
-# linewidth_sw = 0.3                              # linewidth of boxplot borders
-# alpha_sw = 1                                    # transparency of dots in swarmplot
-# alpha_bp = 0.8                                  # transparency of boxplots
-# ylabeloffset = 1                                # adjusts distance of ylabel to the plot
-# titleoffset = 3                                 # adjusts distance of title to the plot
-
-# ##############################################################################
-# #Generate first panel
-# ##############################################################################
-# ymin = 500
-# ymax = 2000
-# stat_annotation_offset = 0.2
-
-# # the grid spec is rows, then columns
-# fig_ax = fig.add_subplot(gs[0,0])
-
-# # set plot variables
-# x = 'keys'
-# y = 'spreadingsize_baseline'
-# # if test_if_gaussian(spreadingsize_baseline_1to1d,spreadingsize_baseline_1to1s,'Spreading size'):
-# #     test = 't-test_ind'
-# # else:
-# #     test = 'Mann-Whitney'
-
-# # create box- and swarmplots
-# sns.swarmplot(x=x, y=y, data=df, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
-# bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax,linewidth=linewidth_bp,notch=True, showfliers = False, width=width)
-
-# order = ['AR1to1d', 'AR1to1s']
-# # test_results = add_stat_annotation(bp, data=df, x=x, y=y, order=order, line_offset_to_box=stat_annotation_offset, box_pairs=[('AR1to1d', 'AR1to1s')],                      
-# #                                    test=test, text_format='star', loc='inside', verbose=2)
-
-# # make boxplots transparent
-# for patch in bp.artists:
-#     r, g, b, a = patch.get_facecolor()
-#     patch.set_facecolor((r, g, b, alpha_bp))
-
-# plt.setp(bp.artists, edgecolor = 'k')
-# plt.setp(bp.lines, color='k')
-
-# # set labels
-# fig_ax.set_xticklabels(['doublet', 'singlet'])
-# fig_ax.set_xlabel(xlabel=None)
-# fig_ax.set_ylabel(ylabel='A [$\mathrm{\mu m^2}$]', labelpad=ylabeloffset)
-# fig_ax.set_title(label='Spreading size', pad=titleoffset)
-# fig_ax.set()
-
-# # Define where you want ticks
-# yticks = np.arange(500,1501,250)
-# plt.yticks(yticks)
-
-# # provide info on tick parameters
-# plt.minorticks_on()
-# plt.tick_params(direction='in',which='minor', length=3, bottom=False, top=False, left=True, right=True)
-# plt.tick_params(direction='in',which='major', length=6, bottom=False, top=False, left=True, right=True)
-
-# # set limits
-# fig_ax.set_ylim(ymin=ymin)
-# fig_ax.set_ylim(ymax=ymax)
-
-# ##############################################################################
-# # Generate second panel
-# ##############################################################################
-
-# ymin = 0
-# ymax = 2
-# stat_annotation_offset = -0.1 # adjust y-position of statistical annotation
-
-# # the grid spec is rows, then columns
-# fig_ax = fig.add_subplot(gs[0,1])
-
-# # set plot variables
-# x = 'keys'
-# y = 'strain_energy'
-# # if test_if_gaussian(Es_baseline_1to1d,Es_baseline_1to1s,'Strain energy'):
-# #     test = 't-test_ind'
-# # else:
-# #     test = 'Mann-Whitney'
-
-# sns.swarmplot(x=x, y=y, data=df, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
-# bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax,linewidth=linewidth_bp,notch=True, showfliers = False, width=width)
-
-# order = ['AR1to1d', 'AR1to1s']
-# # test_results = add_stat_annotation(bp, data=df, x=x, y=y, order=order, line_offset_to_box=stat_annotation_offset, box_pairs=[('AR1to1d', 'AR1to1s')],                      
-# #                                     test=test, text_format='star', loc='inside', verbose=2)
-
-# # make boxplots transparent
-# for patch in bp.artists:
-#     r, g, b, a = patch.get_facecolor()
-#     patch.set_facecolor((r, g, b, alpha_bp))
-
-# plt.setp(bp.artists, edgecolor = 'k')
-# plt.setp(bp.lines, color='k')
-
-# # set labels
-# fig_ax.set_xticklabels(['doublet', 'singlet'])
-# fig_ax.set_xlabel(xlabel=None)
-# fig_ax.set_ylabel(ylabel='$\mathrm{E_s}$ [pJ]', labelpad=ylabeloffset)
-# fig_ax.set_title(label='Strain energy', pad=titleoffset)
-# fig_ax.set()
-
-# # Define where you want ticks
-# yticks = np.arange(0,2.1,0.5)
-# plt.yticks(yticks)
-
-# #provide info on tick parameters
-# plt.minorticks_on()
-# plt.tick_params(direction='in',which='minor', length=3, bottom=False, top=False, left=True, right=True)
-# plt.tick_params(direction='in',which='major', length=6, bottom=False, top=False, left=True, right=True)
-
-# # set limits
-# fig_ax.set_ylim(ymin=ymin)
-# fig_ax.set_ylim(ymax=ymax)
-
-# ##############################################################################
-# #Generate third panel
-# ##############################################################################
-# ymin = 0
-# ymax = 90
-# stat_annotation_offset = 0.037 # adjust y-position of statistical annotation
-
-# # the grid spec is rows, then columns
-# fig_ax = fig.add_subplot(gs[0,2])
-
-# # set plot variables
-# x = 'keys'
-# y = 'force_angle'
-# # if test_if_gaussian(force_angle_baseline_1to1d,force_angle_baseline_1to1s,'Force angles'):
-# #     test = 't-test_ind'
-# # else:
-# #     test = 'Mann-Whitney'
-
-# # create box- and swarmplots
-# sns.swarmplot(x=x, y=y, data=df, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
-# bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax,linewidth=linewidth_bp,notch=True, showfliers = False, width=width)
-
-# order = ['AR1to1d', 'AR1to1s']
-# # test_results = add_stat_annotation(bp, data=df, x=x, y=y, order=order, line_offset_to_box=stat_annotation_offset, box_pairs=[('AR1to1d', 'AR1to1s')],                      
-# #                                     test=test, text_format='star', loc='inside', verbose=2)
-
-# # make boxplots transparent
-# for patch in bp.artists:
-#     r, g, b, a = patch.get_facecolor()
-#     patch.set_facecolor((r, g, b, alpha_bp))
-
-# plt.setp(bp.artists, edgecolor = 'k')
-# plt.setp(bp.lines, color='k')
-
-
-# # set labels
-# fig_ax.set_xticklabels(['doublet', 'singlet'])
-# fig_ax.set_xlabel(xlabel=None)
-# fig_ax.set_ylabel(ylabel=r'$\mathrm{\vartheta}$ [°]', labelpad=ylabeloffset)
-# fig_ax.set_title(label='Force angles', pad=titleoffset)
-# fig_ax.set()
-
-# # Define where you want ticks
-# yticks = np.arange(0,91,15)
-# plt.yticks(yticks)
-
-# #provide info on tick parameters
-# plt.minorticks_on()
-# plt.tick_params(direction='in',which='minor', length=3, bottom=False, top=False, left=True, right=True)
-# plt.tick_params(direction='in',which='major', length=6, bottom=False, top=False, left=True, right=True)
-
-# # set limits
-# fig_ax.set_ylim(ymin=ymin)
-# fig_ax.set_ylim(ymax=ymax)
-
-
-# # save plot to file
-# plt.savefig(folder+'fig1D.png', dpi=300, bbox_inches="tight")
-# plt.close()

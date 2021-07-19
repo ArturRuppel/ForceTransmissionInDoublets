@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import math
 ''' Main Analysis Script for TFM-Opto Experiment for Cells on H-shaped Micropattern (Artur Ruppel, Dennis Wörthmüller)
 
-    Copyright: Dennis Wörthmüller
+    Copyright: Dennis Wörthmüller, Artur Ruppel
     Date: April 29, 2021  
 
     External python modules which are necessary: numpy, pandas scipy, lmfit
