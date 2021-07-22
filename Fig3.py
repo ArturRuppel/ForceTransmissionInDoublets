@@ -5,17 +5,16 @@ Created on Wed Jul  7 21:56:01 2021
 @author: Artur Ruppel
 
 """
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-import numpy as np
-import matplotlib as mpl
-import pickle
-import seaborn as sns
-import pandas as pd
-from scipy.stats import normaltest, shapiro
-from statannot import add_stat_annotation
 import os
-import pylustrator
+import pickle
+
+import matplotlib as mpl
+import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from statannot import add_stat_annotation
 
 # mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['font.size'] = 8
@@ -23,24 +22,6 @@ mpl.rcParams['font.size'] = 8
 # define some colors for the plots
 colors_parent = ['#026473', '#E3CC69', '#77C8A6', '#D96248']
 colors_parent_dark = ['#01353D', '#564910', '#235741', '#A93B23']
-
-
-def test_if_gaussian(data1, data2, title):
-    # test if data follows Gaussian distribution
-    stat, p_n1 = normaltest(data1)
-    stat, p_s1 = shapiro(data1)
-    stat, p_n2 = normaltest(data2)
-    stat, p_s2 = shapiro(data2)
-    print('#############################################')
-    # depending on the result of the Gaussian distribution test, perform either unpaired t-test or Mann-Whitney U test
-    if (p_n1 > 0.05 and p_s1 > 0.05 and p_n2 > 0.05 and p_s2 > 0.05):
-        gaussian = True
-        print(title + ': Probably Gaussian.')
-    else:
-        gaussian = False
-        print(title + ': Probably not Gaussian.')
-
-    return gaussian
 
 
 # %% load data for plotting
@@ -80,7 +61,8 @@ for key1 in AR1to1d_fullstim_long:  # keys are the same for all dictionaries so 
                 (AR1to1d_fullstim_long[key1][key2], AR1to1d_halfstim[key1][key2]))
             concatenated_data_singlet[key2] = np.concatenate(
                 (AR1to1s_fullstim_long[key1][key2], AR1to1s_halfstim[key1][key2]))
-
+key1 = "TFM_data"
+key2 = "Es_baseline"
 # get number of elements for both condition
 n_d_fullstim = AR1to1d_fullstim_long[key1][key2].shape[0]
 n_d_halfstim = AR1to1d_halfstim[key1][key2].shape[0]
@@ -186,24 +168,22 @@ extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
 # create mesh for vectorplot    
 xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))
 
-fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3.5, 3))
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3.8, 3.3))
 
 im = axes[0, 0].imshow(T_1to1d_fs_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
                        vmin=pmin, vmax=pmax, aspect='auto')
 axes[0, 0].quiver(xq[::n, ::n], yq[::n, ::n], Tx_1to1d_fs_diff_crop[::n, ::n], Ty_1to1d_fs_diff_crop[::n, ::n],
                   angles='xy', scale=1, units='width', color="r")
-# axes[0,0].set_title('n=1', pad=-400, color='r')
 
 axes[0, 1].imshow(T_1to1d_hs_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
                   vmin=pmin, vmax=pmax, aspect='auto')
 axes[0, 1].quiver(xq[::n, ::n], yq[::n, ::n], Tx_1to1d_hs_diff_crop[::n, ::n], Ty_1to1d_hs_diff_crop[::n, ::n],
                   angles='xy', scale=1, units='width', color="r")
 
-im = axes[1, 0].imshow(T_1to1s_fs_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+axes[1, 0].imshow(T_1to1s_fs_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
                        vmin=pmin, vmax=pmax, aspect='auto')
 axes[1, 0].quiver(xq[::n, ::n], yq[::n, ::n], Tx_1to1s_fs_diff_crop[::n, ::n], Ty_1to1s_fs_diff_crop[::n, ::n],
                   angles='xy', scale=1, units='width', color="r")
-# axes[0,0].set_title('n=1', pad=-400, color='r')
 
 axes[1, 1].imshow(T_1to1s_hs_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
                   vmin=pmin, vmax=pmax, aspect='auto')
@@ -224,32 +204,16 @@ for ax in axes.flat:
 cbar = fig.colorbar(im, ax=axes.ravel().tolist())
 cbar.ax.set_title('kPa')
 
-plt.suptitle('$\mathrm{\Delta}$ Traction forces', y=0.94, x=0.44)
+# add annotations
+plt.suptitle('$\mathrm{\Delta}$ Traction forces', y=0.98, x=0.44)
 
-# make some annotations
-# % start: automatic generated code from pylustrator
-plt.figure(1).ax_dict = {ax.get_label(): ax for ax in plt.figure(1).axes}
+plt.figure(1).text(0.17, 0.89, "global activation")
+plt.figure(1).text(0.49, 0.89, "local activation")
 
-plt.figure(1).texts[0].set_position([0.440000, 0.98])
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[1].new
-plt.figure(1).texts[1].set_position([0.239612, 0.840355])
-plt.figure(1).texts[1].set_text("n=40")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[2].new
-plt.figure(1).texts[2].set_position([0.13, 0.889135])
-plt.figure(1).texts[2].set_text("global activation")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[3].new
-plt.figure(1).texts[3].set_position([0.239612, 0.471175])
-plt.figure(1).texts[3].set_text("n=16")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[4].new
-plt.figure(1).texts[4].set_position([0.455, 0.889135])
-plt.figure(1).texts[4].set_text("local activation")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[5].new
-plt.figure(1).texts[5].set_position([0.553555, 0.840355])
-plt.figure(1).texts[5].set_text("n=28")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[6].new
-plt.figure(1).texts[6].set_position([0.555402, 0.471175])
-plt.figure(1).texts[6].set_text("n=36")
-# % end: automatic generated code from pylustrator
+plt.figure(1).text(0.24, 0.84, "n="+str(n_d_fullstim))
+plt.figure(1).text(0.24, 0.46, "n="+str(n_s_fullstim))
+plt.figure(1).text(0.55, 0.84, "n="+str(n_d_halfstim))
+plt.figure(1).text(0.55, 0.46, "n="+str(n_s_halfstim))
 
 
 # save figure
@@ -262,7 +226,7 @@ plt.show()
 # define plot parameters
 fig = plt.figure(2, figsize=(5, 3))  # figuresize in inches
 gs = gridspec.GridSpec(2, 3)  # sets up subplotgrid rows by columns
-gs.update(wspace=0.5, hspace=0.5)  # adjusts space in between the boxes in the grid
+gs.update(wspace=0.35, hspace=0.35)  # adjusts space in between the boxes in the grid
 linewidth_bp = 0.7  # linewidth of boxplot borders
 width = 0.3  # width of boxplots
 dotsize = 2  # size of datapoints in swarmplot
@@ -473,7 +437,7 @@ fig_ax.set_ylim(ymax=ymax)
 ##############################################################################
 # Generate fifth panel
 ##############################################################################
-colors = [colors_parent[1], colors_parent[1]];  # defines colors
+colors = [colors_parent[1], colors_parent[1]]  # defines colors
 sns.set_palette(sns.color_palette(colors))  # sets colors
 ylabeloffset = -1
 
@@ -487,7 +451,8 @@ test = 'Mann-Whitney'
 
 ymin = -0.2
 ymax = 0.8
-stat_annotation_offset = 0
+yticks = np.arange(-0.2, 0.81, 0.2)
+stat_annotation_offset = 0.1
 
 # the grid spec is rows, then columns
 fig_ax = fig.add_subplot(gs[0, 2])
@@ -501,8 +466,19 @@ sns.swarmplot(x=x, y=y, data=df_doublet, ax=fig_ax, alpha=alpha_sw, linewidth=li
 bp = sns.boxplot(x=x, y=y, data=df_doublet, ax=fig_ax, linewidth=linewidth_bp, notch=True, showfliers=False,
                  width=width)
 
-order = ['AR1to1d_fs', 'AR1to1s_fs']
-add_stat_annotation(bp, data=df_fs, x=x, y=y, order=order, box_pairs=[('AR1to1d_fs', 'AR1to1s_fs')],
+# Define where you want ticks
+plt.yticks(yticks)
+
+# provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in', which='minor', length=3, bottom=False, top=False, left=True, right=True)
+plt.tick_params(direction='in', which='major', length=6, bottom=False, top=False, left=True, right=True)
+
+# set limits
+fig_ax.set_ylim(ymin=ymin)
+fig_ax.set_ylim(ymax=ymax)
+order = ['AR1to1d_fs', 'AR1to1d_hs']
+add_stat_annotation(bp, x=x, y=y, data=df_doublet, order=order, box_pairs=[('AR1to1d_fs', 'AR1to1d_hs')],
                     line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
 
 # make boxplots transparent
@@ -520,36 +496,21 @@ fig_ax.set_ylabel(ylabel=None, labelpad=ylabeloffset)
 # fig_ax.set_title(label='REI', pad=titleoffset)
 fig_ax.set()
 
-# Define where you want ticks
-yticks = np.arange(-0.2, 0.81, 0.2)
-plt.yticks(yticks)
 
-# provide info on tick parameters
-plt.minorticks_on()
-plt.tick_params(direction='in', which='minor', length=3, bottom=False, top=False, left=True, right=True)
-plt.tick_params(direction='in', which='major', length=6, bottom=False, top=False, left=True, right=True)
-
-# set limits
-fig_ax.set_ylim(ymin=ymin)
-fig_ax.set_ylim(ymax=ymax)
 
 ##############################################################################
 # Generate sixth panel
 ##############################################################################
-colors = [colors_parent[2], colors_parent[2]];  # defines colors
+
+colors = [colors_parent[2], colors_parent[2]]  # defines colors
 sns.set_palette(sns.color_palette(colors))  # sets colors
 
-# extract data from dataframe to test if their distribution is gaussian
-data_1to1d = df_hs[df_hs["keys"] == "AR1to1d_hs"]["REI"].to_numpy()
-data_1to1s = df_hs[df_hs["keys"] == "AR1to1s_hs"]["REI"].to_numpy()
-# if test_if_gaussian(data_1to1d,data_1to1s,'REI'):
-#     test = 't-test_ind'
-# else:
 test = 'Mann-Whitney'
 
 ymin = -0.2
 ymax = 0.8
-stat_annotation_offset = 0.5
+yticks = np.arange(-0.2, 0.81, 0.2)
+stat_annotation_offset = 0.3
 
 # the grid spec is rows, then columns
 fig_ax = fig.add_subplot(gs[1, 2])
@@ -563,8 +524,21 @@ sns.swarmplot(x=x, y=y, data=df_singlet, ax=fig_ax, alpha=alpha_sw, linewidth=li
 bp = sns.boxplot(x=x, y=y, data=df_singlet, ax=fig_ax, linewidth=linewidth_bp, notch=True, showfliers=False,
                  width=width)
 
-order = ['AR1to1d_hs', 'AR1to1s_hs']
-add_stat_annotation(bp, data=df_hs, x=x, y=y, order=order, box_pairs=[('AR1to1d_hs', 'AR1to1s_hs')],
+# Define where you want ticks
+plt.yticks(yticks)
+
+# provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in', which='minor', length=3, bottom=False, top=False, left=True, right=True)
+plt.tick_params(direction='in', which='major', length=6, bottom=False, top=False, left=True, right=True)
+
+# set limits
+fig_ax.set_ylim(ymin=ymin)
+fig_ax.set_ylim(ymax=ymax)
+
+# add statistical test
+order = ['AR1to1s_fs', 'AR1to1s_hs']
+add_stat_annotation(bp, x=x, y=y, data=df_singlet, order=order, box_pairs=[('AR1to1s_fs', 'AR1to1s_hs')],
                     line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
 
 # make boxplots transparent
@@ -582,8 +556,488 @@ fig_ax.set_ylabel(ylabel=None, labelpad=ylabeloffset)
 fig_ax.set_title(label=None, pad=titleoffset)
 fig_ax.set()
 
+
+
+# write title for panels 1 to 4
+plt.text(-5.1, 2.55, 'Relative strain energy', fontsize=10)
+# write title for panels 5 to 6
+plt.text(-0.61, 2.4, 'Relative energy \n     increase', fontsize=10)
+# save plot to file
+plt.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
+
+plt.show()
+# %% plot figure 3D, stress map difference halfstim
+
+# prepare data first
+
+# concatenate TFM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
+sigmaxx_1to1d_diff = np.nanmean(
+    AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 33, :] - AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 20, :],
+    axis=2)
+sigmayy_1to1d_diff = np.nanmean(
+    AR1to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 33, :] - AR1to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 20, :],
+    axis=2)
+sigmaxx_1to1s_diff = np.nanmean(
+    AR1to1s_halfstim["MSM_data"]["sigma_xx"][:, :, 33, :] - AR1to1s_halfstim["MSM_data"]["sigma_xx"][:, :, 20, :],
+    axis=2)
+sigmayy_1to1s_diff = np.nanmean(
+    AR1to1s_halfstim["MSM_data"]["sigma_yy"][:, :, 33, :] - AR1to1s_halfstim["MSM_data"]["sigma_yy"][:, :, 20, :],
+    axis=2)
+
+# crop maps
+crop_start = 8
+crop_end = 84
+
+sigmaxx_1to1d_diff_crop = sigmaxx_1to1d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+sigmayy_1to1d_diff_crop = sigmayy_1to1d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3
+sigmaxx_1to1s_diff_crop = sigmaxx_1to1s_diff[crop_start:crop_end, crop_start:crop_end] * 1e3
+sigmayy_1to1s_diff_crop = sigmayy_1to1s_diff[crop_start:crop_end, crop_start:crop_end] * 1e3
+
+# set up plot parameters
+# *****************************************************************************
+
+pixelsize = 0.864  # in µm
+sigma_max = 1  # kPa
+sigma_min = -1  # kPa
+
+# create x- and y-axis for plotting maps
+x_end = np.shape(sigmaxx_1to1d_diff_crop)[1]
+y_end = np.shape(sigmaxx_1to1d_diff_crop)[0]
+extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
+
+# create mesh for vectorplot
+xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))
+
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3.8, 3.3))
+
+im = axes[0, 0].imshow(sigmaxx_1to1d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+                       vmin=sigma_min, vmax=sigma_max, aspect='auto')
+
+axes[0, 1].imshow(sigmayy_1to1d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+                  vmin=sigma_min, vmax=sigma_max, aspect='auto')
+
+axes[1, 0].imshow(sigmaxx_1to1s_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+                  vmin=sigma_min, vmax=sigma_max, aspect='auto')
+
+axes[1, 1].imshow(sigmayy_1to1s_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+                  vmin=sigma_min, vmax=sigma_max, aspect='auto')
+
+# adjust space in between plots
+plt.subplots_adjust(wspace=0.02, hspace=-0.02)
+
+# remove axes
+for ax in axes.flat:
+    ax.axis('off')
+    aspectratio = 1.0
+    ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
+    ax.set_aspect(ratio_default * aspectratio)
+
+# add colorbar
+cbar = fig.colorbar(im, ax=axes.ravel().tolist())
+cbar.ax.set_title('mN/m')
+
+# add title
+plt.suptitle('$\mathrm{\Delta}$ Stresses, local activation', y=0.97, x=0.44)
+
+# plt.suptitle('$\mathrm{\Delta}$ Traction forces', y=0.98, x=0.44)
+
+plt.figure(1).text(0.21, 0.88, "xx-Stress")
+plt.figure(1).text(0.52, 0.88, "yy-Stress")
+
+plt.figure(1).text(0.24, 0.84, "n="+str(n_d_halfstim))
+plt.figure(1).text(0.24, 0.46, "n="+str(n_s_halfstim))
+plt.figure(1).text(0.55, 0.84, "n="+str(n_d_halfstim))
+plt.figure(1).text(0.55, 0.46, "n="+str(n_s_halfstim))
+
+
+# save figure
+fig.savefig(figfolder + 'D.png', dpi=300, bbox_inches="tight")
+plt.show()
+
+# %% plot figure 3E, Relative stress over time halfstim
+
+# define plot parameters
+fig = plt.figure(2, figsize=(5, 3))  # figuresize in inches
+gs = gridspec.GridSpec(2, 3)  # sets up subplotgrid rows by columns
+gs.update(wspace=0.35, hspace=0.35)  # adjusts space in between the boxes in the grid
+linewidth_bp = 0.7  # linewidth of boxplot borders
+width = 0.5  # width of boxplots
+dotsize = 1.5  # size of datapoints in swarmplot
+linewidth_sw = 0.3  # linewidth of boxplot borders
+alpha_sw = 1  # transparency of dots in swarmplot
+alpha_bp = 0.8  # transparency of boxplots
+ylabeloffset = -2  # adjusts distance of ylabel to the plot
+xlabeloffset = 1  # adjusts distance of ylabel to the plot
+titleoffset = 5  # adjusts distance of title to the plot
+optolinewidth = 0.1  # adjusts the linewidth of the annotations that represent the optogenetic activation
+
+##############################################################################
+# Generate first panel
+##############################################################################
+
+ymin = -0.1
+ymax = 0.2
+xticks = np.arange(0, 61, 20)
+yticks = np.arange(-0.1, 0.21, 0.1)
+
+# the grid spec is rows, then columns
+fig_ax = fig.add_subplot(gs[0, 0])
+
+# set plot variables
+x = np.arange(60)
+y = AR1to1d_halfstim["MSM_data"]["sigma_xx_left_noBL"]
+x = x[::2]  # downsample data for nicer plotting
+y = y[::2, :]
+y_mean = np.nanmean(y, axis=1)
+y_std = np.nanstd(y, axis=1)
+y_sem = y_std / np.sqrt(np.shape(y)[1])
+
+# create first plot
+fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[1], marker='o', ms=2, linewidth=0.5, ls='none',
+                markeredgewidth=0.5)
+# set plot variables
+x = np.arange(60)
+y = AR1to1d_halfstim["MSM_data"]["sigma_xx_right_noBL"]
+x = x[::2]  # downsample data for nicer plotting
+y = y[::2, :]
+y_mean = np.nanmean(y, axis=1)
+y_std = np.nanstd(y, axis=1)
+y_sem = y_std / np.sqrt(np.shape(y)[1])
+
+# create second plot
+fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent_dark[1], marker='o', ms=2, linewidth=0.5, ls='none',
+                markeredgewidth=0.5)
+
+# set labels
+fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
+fig_ax.set_ylabel(ylabel='doublet', labelpad=ylabeloffset)
+fig_ax.set_title(label='normalized $\mathrm{E_s}$', pad=titleoffset)
+fig_ax.set_title(label='xx-Stress', pad=titleoffset)
+
+# add anotations for opto pulses
+for i in np.arange(10):
+    plt.axline((20 + i, ymin), (20 + i, ymax), linewidth=optolinewidth, color="cyan")
+
+
+plt.xticks(xticks)
+plt.yticks(yticks)
+
+# provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in', which='minor', length=3, bottom=True, top=False, left=True, right=True)
+plt.tick_params(direction='in', which='major', length=6, bottom=True, top=False, left=True, right=True)
+
+# set limits
+fig_ax.set_ylim(ymin=ymin)
+fig_ax.set_ylim(ymax=ymax)
+
+##############################################################################
+# Generate second panel
+##############################################################################
+
+ymin = -0.1
+ymax = 0.2
+xticks = np.arange(0, 61, 20)
+yticks = np.arange(-0.1, 0.21, 0.1)
+# the grid spec is rows, then columns
+fig_ax = fig.add_subplot(gs[0, 1])
+
+# set plot variables
+x = np.arange(60)
+y = AR1to1d_halfstim["MSM_data"]["sigma_yy_left_noBL"]
+x = x[::2]  # downsample data for nicer plotting
+y = y[::2, :]
+y_mean = np.nanmean(y, axis=1)
+y_std = np.nanstd(y, axis=1)
+y_sem = y_std / np.sqrt(np.shape(y)[1])
+
+# create first plot
+fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[1], marker='o', ms=2, linewidth=0.5, ls='none',
+                markeredgewidth=0.5)
+# set plot variables
+x = np.arange(60)
+y = AR1to1d_halfstim["MSM_data"]["sigma_yy_right_noBL"]
+x = x[::2]  # downsample data for nicer plotting
+y = y[::2, :]
+y_mean = np.nanmean(y, axis=1)
+y_std = np.nanstd(y, axis=1)
+y_sem = y_std / np.sqrt(np.shape(y)[1])
+
+# create second plot
+fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent_dark[1], marker='o', ms=2, linewidth=0.5, ls='none',
+                markeredgewidth=0.5)
+
+# set labels
+fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
+fig_ax.set_title(label='yy-Stress', pad=titleoffset)
+fig_ax.set()
+
+# add anotations for opto pulses
+for i in np.arange(10):
+    plt.axline((20 + i, ymin), (20 + i, ymax), linewidth=optolinewidth, color="cyan")
+
+plt.xticks(xticks)
+plt.yticks(yticks)
+
+# provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in', which='minor', length=3, bottom=True, top=False, left=True, right=True)
+plt.tick_params(direction='in', which='major', length=6, bottom=True, top=False, left=True, right=True)
+
+# set limits
+fig_ax.set_ylim(ymin=ymin)
+fig_ax.set_ylim(ymax=ymax)
+
+##############################################################################
+# Generate third panel
+##############################################################################
+
+ymin = -0.1
+ymax = 0.2
+xticks = np.arange(0, 61, 20)
+yticks = np.arange(-0.1, 0.21, 0.1)
+
+# the grid spec is rows, then columns
+fig_ax = fig.add_subplot(gs[1, 0])
+
+# set plot variables
+x = np.arange(60)
+y = AR1to1s_halfstim["MSM_data"]["sigma_xx_left_noBL"]
+x = x[::2]  # downsample data for nicer plotting
+y = y[::2, :]
+y_mean = np.nanmean(y, axis=1)
+y_std = np.nanstd(y, axis=1)
+y_sem = y_std / np.sqrt(np.shape(y)[1])
+
+# create first plot
+fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[2], marker='o', ms=2, linewidth=0.5, ls='none',
+                markeredgewidth=0.5)
+# set plot variables
+x = np.arange(60)
+y = AR1to1s_halfstim["MSM_data"]["sigma_xx_right_noBL"]
+x = x[::2]  # downsample data for nicer plotting
+y = y[::2, :]
+y_mean = np.nanmean(y, axis=1)
+y_std = np.nanstd(y, axis=1)
+y_sem = y_std / np.sqrt(np.shape(y)[1])
+
+# create second plot
+fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent_dark[2], marker='o', ms=2, linewidth=0.5, ls='none',
+                markeredgewidth=0.5)
+
+# set labels
+fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
+fig_ax.set_ylabel(ylabel='singlet', labelpad=ylabeloffset)
+
+fig_ax.set()
+
+# add anotations for opto pulses
+for i in np.arange(10):
+    plt.axline((20 + i, ymin), (20 + i, ymax), linewidth=optolinewidth, color="cyan")
+
+plt.xticks(xticks)
+plt.yticks(yticks)
+
+# provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in', which='minor', length=3, bottom=True, top=False, left=True, right=True)
+plt.tick_params(direction='in', which='major', length=6, bottom=True, top=False, left=True, right=True)
+
+# set limits
+fig_ax.set_ylim(ymin=ymin)
+fig_ax.set_ylim(ymax=ymax)
+
+##############################################################################
+# Generate fourth panel
+##############################################################################
+
+ymin = -0.1
+ymax = 0.2
+xticks = np.arange(0, 61, 20)
+yticks = np.arange(-0.1, 0.21, 0.1)
+
+# the grid spec is rows, then columns
+fig_ax = fig.add_subplot(gs[1, 1])
+
+# set plot variables
+x = np.arange(60)
+y = AR1to1s_halfstim["MSM_data"]["sigma_yy_left_noBL"]
+x = x[::2]  # downsample data for nicer plotting
+y = y[::2, :]
+y_mean = np.nanmean(y, axis=1)
+y_std = np.nanstd(y, axis=1)
+y_sem = y_std / np.sqrt(np.shape(y)[1])
+
+# create first plot
+fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[2], marker='o', ms=2, linewidth=0.5, ls='none',
+                markeredgewidth=0.5)
+# set plot variables
+x = np.arange(60)
+y = AR1to1s_halfstim["MSM_data"]["sigma_yy_right_noBL"]
+x = x[::2]  # downsample data for nicer plotting
+y = y[::2, :]
+y_mean = np.nanmean(y, axis=1)
+y_std = np.nanstd(y, axis=1)
+y_sem = y_std / np.sqrt(np.shape(y)[1])
+
+# create second plot
+fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent_dark[2], marker='o', ms=2, linewidth=0.5, ls='none',
+                markeredgewidth=0.5)
+
+# set labels
+fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
+fig_ax.set()
+
+# add anotations for opto pulses
+for i in np.arange(10):
+    plt.axline((20 + i, ymin), (20 + i, ymax), linewidth=optolinewidth, color="cyan")
+
+
+plt.xticks(xticks)
+plt.yticks(yticks)
+
+# provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in', which='minor', length=3, bottom=True, top=False, left=True, right=True)
+plt.tick_params(direction='in', which='major', length=6, bottom=True, top=False, left=True, right=True)
+
+# set limits
+fig_ax.set_ylim(ymin=ymin)
+fig_ax.set_ylim(ymax=ymax)
+
+##############################################################################
+# Generate fifth panel
+##############################################################################
+colors = [colors_parent[1], colors_parent_dark[1], colors_parent[1], colors_parent_dark[1]]  # defines colors
+sns.set_palette(sns.color_palette(colors))  # sets colors
+ylabeloffset = -1
+
+test = 'Mann-Whitney'
+
+ymin = -0.2
+ymax = 0.4
+yticks = np.arange(-0.2, 0.41, 0.1)
+stat_annotation_offset = 0
+
+# the grid spec is rows, then columns
+fig_ax = fig.add_subplot(gs[0, 2])
+
+# a little weird way to get the dataframe format I need for seaborn boxplots...
+df1 = pd.DataFrame(df_d_hs['RSI_xx_left'])
+df2 = pd.DataFrame(df_d_hs['RSI_xx_right'])
+df3 = pd.DataFrame(df_d_hs['RSI_yy_left'])
+df4 = pd.DataFrame(df_d_hs['RSI_yy_right'])
+
+df1 = df1.transpose().reset_index(drop=True).transpose()
+df2 = df2.transpose().reset_index(drop=True).transpose()
+df3 = df3.transpose().reset_index(drop=True).transpose()
+df4 = df4.transpose().reset_index(drop=True).transpose()
+
+df_plot = pd.concat([df1, df2, df3, df4], axis=0)
+
+df_plot.rename(columns={0: 'sigma'}, inplace=True)
+
+keys_sx_l = ['sigma_xx_left' for i in range(n_d_halfstim)]
+keys_sx_r = ['sigma_xx_right' for i in range(n_d_halfstim)]
+keys_sy_l = ['sigma_yy_left' for i in range(n_d_halfstim)]
+keys_sy_r = ['sigma_yy_right' for i in range(n_d_halfstim)]
+keys = np.concatenate((keys_sx_l, keys_sx_r, keys_sy_l, keys_sy_r))
+df_plot['keys'] = keys
+
+# create box- and swarmplots
+sns.swarmplot(x='keys', y='sigma', data=df_plot, ax=fig_ax, alpha=alpha_sw, linewidth=linewidth_sw, zorder=0,
+              size=dotsize)
+bp = sns.boxplot(x='keys', y='sigma', data=df_plot, ax=fig_ax, linewidth=linewidth_bp, notch=True, showfliers=False,
+                 width=width)
+
+
+# make boxplots transparent
+for patch in bp.artists:
+    r, g, b, a = patch.get_facecolor()
+    patch.set_facecolor((r, g, b, alpha_bp))
+
+plt.setp(bp.artists, edgecolor='k')
+plt.setp(bp.lines, color='k')
+
+# set labels
+fig_ax.set_xticklabels(['left \n         $\mathrm{\sigma _ {xx}}$', 'right', 'left \n         $\mathrm{\sigma _ {yy}}$', 'right'])
+fig_ax.set_xlabel(xlabel=None)
+fig_ax.set_ylabel(ylabel=None, labelpad=ylabeloffset)
+# fig_ax.set_title(label='REI', pad=titleoffset)
+fig_ax.set()
+
 # Define where you want ticks
-yticks = np.arange(-0.2, 0.81, 0.2)
+plt.yticks(yticks)
+
+# provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in', which='minor', length=3, bottom=False, top=False, left=True, right=True)
+plt.tick_params(direction='in', which='major', length=6, bottom=False, top=False, left=True, right=True)
+
+# set limits
+fig_ax.set_ylim(ymin=ymin)
+fig_ax.set_ylim(ymax=ymax)
+
+##############################################################################
+# Generate sixth panel
+##############################################################################
+colors = [colors_parent[2], colors_parent_dark[2], colors_parent[2], colors_parent_dark[2]]  # defines colors
+sns.set_palette(sns.color_palette(colors))  # sets colors
+
+test = 'Mann-Whitney'
+
+ymin = -0.2
+ymax = 0.4
+yticks = np.arange(-0.2, 0.41, 0.1)
+stat_annotation_offset = 0.5
+
+# the grid spec is rows, then columns
+fig_ax = fig.add_subplot(gs[1, 2])
+
+# a little weird way to get the dataframe format I need for seaborn boxplots...
+df1 = pd.DataFrame(df_s_hs['RSI_xx_left'])
+df2 = pd.DataFrame(df_s_hs['RSI_xx_right'])
+df3 = pd.DataFrame(df_s_hs['RSI_yy_left'])
+df4 = pd.DataFrame(df_s_hs['RSI_yy_right'])
+
+df1 = df1.transpose().reset_index(drop=True).transpose()
+df2 = df2.transpose().reset_index(drop=True).transpose()
+df3 = df3.transpose().reset_index(drop=True).transpose()
+df4 = df4.transpose().reset_index(drop=True).transpose()
+
+df_plot = pd.concat([df1, df2, df3, df4], axis=0)
+
+df_plot.rename(columns={0: 'sigma'}, inplace=True)
+
+keys_sx_l = ['sigma_xx_left' for i in range(n_s_halfstim)]
+keys_sx_r = ['sigma_xx_right' for i in range(n_s_halfstim)]
+keys_sy_l = ['sigma_yy_left' for i in range(n_s_halfstim)]
+keys_sy_r = ['sigma_yy_right' for i in range(n_s_halfstim)]
+keys = np.concatenate((keys_sx_l, keys_sx_r, keys_sy_l, keys_sy_r))
+df_plot['keys'] = keys
+
+# create box- and swarmplots
+sns.swarmplot(x='keys', y='sigma', data=df_plot, ax=fig_ax, alpha=alpha_sw, linewidth=linewidth_sw, zorder=0,
+              size=dotsize)
+bp = sns.boxplot(x='keys', y='sigma', data=df_plot, ax=fig_ax, linewidth=linewidth_bp, notch=True, showfliers=False,
+                 width=width)
+
+# make boxplots transparent
+for patch in bp.artists:
+    r, g, b, a = patch.get_facecolor()
+    patch.set_facecolor((r, g, b, alpha_bp))
+
+plt.setp(bp.artists, edgecolor='k')
+plt.setp(bp.lines, color='k')
+
+# set labels
+fig_ax.set_xticklabels(['left \n         $\mathrm{\sigma _ {xx}}$', 'right', 'left \n         $\mathrm{\sigma _ {yy}}$', 'right'])
+fig_ax.set_xlabel(xlabel=None)
+fig_ax.set_ylabel(ylabel=None, labelpad=ylabeloffset)
+fig_ax.set_title(label=None, pad=titleoffset)
+fig_ax.set()
+
+# Define where you want ticks
 plt.yticks(yticks)
 
 # provide info on tick parameters
@@ -596,15 +1050,311 @@ fig_ax.set_ylim(ymin=ymin)
 fig_ax.set_ylim(ymax=ymax)
 
 # write title for panels 1 to 4
-plt.text(-5.7, 2.575947, 'Relative strain energy', fontsize=10)
+plt.text(-9, 1.35, 'Relative stresses', fontsize=10)
 # write title for panels 5 to 6
-plt.text(-0.662416, 2.400220, 'Relative energy \n     increase', fontsize=10)
+plt.text(-0.65, 1.25, 'Relative stress \n     increase', fontsize=10)
+
 # save plot to file
-plt.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")
 
 plt.show()
 
-# %% plot figure 3D, stress map difference fullstim
+# %% plot figure S3A, actin intensity over time
+
+# define plot parameters
+fig = plt.figure(2, figsize=(3, 3))  # figuresize in inches
+gs = gridspec.GridSpec(2, 2)  # sets up subplotgrid rows by columns
+gs.update(wspace=0.5, hspace=0.5)  # adjusts space in between the boxes in the grid
+linewidth_bp = 0.7  # linewidth of boxplot borders
+width = 0.5  # width of boxplots
+dotsize = 1.5  # size of datapoints in swarmplot
+linewidth_sw = 0.3  # linewidth of boxplot borders
+alpha_sw = 1  # transparency of dots in swarmplot
+alpha_bp = 0.8  # transparency of boxplots
+ylabeloffset = 1  # adjusts distance of ylabel to the plot
+xlabeloffset = 1  # adjusts distance of ylabel to the plot
+titleoffset = 5  # adjusts distance of title to the plot
+optolinewidth = 0.1  # adjusts the linewidth of the annotations that represent the optogenetic activation
+##############################################################################
+# Generate first panel
+##############################################################################
+
+ymin = 0.95
+ymax = 1.05
+xticks = np.arange(0, 61, 20)
+yticks = np.arange(0.95, 1.051, 0.05)
+
+# the grid spec is rows, then columns
+fig_ax = fig.add_subplot(gs[0, 0])
+
+# set plot variables
+x = np.arange(60)
+y = AR1to1d_halfstim["shape_data"]["relactin_intensity_left"]
+x = x[::2]  # downsample data for nicer plotting
+y = y[::2, :]
+y_mean = np.nanmean(y, axis=1)
+y_std = np.nanstd(y, axis=1)
+y_sem = y_std / np.sqrt(np.shape(y)[1])
+
+# create first plot
+fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[1], marker='o', ms=2, linewidth=0.5, ls='none',
+                markeredgewidth=0.5)
+# set plot variables
+x = np.arange(60)
+y = AR1to1d_halfstim["shape_data"]["relactin_intensity_right"]
+x = x[::2]  # downsample data for nicer plotting
+y = y[::2, :]
+y_mean = np.nanmean(y, axis=1)
+y_std = np.nanstd(y, axis=1)
+y_sem = y_std / np.sqrt(np.shape(y)[1])
+
+# create second plot
+fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent_dark[1], marker='o', ms=2, linewidth=0.5, ls='none',
+                markeredgewidth=0.5)
+
+# set labels
+fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
+fig_ax.set_ylabel(ylabel='doublet', labelpad=ylabeloffset)
+fig_ax.set_title(label='relative actin intensity', pad=titleoffset)
+# fig_ax.set_title(label='xx-Stress', pad=titleoffset)
+
+# add anotations for opto pulses
+for i in np.arange(10):
+    plt.axline((20 + i, ymin), (20 + i, ymax), linewidth=optolinewidth, color="cyan")
+
+
+plt.xticks(xticks)
+plt.yticks(yticks)
+
+# provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in', which='minor', length=3, bottom=True, top=False, left=True, right=True)
+plt.tick_params(direction='in', which='major', length=6, bottom=True, top=False, left=True, right=True)
+
+# set limits
+fig_ax.set_ylim(ymin=ymin)
+fig_ax.set_ylim(ymax=ymax)
+
+##############################################################################
+# Generate second panel
+##############################################################################
+
+ymin = 0.95
+ymax = 1.05
+xticks = np.arange(0, 61, 20)
+yticks = np.arange(0.95, 1.051, 0.05)
+
+# the grid spec is rows, then columns
+fig_ax = fig.add_subplot(gs[1, 0])
+
+# set plot variables
+x = np.arange(60)
+y = AR1to1s_halfstim["shape_data"]["relactin_intensity_left"]
+x = x[::2]  # downsample data for nicer plotting
+y = y[::2, :]
+y_mean = np.nanmean(y, axis=1)
+y_std = np.nanstd(y, axis=1)
+y_sem = y_std / np.sqrt(np.shape(y)[1])
+
+# create first plot
+fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[2], marker='o', ms=2, linewidth=0.5, ls='none',
+                markeredgewidth=0.5)
+# set plot variables
+x = np.arange(60)
+y = AR1to1s_halfstim["shape_data"]["relactin_intensity_right"]
+x = x[::2]  # downsample data for nicer plotting
+y = y[::2, :]
+y_mean = np.nanmean(y, axis=1)
+y_std = np.nanstd(y, axis=1)
+y_sem = y_std / np.sqrt(np.shape(y)[1])
+
+# create second plot
+fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent_dark[2], marker='o', ms=2, linewidth=0.5, ls='none',
+                markeredgewidth=0.5)
+
+# set labels
+fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
+fig_ax.set_ylabel(ylabel='singlet', labelpad=ylabeloffset)
+# fig_ax.set_title(label='relative $\mathrm{E_s}$', pad=titleoffset)
+fig_ax.set()
+
+# add anotations for opto pulses
+for i in np.arange(10):
+    plt.axline((20 + i, ymin), (20 + i, ymax), linewidth=optolinewidth, color="cyan")
+
+plt.xticks(xticks)
+plt.yticks(yticks)
+
+# provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in', which='minor', length=3, bottom=True, top=False, left=True, right=True)
+plt.tick_params(direction='in', which='major', length=6, bottom=True, top=False, left=True, right=True)
+
+# set limits
+fig_ax.set_ylim(ymin=ymin)
+fig_ax.set_ylim(ymax=ymax)
+
+
+##############################################################################
+# Generate third panel
+##############################################################################
+colors = [colors_parent[1], colors_parent_dark[1], colors_parent[1], colors_parent_dark[1]]  # defines colors
+sns.set_palette(sns.color_palette(colors))  # sets colors
+
+# extract data from dataframe to test if their distribution is gaussian
+# data_1to1d = df_hs[df_hs["keys"]=="AR1to1d_hs"]["REI"].to_numpy()
+# data_1to1s = df_hs[df_hs["keys"]=="AR1to1s_hs"]["REI"].to_numpy()
+# if test_if_gaussian(data_1to1d,data_1to1s,'REI'):
+#     test = 't-test_ind'
+# else:
+test = 'Mann-Whitney'
+
+ymin = -0.2
+ymax = 0.2
+yticks = np.arange(-0.2, 0.21, 0.1)
+stat_annotation_offset = 0.2
+
+# the grid spec is rows, then columns
+fig_ax = fig.add_subplot(gs[0, 1])
+
+# a little weird way to get the dataframe format I need for seaborn boxplots...
+df1 = pd.DataFrame(df_d_hs['RAI_left'])
+df2 = pd.DataFrame(df_d_hs['RAI_right'])
+
+df1 = df1.transpose().reset_index(drop=True).transpose()
+df2 = df2.transpose().reset_index(drop=True).transpose()
+
+df_plot = pd.concat([df1, df2], axis=0)
+
+df_plot.rename(columns={0: 'RAI'}, inplace=True)
+
+keys_l = ['RAI_left' for i in range(n_d_halfstim)]
+keys_r = ['RAI_right' for i in range(n_d_halfstim)]
+
+keys = np.concatenate((keys_l, keys_r))
+df_plot['keys'] = keys
+
+# create box- and swarmplots
+sns.swarmplot(x='keys', y='RAI', data=df_plot, ax=fig_ax, alpha=alpha_sw, linewidth=linewidth_sw, zorder=0,
+              size=dotsize)
+bp = sns.boxplot(x='keys', y='RAI', data=df_plot, ax=fig_ax, linewidth=linewidth_bp, notch=True, showfliers=False,
+                 width=width)
+
+# Define where you want ticks
+plt.yticks(yticks)
+
+# provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in', which='minor', length=3, bottom=False, top=False, left=True, right=True)
+plt.tick_params(direction='in', which='major', length=6, bottom=False, top=False, left=True, right=True)
+
+# set limits
+fig_ax.set_ylim(ymin=ymin)
+fig_ax.set_ylim(ymax=ymax)
+
+order = ['RAI_left', 'RAI_right']
+add_stat_annotation(bp, data=df_plot, x='keys', y='RAI', order=order, box_pairs=[('RAI_left', 'RAI_right')],
+                    line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
+
+# make boxplots transparent
+for patch in bp.artists:
+    r, g, b, a = patch.get_facecolor()
+    patch.set_facecolor((r, g, b, alpha_bp))
+
+plt.setp(bp.artists, edgecolor='k')
+plt.setp(bp.lines, color='k')
+
+# set labels
+fig_ax.set_xticklabels(['1', '2'])
+fig_ax.set_xlabel(xlabel=None)
+fig_ax.set_ylabel(ylabel=None, labelpad=ylabeloffset)
+fig_ax.set_title(label=None, pad=titleoffset)
+fig_ax.set()
+
+
+##############################################################################
+# Generate fourth panel
+##############################################################################
+colors = [colors_parent[2], colors_parent_dark[2], colors_parent[2], colors_parent_dark[2]]  # defines colors
+sns.set_palette(sns.color_palette(colors))  # sets colors
+
+
+test = 'Mann-Whitney'
+
+ymin = -0.2
+ymax = 0.2
+yticks = np.arange(-0.2, 0.21, 0.1)
+stat_annotation_offset = 0.09
+
+# the grid spec is rows, then columns
+fig_ax = fig.add_subplot(gs[1, 1])
+
+# a little weird way to get the dataframe format I need for seaborn boxplots...
+df1 = pd.DataFrame(df_s_hs['RAI_left'])
+df2 = pd.DataFrame(df_s_hs['RAI_right'])
+
+df1 = df1.transpose().reset_index(drop=True).transpose()
+df2 = df2.transpose().reset_index(drop=True).transpose()
+
+df_plot = pd.concat([df1, df2], axis=0)
+
+df_plot.rename(columns={0: 'RAI'}, inplace=True)
+
+keys_l = ['RAI_left' for i in range(n_s_halfstim)]
+keys_r = ['RAI_right' for i in range(n_s_halfstim)]
+
+keys = np.concatenate((keys_l, keys_r))
+df_plot['keys'] = keys
+
+# create box- and swarmplots
+sns.swarmplot(x='keys', y='RAI', data=df_plot, ax=fig_ax, alpha=alpha_sw, linewidth=linewidth_sw, zorder=0,
+              size=dotsize)
+bp = sns.boxplot(x='keys', y='RAI', data=df_plot, ax=fig_ax, linewidth=linewidth_bp, notch=True, showfliers=False,
+                 width=width)
+
+# Define where you want ticks
+plt.yticks(yticks)
+
+# provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in', which='minor', length=3, bottom=False, top=False, left=True, right=True)
+plt.tick_params(direction='in', which='major', length=6, bottom=False, top=False, left=True, right=True)
+
+# set limits
+fig_ax.set_ylim(ymin=ymin)
+fig_ax.set_ylim(ymax=ymax)
+
+order = ['RAI_left', 'RAI_right']
+add_stat_annotation(bp, data=df_plot, x='keys', y='RAI', order=order, box_pairs=[('RAI_left', 'RAI_right')],
+                    line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
+
+# make boxplots transparent
+for patch in bp.artists:
+    r, g, b, a = patch.get_facecolor()
+    patch.set_facecolor((r, g, b, alpha_bp))
+
+plt.setp(bp.artists, edgecolor='k')
+plt.setp(bp.lines, color='k')
+
+# set labels
+fig_ax.set_xticklabels(['1', '2'])
+fig_ax.set_xlabel(xlabel=None)
+fig_ax.set_ylabel(ylabel=None, labelpad=ylabeloffset)
+fig_ax.set_title(label=None, pad=titleoffset)
+fig_ax.set()
+
+
+
+# write title for panels 1 to 4
+# plt.text(-5.7, 2.575947, 'Relative strain energy', fontsize=10)
+# write title for panels 5 to 6
+# plt.text(-0.662416, 2.400220, 'Relative energy \n     increase', fontsize=10)
+# save plot to file
+plt.savefig(figfolder + 'SA.png', dpi=300, bbox_inches="tight")
+
+plt.show()
+
+# %% plot figure S3B, stress map difference fullstim
 
 # prepare data first
 
@@ -646,7 +1396,7 @@ extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
 # create mesh for vectorplot    
 xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))
 
-fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3.5, 3))
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3.8, 3.3))
 
 im = axes[0, 0].imshow(sigmaxx_1to1d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
                        vmin=sigma_min, vmax=sigma_max, aspect='auto')
@@ -675,44 +1425,27 @@ cbar = fig.colorbar(im, ax=axes.ravel().tolist())
 cbar.ax.set_title('mN/m')
 
 # add title
-plt.suptitle('$\mathrm{\Delta}$ Stresses, global activation', y=0.94, x=0.44)
+plt.suptitle('$\mathrm{\Delta}$ Stresses, global activation', y=0.97, x=0.44)
 
-# make some annotations
-# % start: automatic generated code from pylustrator
-plt.figure(1).ax_dict = {ax.get_label(): ax for ax in plt.figure(1).axes}
+plt.figure(1).text(0.21, 0.88, "xx-Stress")
+plt.figure(1).text(0.52, 0.88, "yy-Stress")
 
-plt.figure(1).texts[0].set_position([0.440000, 0.98])
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[1].new
-plt.figure(1).texts[1].set_position([0.239612, 0.840355])
-plt.figure(1).texts[1].set_text("n=40")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[2].new
-plt.figure(1).texts[2].set_position([0.2, 0.889135])
-plt.figure(1).texts[2].set_text("xx-Stress")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[3].new
-plt.figure(1).texts[3].set_position([0.239612, 0.471175])
-plt.figure(1).texts[3].set_text("n=16")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[4].new
-plt.figure(1).texts[4].set_position([0.5, 0.889135])
-plt.figure(1).texts[4].set_text("yy-Stress")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[5].new
-plt.figure(1).texts[5].set_position([0.553555, 0.840355])
-plt.figure(1).texts[5].set_text("n=28")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[6].new
-plt.figure(1).texts[6].set_position([0.555402, 0.471175])
-plt.figure(1).texts[6].set_text("n=36")
-# % end: automatic generated code from pylustrator
+plt.figure(1).text(0.24, 0.84, "n="+str(n_d_fullstim))
+plt.figure(1).text(0.24, 0.46, "n="+str(n_s_fullstim))
+plt.figure(1).text(0.55, 0.84, "n="+str(n_d_fullstim))
+plt.figure(1).text(0.55, 0.46, "n="+str(n_s_fullstim))
 
 
 # save figure
-fig.savefig(figfolder + 'D.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'SB.png', dpi=300, bbox_inches="tight")
 plt.show()
 
-# %% plot figure 3E, Relative stress over time fullstim
+# %% plot figure S3C, Relative stress over time fullstim
 
 # define plot parameters
 fig = plt.figure(2, figsize=(5, 3))  # figuresize in inches
 gs = gridspec.GridSpec(2, 3)  # sets up subplotgrid rows by columns
-gs.update(wspace=0.5, hspace=0.5)  # adjusts space in between the boxes in the grid
+gs.update(wspace=0.35, hspace=0.35)  # adjusts space in between the boxes in the grid
 linewidth_bp = 0.7  # linewidth of boxplot borders
 width = 0.3  # width of boxplots
 dotsize = 2  # size of datapoints in swarmplot
@@ -735,7 +1468,7 @@ fig_ax = fig.add_subplot(gs[0, 0])
 
 # set plot variables
 x = np.arange(60)
-y = AR1to1d_fullstim_long["MSM_data"]["relsigma_xx_average"]
+y = AR1to1d_fullstim_long["MSM_data"]["relsigma_xx"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -784,7 +1517,7 @@ fig_ax = fig.add_subplot(gs[0, 1])
 
 # set plot variables
 x = np.arange(60)
-y = AR1to1d_fullstim_long["MSM_data"]["relsigma_yy_average"]
+y = AR1to1d_fullstim_long["MSM_data"]["relsigma_yy"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -834,7 +1567,7 @@ fig_ax = fig.add_subplot(gs[1, 0])
 
 # set plot variables
 x = np.arange(60)
-y = AR1to1s_fullstim_long["MSM_data"]["relsigma_xx_average"]
+y = AR1to1s_fullstim_long["MSM_data"]["relsigma_xx"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -883,7 +1616,7 @@ fig_ax = fig.add_subplot(gs[1, 1])
 
 # set plot variables
 x = np.arange(60)
-y = AR1to1s_fullstim_long["MSM_data"]["relsigma_yy_average"]
+y = AR1to1s_fullstim_long["MSM_data"]["relsigma_yy"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -923,7 +1656,7 @@ fig_ax.set_ylim(ymax=ymax)
 ##############################################################################
 # Generate fifth panel
 ##############################################################################
-colors = [colors_parent[1], colors_parent[1]];  # defines colors
+colors = [colors_parent[1], colors_parent[1]]  # defines colors
 sns.set_palette(sns.color_palette(colors))  # sets colors
 ylabeloffset = -1
 
@@ -998,7 +1731,7 @@ fig_ax.set_ylim(ymax=ymax)
 ##############################################################################
 # Generate sixth panel
 ##############################################################################
-colors = [colors_parent[2], colors_parent[2]];  # defines colors
+colors = [colors_parent[2], colors_parent[2]]  # defines colors
 sns.set_palette(sns.color_palette(colors))  # sets colors
 
 # extract data from dataframe to test if their distribution is gaussian
@@ -1070,1226 +1803,10 @@ fig_ax.set_ylim(ymin=ymin)
 fig_ax.set_ylim(ymax=ymax)
 
 # write title for panels 1 to 4
-plt.text(-5.7, 2.575947, 'Relative strain energy', fontsize=10)
+plt.text(-4.6, 1.82, 'Relative stresses', fontsize=10)
 # write title for panels 5 to 6
-plt.text(-0.662416, 2.400220, 'Relative energy \n     increase', fontsize=10)
+plt.text(-0.5, 1.7, 'Relative stress \n     increase', fontsize=10)
 # save plot to file
-plt.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'SC.png', dpi=300, bbox_inches="tight")
 
 plt.show()
-# %% plot figure 3F, stress map difference halfstim
-
-# prepare data first
-
-# concatenate TFM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
-sigmaxx_1to1d_diff = np.nanmean(
-    AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 33, :] - AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 20, :],
-    axis=2)
-sigmayy_1to1d_diff = np.nanmean(
-    AR1to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 33, :] - AR1to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 20, :],
-    axis=2)
-sigmaxx_1to1s_diff = np.nanmean(
-    AR1to1s_halfstim["MSM_data"]["sigma_xx"][:, :, 33, :] - AR1to1s_halfstim["MSM_data"]["sigma_xx"][:, :, 20, :],
-    axis=2)
-sigmayy_1to1s_diff = np.nanmean(
-    AR1to1s_halfstim["MSM_data"]["sigma_yy"][:, :, 33, :] - AR1to1s_halfstim["MSM_data"]["sigma_yy"][:, :, 20, :],
-    axis=2)
-
-# crop maps
-crop_start = 8
-crop_end = 84
-
-sigmaxx_1to1d_diff_crop = sigmaxx_1to1d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
-sigmayy_1to1d_diff_crop = sigmayy_1to1d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3
-sigmaxx_1to1s_diff_crop = sigmaxx_1to1s_diff[crop_start:crop_end, crop_start:crop_end] * 1e3
-sigmayy_1to1s_diff_crop = sigmayy_1to1s_diff[crop_start:crop_end, crop_start:crop_end] * 1e3
-
-# set up plot parameters
-# *****************************************************************************
-
-pixelsize = 0.864  # in µm
-sigma_max = 1  # kPa
-sigma_min = -1  # kPa
-
-# create x- and y-axis for plotting maps 
-x_end = np.shape(sigmaxx_1to1d_diff_crop)[1]
-y_end = np.shape(sigmaxx_1to1d_diff_crop)[0]
-extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
-
-# create mesh for vectorplot    
-xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))
-
-fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3.5, 3))
-
-im = axes[0, 0].imshow(sigmaxx_1to1d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
-                       vmin=sigma_min, vmax=sigma_max, aspect='auto')
-
-axes[0, 1].imshow(sigmayy_1to1d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
-                  vmin=sigma_min, vmax=sigma_max, aspect='auto')
-
-axes[1, 0].imshow(sigmaxx_1to1s_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
-                  vmin=sigma_min, vmax=sigma_max, aspect='auto')
-
-axes[1, 1].imshow(sigmayy_1to1s_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
-                  vmin=sigma_min, vmax=sigma_max, aspect='auto')
-
-# adjust space in between plots
-plt.subplots_adjust(wspace=0.02, hspace=-0.02)
-
-# axes[0,0].set_xlabel("lol")
-# # add annotations
-plt.text(-50, 120, 'sigmaxx', color='k')
-plt.text(20, 120, 'sigmayy', color='k')
-# plt.text(-40.5,119,'n=1',color = 'white')
-# plt.text(23,55.5,'n=101',color = 'white')
-# plt.text(23.5,119,'n=66',color = 'white')
-
-# remove axes
-for ax in axes.flat:
-    ax.axis('off')
-    aspectratio = 1.0
-    ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
-    ax.set_aspect(ratio_default * aspectratio)
-
-# add colorbar
-cbar = fig.colorbar(im, ax=axes.ravel().tolist())
-cbar.ax.set_title('mN/m')
-
-# add title
-plt.suptitle('$\mathrm{\Delta}$ Stresses, local activation', y=0.94, x=0.44)
-
-# make some annotations
-# % start: automatic generated code from pylustrator
-plt.figure(1).ax_dict = {ax.get_label(): ax for ax in plt.figure(1).axes}
-
-plt.figure(1).texts[0].set_position([0.440000, 0.98])
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[1].new
-plt.figure(1).texts[1].set_position([0.239612, 0.840355])
-plt.figure(1).texts[1].set_text("n=40")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[2].new
-plt.figure(1).texts[2].set_position([0.2, 0.889135])
-plt.figure(1).texts[2].set_text("xx-Stress")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[3].new
-plt.figure(1).texts[3].set_position([0.239612, 0.471175])
-plt.figure(1).texts[3].set_text("n=16")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[4].new
-plt.figure(1).texts[4].set_position([0.5, 0.889135])
-plt.figure(1).texts[4].set_text("yy-Stress")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[5].new
-plt.figure(1).texts[5].set_position([0.553555, 0.840355])
-plt.figure(1).texts[5].set_text("n=28")
-plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[6].new
-plt.figure(1).texts[6].set_position([0.555402, 0.471175])
-plt.figure(1).texts[6].set_text("n=36")
-# % end: automatic generated code from pylustrator
-
-# save figure
-fig.savefig(figfolder + 'F.png', dpi=300, bbox_inches="tight")
-plt.close()
-
-# %% plot figure 3G, Relative stress over time halfstim
-
-# define plot parameters
-fig = plt.figure(2, figsize=(5, 3))  # figuresize in inches
-gs = gridspec.GridSpec(2, 3)  # sets up subplotgrid rows by columns
-gs.update(wspace=0.5, hspace=0.5)  # adjusts space in between the boxes in the grid
-linewidth_bp = 0.7  # linewidth of boxplot borders
-width = 0.3  # width of boxplots
-dotsize = 2  # size of datapoints in swarmplot
-linewidth_sw = 0.3  # linewidth of boxplot borders
-alpha_sw = 1  # transparency of dots in swarmplot
-alpha_bp = 0.8  # transparency of boxplots
-ylabeloffset = 1  # adjusts distance of ylabel to the plot
-xlabeloffset = 1  # adjusts distance of ylabel to the plot
-titleoffset = 5  # adjusts distance of title to the plot
-optolinewidth = 0.1  # adjusts the linewidth of the annotations that represent the optogenetic activation
-##############################################################################
-# Generate first panel
-##############################################################################
-
-ymin = 0.9
-ymax = 1.3
-
-# the grid spec is rows, then columns
-fig_ax = fig.add_subplot(gs[0, 0])
-
-# set plot variables
-x = np.arange(60)
-y = AR1to1d_halfstim["MSM_data"]["relsigma_xx_lefthalf_average"]
-x = x[::2]  # downsample data for nicer plotting
-y = y[::2, :]
-y_mean = np.nanmean(y, axis=1)
-y_std = np.nanstd(y, axis=1)
-y_sem = y_std / np.sqrt(np.shape(y)[1])
-
-# create first plot
-fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[1], marker='o', ms=2, linewidth=0.5, ls='none',
-                markeredgewidth=0.5)
-# set plot variables
-x = np.arange(60)
-y = AR1to1d_halfstim["MSM_data"]["relsigma_xx_righthalf_average"]
-x = x[::2]  # downsample data for nicer plotting
-y = y[::2, :]
-y_mean = np.nanmean(y, axis=1)
-y_std = np.nanstd(y, axis=1)
-y_sem = y_std / np.sqrt(np.shape(y)[1])
-
-# create second plot
-fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent_dark[1], marker='o', ms=2, linewidth=0.5, ls='none',
-                markeredgewidth=0.5)
-
-# set labels
-fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
-fig_ax.set_ylabel(ylabel='doublet', labelpad=ylabeloffset)
-fig_ax.set_title(label='relative $\mathrm{E_s}$', pad=titleoffset)
-fig_ax.set_title(label='xx-Stress', pad=titleoffset)
-
-# add anotations for opto pulses
-for i in np.arange(10):
-    plt.axline((20 + i, ymin), (20 + i, ymax), linewidth=optolinewidth, color="cyan")
-
-# Define where you want ticks
-xticks = np.arange(0, 61, 20)
-yticks = np.arange(0.9, 1.31, 0.1)
-
-plt.xticks(xticks)
-plt.yticks(yticks)
-
-# provide info on tick parameters
-plt.minorticks_on()
-plt.tick_params(direction='in', which='minor', length=3, bottom=True, top=False, left=True, right=True)
-plt.tick_params(direction='in', which='major', length=6, bottom=True, top=False, left=True, right=True)
-
-# set limits
-fig_ax.set_ylim(ymin=ymin)
-fig_ax.set_ylim(ymax=ymax)
-
-##############################################################################
-# Generate second panel
-##############################################################################
-
-ymin = 0.9
-ymax = 1.3
-
-# the grid spec is rows, then columns
-fig_ax = fig.add_subplot(gs[0, 1])
-
-# set plot variables
-x = np.arange(60)
-y = AR1to1d_halfstim["MSM_data"]["relsigma_yy_lefthalf_average"]
-x = x[::2]  # downsample data for nicer plotting
-y = y[::2, :]
-y_mean = np.nanmean(y, axis=1)
-y_std = np.nanstd(y, axis=1)
-y_sem = y_std / np.sqrt(np.shape(y)[1])
-
-# create first plot
-fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[1], marker='o', ms=2, linewidth=0.5, ls='none',
-                markeredgewidth=0.5)
-# set plot variables
-x = np.arange(60)
-y = AR1to1d_halfstim["MSM_data"]["relsigma_yy_righthalf_average"]
-x = x[::2]  # downsample data for nicer plotting
-y = y[::2, :]
-y_mean = np.nanmean(y, axis=1)
-y_std = np.nanstd(y, axis=1)
-y_sem = y_std / np.sqrt(np.shape(y)[1])
-
-# create second plot
-fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent_dark[1], marker='o', ms=2, linewidth=0.5, ls='none',
-                markeredgewidth=0.5)
-
-# set labels
-fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
-# fig_ax.set_ylabel(ylabel='doublet', labelpad=ylabeloffset)
-# fig_ax.set_title(label='relative $\mathrm{E_s}$', pad=titleoffset)
-fig_ax.set_title(label='yy-Stress', pad=titleoffset)
-fig_ax.set()
-
-# add anotations for opto pulses
-for i in np.arange(10):
-    plt.axline((20 + i, ymin), (20 + i, ymax), linewidth=optolinewidth, color="cyan")
-
-# Define where you want ticks
-xticks = np.arange(0, 61, 20)
-yticks = np.arange(0.9, 1.31, 0.1)
-
-plt.xticks(xticks)
-plt.yticks(yticks)
-
-# provide info on tick parameters
-plt.minorticks_on()
-plt.tick_params(direction='in', which='minor', length=3, bottom=True, top=False, left=True, right=True)
-plt.tick_params(direction='in', which='major', length=6, bottom=True, top=False, left=True, right=True)
-
-# set limits
-fig_ax.set_ylim(ymin=ymin)
-fig_ax.set_ylim(ymax=ymax)
-
-##############################################################################
-# Generate third panel
-##############################################################################
-
-ymin = 0.9
-ymax = 1.3
-
-# the grid spec is rows, then columns
-fig_ax = fig.add_subplot(gs[1, 0])
-
-# set plot variables
-x = np.arange(60)
-y = AR1to1s_halfstim["MSM_data"]["relsigma_xx_lefthalf_average"]
-x = x[::2]  # downsample data for nicer plotting
-y = y[::2, :]
-y_mean = np.nanmean(y, axis=1)
-y_std = np.nanstd(y, axis=1)
-y_sem = y_std / np.sqrt(np.shape(y)[1])
-
-# create first plot
-fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[2], marker='o', ms=2, linewidth=0.5, ls='none',
-                markeredgewidth=0.5)
-# set plot variables
-x = np.arange(60)
-y = AR1to1s_halfstim["MSM_data"]["relsigma_xx_righthalf_average"]
-x = x[::2]  # downsample data for nicer plotting
-y = y[::2, :]
-y_mean = np.nanmean(y, axis=1)
-y_std = np.nanstd(y, axis=1)
-y_sem = y_std / np.sqrt(np.shape(y)[1])
-
-# create second plot
-fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent_dark[2], marker='o', ms=2, linewidth=0.5, ls='none',
-                markeredgewidth=0.5)
-
-# set labels
-fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
-fig_ax.set_ylabel(ylabel='singlet', labelpad=ylabeloffset)
-# fig_ax.set_title(label='relative $\mathrm{E_s}$', pad=titleoffset)
-fig_ax.set()
-
-# add anotations for opto pulses
-for i in np.arange(10):
-    plt.axline((20 + i, ymin), (20 + i, ymax), linewidth=optolinewidth, color="cyan")
-
-# Define where you want ticks
-xticks = np.arange(0, 61, 20)
-yticks = np.arange(0.9, 1.31, 0.1)
-
-plt.xticks(xticks)
-plt.yticks(yticks)
-
-# provide info on tick parameters
-plt.minorticks_on()
-plt.tick_params(direction='in', which='minor', length=3, bottom=True, top=False, left=True, right=True)
-plt.tick_params(direction='in', which='major', length=6, bottom=True, top=False, left=True, right=True)
-
-# set limits
-fig_ax.set_ylim(ymin=ymin)
-fig_ax.set_ylim(ymax=ymax)
-
-##############################################################################
-# Generate fourth panel
-##############################################################################
-
-ymin = 0.9
-ymax = 1.3
-
-# the grid spec is rows, then columns
-fig_ax = fig.add_subplot(gs[1, 1])
-
-# set plot variables
-x = np.arange(60)
-y = AR1to1s_halfstim["MSM_data"]["relsigma_yy_lefthalf_average"]
-x = x[::2]  # downsample data for nicer plotting
-y = y[::2, :]
-y_mean = np.nanmean(y, axis=1)
-y_std = np.nanstd(y, axis=1)
-y_sem = y_std / np.sqrt(np.shape(y)[1])
-
-# create first plot
-fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[2], marker='o', ms=2, linewidth=0.5, ls='none',
-                markeredgewidth=0.5)
-# set plot variables
-x = np.arange(60)
-y = AR1to1s_halfstim["MSM_data"]["relsigma_yy_righthalf_average"]
-x = x[::2]  # downsample data for nicer plotting
-y = y[::2, :]
-y_mean = np.nanmean(y, axis=1)
-y_std = np.nanstd(y, axis=1)
-y_sem = y_std / np.sqrt(np.shape(y)[1])
-
-# create second plot
-fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent_dark[2], marker='o', ms=2, linewidth=0.5, ls='none',
-                markeredgewidth=0.5)
-
-# set labels
-fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
-# fig_ax.set_ylabel(ylabel='singlet', labelpad=ylabeloffset)
-# fig_ax.set_title(label='relative $\mathrm{E_s}$', pad=titleoffset)
-fig_ax.set()
-
-# add anotations for opto pulses
-for i in np.arange(10):
-    plt.axline((20 + i, ymin), (20 + i, ymax), linewidth=optolinewidth, color="cyan")
-
-# Define where you want ticks
-xticks = np.arange(0, 61, 20)
-yticks = np.arange(0.9, 1.31, 0.1)
-
-plt.xticks(xticks)
-plt.yticks(yticks)
-
-# provide info on tick parameters
-plt.minorticks_on()
-plt.tick_params(direction='in', which='minor', length=3, bottom=True, top=False, left=True, right=True)
-plt.tick_params(direction='in', which='major', length=6, bottom=True, top=False, left=True, right=True)
-
-# set limits
-fig_ax.set_ylim(ymin=ymin)
-fig_ax.set_ylim(ymax=ymax)
-
-##############################################################################
-# Generate fifth panel
-##############################################################################
-colors = [colors_parent[1], colors_parent_dark[1], colors_parent[1], colors_parent_dark[1]];  # defines colors
-sns.set_palette(sns.color_palette(colors))  # sets colors
-ylabeloffset = -1
-
-# extract data from dataframe to test if their distribution is gaussian
-# data_1to1d = df_fs[df_fs["keys"]=="AR1to1d_fs"]["RSI_xx"].to_numpy()
-# data_1to1s = df_fs[df_fs["keys"]=="AR1to1s_fs"]["RSI_xx"].to_numpy()
-# if test_if_gaussian(data_1to1d,data_1to1s,'REI'):
-#     test = 't-test_ind'
-# else:
-test = 'Mann-Whitney'
-
-ymin = -0.2
-ymax = 0.6
-stat_annotation_offset = 0
-
-# the grid spec is rows, then columns
-fig_ax = fig.add_subplot(gs[0, 2])
-
-# a little weird way to get the dataframe format I need for seaborn boxplots...
-df1 = pd.DataFrame(df_d_hs['RSI_xx_left'])
-df2 = pd.DataFrame(df_d_hs['RSI_xx_right'])
-df3 = pd.DataFrame(df_d_hs['RSI_yy_left'])
-df4 = pd.DataFrame(df_d_hs['RSI_yy_right'])
-
-df1 = df1.transpose().reset_index(drop=True).transpose()
-df2 = df2.transpose().reset_index(drop=True).transpose()
-df3 = df3.transpose().reset_index(drop=True).transpose()
-df4 = df4.transpose().reset_index(drop=True).transpose()
-
-df_plot = pd.concat([df1, df2, df3, df4], axis=0)
-
-df_plot.rename(columns={0: 'sigma'}, inplace=True)
-
-keys_sx_l = ['sigma_xx_left' for i in range(n_d_halfstim)]
-keys_sx_r = ['sigma_xx_right' for i in range(n_d_halfstim)]
-keys_sy_l = ['sigma_yy_left' for i in range(n_d_halfstim)]
-keys_sy_r = ['sigma_yy_right' for i in range(n_d_halfstim)]
-keys = np.concatenate((keys_sx_l, keys_sx_r, keys_sy_l, keys_sy_r))
-df_plot['keys'] = keys
-
-# create box- and swarmplots
-sns.swarmplot(x='keys', y='sigma', data=df_plot, ax=fig_ax, alpha=alpha_sw, linewidth=linewidth_sw, zorder=0,
-              size=dotsize)
-bp = sns.boxplot(x='keys', y='sigma', data=df_plot, ax=fig_ax, linewidth=linewidth_bp, notch=True, showfliers=False,
-                 width=width)
-
-# order = ['AR1to1d_fs', 'AR1to1s_fs']
-# add_stat_annotation(bp, data=df_fs, x=x, y=y, order=order, box_pairs=[('AR1to1d_fs', 'AR1to1s_fs')], 
-#                     line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
-
-# make boxplots transparent
-for patch in bp.artists:
-    r, g, b, a = patch.get_facecolor()
-    patch.set_facecolor((r, g, b, alpha_bp))
-
-plt.setp(bp.artists, edgecolor='k')
-plt.setp(bp.lines, color='k')
-
-# set labels
-fig_ax.set_xticklabels(['1', '2', '3', '4'])
-fig_ax.set_xlabel(xlabel=None)
-fig_ax.set_ylabel(ylabel=None, labelpad=ylabeloffset)
-# fig_ax.set_title(label='REI', pad=titleoffset)
-fig_ax.set()
-
-# Define where you want ticks
-yticks = np.arange(-0.2, 0.61, 0.2)
-plt.yticks(yticks)
-
-# provide info on tick parameters
-plt.minorticks_on()
-plt.tick_params(direction='in', which='minor', length=3, bottom=False, top=False, left=True, right=True)
-plt.tick_params(direction='in', which='major', length=6, bottom=False, top=False, left=True, right=True)
-
-# set limits
-fig_ax.set_ylim(ymin=ymin)
-fig_ax.set_ylim(ymax=ymax)
-
-##############################################################################
-# Generate sixth panel
-##############################################################################
-colors = [colors_parent[2], colors_parent_dark[2], colors_parent[2], colors_parent_dark[2]];  # defines colors
-sns.set_palette(sns.color_palette(colors))  # sets colors
-
-# extract data from dataframe to test if their distribution is gaussian
-# data_1to1d = df_hs[df_hs["keys"]=="AR1to1d_hs"]["REI"].to_numpy()
-# data_1to1s = df_hs[df_hs["keys"]=="AR1to1s_hs"]["REI"].to_numpy()
-# if test_if_gaussian(data_1to1d,data_1to1s,'REI'):
-#     test = 't-test_ind'
-# else:
-test = 'Mann-Whitney'
-
-ymin = -0.2
-ymax = 0.6
-stat_annotation_offset = 0.5
-
-# the grid spec is rows, then columns
-fig_ax = fig.add_subplot(gs[1, 2])
-
-# a little weird way to get the dataframe format I need for seaborn boxplots...
-df1 = pd.DataFrame(df_s_hs['RSI_xx_left'])
-df2 = pd.DataFrame(df_s_hs['RSI_xx_right'])
-df3 = pd.DataFrame(df_s_hs['RSI_yy_left'])
-df4 = pd.DataFrame(df_s_hs['RSI_yy_right'])
-
-df1 = df1.transpose().reset_index(drop=True).transpose()
-df2 = df2.transpose().reset_index(drop=True).transpose()
-df3 = df3.transpose().reset_index(drop=True).transpose()
-df4 = df4.transpose().reset_index(drop=True).transpose()
-
-df_plot = pd.concat([df1, df2, df3, df4], axis=0)
-
-df_plot.rename(columns={0: 'sigma'}, inplace=True)
-
-keys_sx_l = ['sigma_xx_left' for i in range(n_s_halfstim)]
-keys_sx_r = ['sigma_xx_right' for i in range(n_s_halfstim)]
-keys_sy_l = ['sigma_yy_left' for i in range(n_s_halfstim)]
-keys_sy_r = ['sigma_yy_right' for i in range(n_s_halfstim)]
-keys = np.concatenate((keys_sx_l, keys_sx_r, keys_sy_l, keys_sy_r))
-df_plot['keys'] = keys
-
-# create box- and swarmplots
-sns.swarmplot(x='keys', y='sigma', data=df_plot, ax=fig_ax, alpha=alpha_sw, linewidth=linewidth_sw, zorder=0,
-              size=dotsize)
-bp = sns.boxplot(x='keys', y='sigma', data=df_plot, ax=fig_ax, linewidth=linewidth_bp, notch=True, showfliers=False,
-                 width=width)
-
-# order = ['AR1to1d_hs', 'AR1to1s_hs']
-# add_stat_annotation(bp, data=df_hs, x=x, y=y, order=order, box_pairs=[('AR1to1d_hs', 'AR1to1s_hs')], 
-#                     line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
-
-# make boxplots transparent
-for patch in bp.artists:
-    r, g, b, a = patch.get_facecolor()
-    patch.set_facecolor((r, g, b, alpha_bp))
-
-plt.setp(bp.artists, edgecolor='k')
-plt.setp(bp.lines, color='k')
-
-# set labels
-fig_ax.set_xticklabels(['1', '2', '3', '4'])
-fig_ax.set_xlabel(xlabel=None)
-fig_ax.set_ylabel(ylabel=None, labelpad=ylabeloffset)
-fig_ax.set_title(label=None, pad=titleoffset)
-fig_ax.set()
-
-# Define where you want ticks
-yticks = np.arange(-0.2, 0.61, 0.2)
-plt.yticks(yticks)
-
-# provide info on tick parameters
-plt.minorticks_on()
-plt.tick_params(direction='in', which='minor', length=3, bottom=False, top=False, left=True, right=True)
-plt.tick_params(direction='in', which='major', length=6, bottom=False, top=False, left=True, right=True)
-
-# set limits
-fig_ax.set_ylim(ymin=ymin)
-fig_ax.set_ylim(ymax=ymax)
-
-# write title for panels 1 to 4
-plt.text(-5.7, 2.575947, 'Relative strain energy', fontsize=10)
-# write title for panels 5 to 6
-plt.text(-0.662416, 2.400220, 'Relative energy \n     increase', fontsize=10)
-# save plot to file
-plt.savefig(figfolder + 'G.png', dpi=300, bbox_inches="tight")
-
-plt.show()
-# %% plot figure 3E
-
-# # define plot parameters
-# fig = plt.figure(2, figsize=(5, 3))             # figuresize in inches
-# gs = gridspec.GridSpec(2,3)                     # sets up subplotgrid rows by columns
-# gs.update(wspace=0.6, hspace=0.7)              # adjusts space in between the boxes in the grid
-# colors = [colors_parent[1],colors_parent[2]];   # defines colors
-# sns.set_palette(sns.color_palette(colors))      # sets colors
-# linewidth_bp = 0.7                              # linewidth of boxplot borders
-# width = 0.3                                     # width of boxplots
-# dotsize = 2                                     # size of datapoints in swarmplot
-# linewidth_sw = 0.3                              # linewidth of boxplot borders
-# alpha_sw = 1                                    # transparency of dots in swarmplot
-# alpha_bp = 0.8                                  # transparency of boxplots
-# ylabeloffset = 1                                # adjusts distance of ylabel to the plot
-# xlabeloffset = 1                                # adjusts distance of ylabel to the plot
-# titleoffset = 5                                 # adjusts distance of title to the plot
-
-# ##############################################################################
-# #Generate first panel
-# ##############################################################################
-
-# ymin = 0.9
-# ymax = 1.3
-
-# # the grid spec is rows, then columns
-# fig_ax = fig.add_subplot(gs[0,0])
-
-# # set plot variables
-# x = np.arange(60)
-# y = AR1to1d_fullstim_long["MSM_data"]["relsigma_yy_average"]
-# x = x[::2] # downsample data for nicer plotting
-# y = y[::2,:]
-# y_mean = np.nanmean(y,axis=1)
-# y_std = np.nanstd(y,axis=1)
-# y_sem = y_std/np.sqrt(np.shape(y)[1])
-
-# # create box- and swarmplots
-# fig_ax.errorbar(x,y_mean,yerr=y_sem, mfc='w', color=colors_parent[1], marker='o',ms=2, linewidth=0.5, ls='none',markeredgewidth=0.5)
-
-# # set labels
-# fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
-# fig_ax.set_ylabel(ylabel='doublet', labelpad=ylabeloffset)
-# fig_ax.set_title(label='relative $\mathrm{\sigma_{yy}}$', pad=titleoffset)
-# fig_ax.set()
-
-# # Define where you want ticks
-# xticks = np.arange(0,61,20)
-# yticks = np.arange(0.9,1.31,0.1)
-
-# plt.xticks(xticks)
-# plt.yticks(yticks)
-
-# # provide info on tick parameters
-# plt.minorticks_on()
-# plt.tick_params(direction='in',which='minor', length=3, bottom=True, top=False, left=True, right=True)
-# plt.tick_params(direction='in',which='major', length=6, bottom=True, top=False, left=True, right=True)
-
-# # set limits
-# fig_ax.set_ylim(ymin=ymin)
-# fig_ax.set_ylim(ymax=ymax)
-
-# ##############################################################################
-# #Generate second panel
-# ##############################################################################
-
-# ymin = 0.9
-# ymax = 1.3
-
-# # the grid spec is rows, then columns
-# fig_ax = fig.add_subplot(gs[0,1])
-
-# # set plot variables
-# x = np.arange(60)
-# y = AR1to1d_halfstim["MSM_data"]["relsigma_yy_average"]
-# x = x[::2] # downsample data for nicer plotting
-# y = y[::2,:]
-# y_mean = np.nanmean(y,axis=1)
-# y_std = np.nanstd(y,axis=1)
-# y_sem = y_std/np.sqrt(np.shape(y)[1])
-
-# # create box- and swarmplots
-# fig_ax.errorbar(x,y_mean,yerr=y_sem, mfc='w', color=colors_parent[1], marker='o',ms=2, linewidth=0.5, ls='none',markeredgewidth=0.5)
-
-# # set labels
-# fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
-# fig_ax.set_ylabel(ylabel='doublet', labelpad=ylabeloffset)
-# fig_ax.set_title(label='relative $\mathrm{\sigma_{yy}}$', pad=titleoffset)
-# fig_ax.set()
-
-# # Define where you want ticks
-# xticks = np.arange(0,61,20)
-# yticks = np.arange(0.9,1.31,0.1)
-
-# plt.xticks(xticks)
-# plt.yticks(yticks)
-
-# # provide info on tick parameters
-# plt.minorticks_on()
-# plt.tick_params(direction='in',which='minor', length=3, bottom=True, top=False, left=True, right=True)
-# plt.tick_params(direction='in',which='major', length=6, bottom=True, top=False, left=True, right=True)
-
-# # set limits
-# fig_ax.set_ylim(ymin=ymin)
-# fig_ax.set_ylim(ymax=ymax)
-
-# ##############################################################################
-# #Generate third panel
-# ##############################################################################
-
-# ymin = 0.9
-# ymax = 1.3
-
-# # the grid spec is rows, then columns
-# fig_ax = fig.add_subplot(gs[1,0])
-
-# # set plot variables
-# x = np.arange(60)
-# y = AR1to1s_fullstim_long["MSM_data"]["relsigma_yy_average"]
-# x = x[::2] # downsample data for nicer plotting
-# y = y[::2,:]
-# y_mean = np.nanmean(y,axis=1)
-# y_std = np.nanstd(y,axis=1)
-# y_sem = y_std/np.sqrt(np.shape(y)[1])
-
-# # create box- and swarmplots
-# fig_ax.errorbar(x,y_mean,yerr=y_sem, mfc='w', color=colors_parent[2], marker='o',ms=2, linewidth=0.5, ls='none',markeredgewidth=0.5)
-
-# # set labels
-# fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
-# fig_ax.set_ylabel(ylabel='singlet', labelpad=ylabeloffset)
-# fig_ax.set_title(label='relative $\mathrm{\sigma_{yy}}$', pad=titleoffset)
-# fig_ax.set()
-
-# # Define where you want ticks
-# xticks = np.arange(0,61,20)
-# yticks = np.arange(0.9,1.31,0.1)
-
-# plt.xticks(xticks)
-# plt.yticks(yticks)
-
-# # provide info on tick parameters
-# plt.minorticks_on()
-# plt.tick_params(direction='in',which='minor', length=3, bottom=True, top=False, left=True, right=True)
-# plt.tick_params(direction='in',which='major', length=6, bottom=True, top=False, left=True, right=True)
-
-# # set limits
-# fig_ax.set_ylim(ymin=ymin)
-# fig_ax.set_ylim(ymax=ymax)
-
-# ##############################################################################
-# #Generate fourth panel
-# ##############################################################################
-
-# ymin = 0.9
-# ymax = 1.3
-
-# # the grid spec is rows, then columns
-# fig_ax = fig.add_subplot(gs[1,1])
-
-# # set plot variables
-# x = np.arange(60)
-# y = AR1to1s_halfstim["MSM_data"]["relsigma_yy_average"]
-# x = x[::2] # downsample data for nicer plotting
-# y = y[::2,:]
-# y_mean = np.nanmean(y,axis=1)
-# y_std = np.nanstd(y,axis=1)
-# y_sem = y_std/np.sqrt(np.shape(y)[1])
-
-# # create box- and swarmplots
-# fig_ax.errorbar(x,y_mean,yerr=y_sem, mfc='w', color=colors_parent[2], marker='o',ms=2, linewidth=0.5, ls='none',markeredgewidth=0.5)
-
-# # set labels
-# fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
-# fig_ax.set_ylabel(ylabel='singlet', labelpad=ylabeloffset)
-# fig_ax.set_title(label='relative $\mathrm{\sigma_{yy}}$', pad=titleoffset)
-# fig_ax.set()
-
-# # Define where you want ticks
-# xticks = np.arange(0,61,20)
-# yticks = np.arange(0.9,1.31,0.1)
-
-# plt.xticks(xticks)
-# plt.yticks(yticks)
-
-# # provide info on tick parameters
-# plt.minorticks_on()
-# plt.tick_params(direction='in',which='minor', length=3, bottom=True, top=False, left=True, right=True)
-# plt.tick_params(direction='in',which='major', length=6, bottom=True, top=False, left=True, right=True)
-
-# # set limits
-# fig_ax.set_ylim(ymin=ymin)
-# fig_ax.set_ylim(ymax=ymax)
-
-
-# #%% plot figure 3D
-
-# # define plot parameters
-# fig = plt.figure(2, figsize=(5, 3))             # figuresize in inches
-# gs = gridspec.GridSpec(2,3)                     # sets up subplotgrid rows by columns
-# gs.update(wspace=0.6, hspace=0.7)              # adjusts space in between the boxes in the grid
-# colors = [colors_parent[1],colors_parent[2]];   # defines colors
-# sns.set_palette(sns.color_palette(colors))      # sets colors
-# linewidth_bp = 0.7                              # linewidth of boxplot borders
-# width = 0.3                                     # width of boxplots
-# dotsize = 2                                     # size of datapoints in swarmplot
-# linewidth_sw = 0.3                              # linewidth of boxplot borders
-# alpha_sw = 1                                    # transparency of dots in swarmplot
-# alpha_bp = 0.8                                  # transparency of boxplots
-# ylabeloffset = 1                                # adjusts distance of ylabel to the plot
-# xlabeloffset = 1                                # adjusts distance of ylabel to the plot
-# titleoffset = 5                                 # adjusts distance of title to the plot
-
-# ##############################################################################
-# #Generate first panel
-# ##############################################################################
-
-# ymin = 0.9
-# ymax = 1.3
-
-# # the grid spec is rows, then columns
-# fig_ax = fig.add_subplot(gs[0,0])
-
-# # set plot variables
-# x = np.arange(60)
-# y = AR1to1d_fullstim_long["MSM_data"]["relsigma_xx_average"]
-# x = x[::2] # downsample data for nicer plotting
-# y = y[::2,:]
-# y_mean = np.nanmean(y,axis=1)
-# y_std = np.nanstd(y,axis=1)
-# y_sem = y_std/np.sqrt(np.shape(y)[1])
-
-# # create box- and swarmplots
-# fig_ax.errorbar(x,y_mean,yerr=y_sem, mfc='w', color=colors_parent[1], marker='o',ms=2, linewidth=0.5, ls='none',markeredgewidth=0.5)
-
-# # set labels
-# fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
-# fig_ax.set_ylabel(ylabel='doublet', labelpad=ylabeloffset)
-# fig_ax.set_title(label='relative $\mathrm{\sigma_{xx}}$', pad=titleoffset)
-# fig_ax.set()
-
-# # Define where you want ticks
-# xticks = np.arange(0,61,20)
-# yticks = np.arange(0.9,1.31,0.1)
-
-# plt.xticks(xticks)
-# plt.yticks(yticks)
-
-# # provide info on tick parameters
-# plt.minorticks_on()
-# plt.tick_params(direction='in',which='minor', length=3, bottom=True, top=False, left=True, right=True)
-# plt.tick_params(direction='in',which='major', length=6, bottom=True, top=False, left=True, right=True)
-
-# # set limits
-# fig_ax.set_ylim(ymin=ymin)
-# fig_ax.set_ylim(ymax=ymax)
-
-# ##############################################################################
-# #Generate second panel
-# ##############################################################################
-
-# ymin = 0.9
-# ymax = 1.3
-
-# # the grid spec is rows, then columns
-# fig_ax = fig.add_subplot(gs[0,1])
-
-# # set plot variables
-# x = np.arange(60)
-# y = AR1to1d_halfstim["MSM_data"]["relsigma_xx_average"]
-# x = x[::2] # downsample data for nicer plotting
-# y = y[::2,:]
-# y_mean = np.nanmean(y,axis=1)
-# y_std = np.nanstd(y,axis=1)
-# y_sem = y_std/np.sqrt(np.shape(y)[1])
-
-# # create box- and swarmplots
-# fig_ax.errorbar(x,y_mean,yerr=y_sem, mfc='w', color=colors_parent[1], marker='o',ms=2, linewidth=0.5, ls='none',markeredgewidth=0.5)
-
-# # set labels
-# fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
-# fig_ax.set_ylabel(ylabel='doublet', labelpad=ylabeloffset)
-# fig_ax.set_title(label='relative $\mathrm{\sigma_{xx}}$', pad=titleoffset)
-# fig_ax.set()
-
-# # Define where you want ticks
-# xticks = np.arange(0,61,20)
-# yticks = np.arange(0.9,1.31,0.1)
-
-# plt.xticks(xticks)
-# plt.yticks(yticks)
-
-# # provide info on tick parameters
-# plt.minorticks_on()
-# plt.tick_params(direction='in',which='minor', length=3, bottom=True, top=False, left=True, right=True)
-# plt.tick_params(direction='in',which='major', length=6, bottom=True, top=False, left=True, right=True)
-
-# # set limits
-# fig_ax.set_ylim(ymin=ymin)
-# fig_ax.set_ylim(ymax=ymax)
-
-# ##############################################################################
-# #Generate third panel
-# ##############################################################################
-
-# ymin = 0.9
-# ymax = 1.3
-
-# # the grid spec is rows, then columns
-# fig_ax = fig.add_subplot(gs[1,0])
-
-# # set plot variables
-# x = np.arange(60)
-# y = AR1to1s_fullstim_long["MSM_data"]["relsigma_xx_average"]
-# x = x[::2] # downsample data for nicer plotting
-# y = y[::2,:]
-# y_mean = np.nanmean(y,axis=1)
-# y_std = np.nanstd(y,axis=1)
-# y_sem = y_std/np.sqrt(np.shape(y)[1])
-
-# # create box- and swarmplots
-# fig_ax.errorbar(x,y_mean,yerr=y_sem, mfc='w', color=colors_parent[2], marker='o',ms=2, linewidth=0.5, ls='none',markeredgewidth=0.5)
-
-# # set labels
-# fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
-# fig_ax.set_ylabel(ylabel='singlet', labelpad=ylabeloffset)
-# fig_ax.set_title(label='relative $\mathrm{\sigma_{xx}}$', pad=titleoffset)
-# fig_ax.set()
-
-# # Define where you want ticks
-# xticks = np.arange(0,61,20)
-# yticks = np.arange(0.9,1.31,0.1)
-
-# plt.xticks(xticks)
-# plt.yticks(yticks)
-
-# # provide info on tick parameters
-# plt.minorticks_on()
-# plt.tick_params(direction='in',which='minor', length=3, bottom=True, top=False, left=True, right=True)
-# plt.tick_params(direction='in',which='major', length=6, bottom=True, top=False, left=True, right=True)
-
-# # set limits
-# fig_ax.set_ylim(ymin=ymin)
-# fig_ax.set_ylim(ymax=ymax)
-
-# ##############################################################################
-# #Generate fourth panel
-# ##############################################################################
-
-# ymin = 0.9
-# ymax = 1.3
-
-# # the grid spec is rows, then columns
-# fig_ax = fig.add_subplot(gs[1,1])
-
-# # set plot variables
-# x = np.arange(60)
-# y = AR1to1s_halfstim["MSM_data"]["relsigma_xx_average"]
-# x = x[::2] # downsample data for nicer plotting
-# y = y[::2,:]
-# y_mean = np.nanmean(y,axis=1)
-# y_std = np.nanstd(y,axis=1)
-# y_sem = y_std/np.sqrt(np.shape(y)[1])
-
-# # create box- and swarmplots
-# fig_ax.errorbar(x,y_mean,yerr=y_sem, mfc='w', color=colors_parent[2], marker='o',ms=2, linewidth=0.5, ls='none',markeredgewidth=0.5)
-
-# # set labels
-# fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
-# fig_ax.set_ylabel(ylabel='singlet', labelpad=ylabeloffset)
-# fig_ax.set_title(label='relative $\mathrm{\sigma_{xx}}$', pad=titleoffset)
-# fig_ax.set()
-
-# # Define where you want ticks
-# xticks = np.arange(0,61,20)
-# yticks = np.arange(0.9,1.31,0.1)
-
-# plt.xticks(xticks)
-# plt.yticks(yticks)
-
-# # provide info on tick parameters
-# plt.minorticks_on()
-# plt.tick_params(direction='in',which='minor', length=3, bottom=True, top=False, left=True, right=True)
-# plt.tick_params(direction='in',which='major', length=6, bottom=True, top=False, left=True, right=True)
-
-# # set limits
-# fig_ax.set_ylim(ymin=ymin)
-# fig_ax.set_ylim(ymax=ymax)
-
-# # save plot to file
-# plt.savefig(figfolder+'D.png', dpi=300, bbox_inches="tight")
-# plt.close()
-
-# # ##############################################################################
-# # #Generate fifth panel
-# # ##############################################################################
-# # ylabeloffset = -1
-
-# # # extract data from dataframe to test if their distribution is gaussian
-# data_1to1d = df_fs[df_fs["keys"]=="AR1to1d_fs"]["REI"].to_numpy()
-# data_1to1s = df_fs[df_fs["keys"]=="AR1to1s_fs"]["REI"].to_numpy()
-# # if test_if_gaussian(data_1to1d,data_1to1s,'REI'):
-# #     test = 't-test_ind'
-# # else:
-# test = 'Mann-Whitney'
-
-# ymin = -0.2
-# ymax = 0.8
-# stat_annotation_offset = 0
-
-# # the grid spec is rows, then columns
-# fig_ax = fig.add_subplot(gs[0,2])
-
-# # set plot variables
-# x = 'keys'
-# y = 'REI'
-
-# # create box- and swarmplots
-# sns.swarmplot(x=x, y=y, data=df_fs, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
-# bp = sns.boxplot(x=x, y=y, data=df_fs, ax=fig_ax,linewidth=linewidth_bp,notch=True, showfliers = False, width=width)
-
-# order = ['AR1to1d_fs', 'AR1to1s_fs']
-# add_stat_annotation(bp, data=df_fs, x=x, y=y, order=order, box_pairs=[('AR1to1d_fs', 'AR1to1s_fs')], 
-#                     line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
-
-# # make boxplots transparent
-# for patch in bp.artists:
-#     r, g, b, a = patch.get_facecolor()
-#     patch.set_facecolor((r, g, b, alpha_bp))
-
-# plt.setp(bp.artists, edgecolor = 'k')
-# plt.setp(bp.lines, color='k')
-
-# # set labels
-# fig_ax.set_xticklabels(['doublet', 'singlet'])
-# fig_ax.set_xlabel(xlabel=None)
-# fig_ax.set_ylabel(ylabel='REI', labelpad=ylabeloffset)
-# fig_ax.set_title(label='Relative energy increase', pad=titleoffset)
-# fig_ax.set()
-
-# # Define where you want ticks
-# yticks = np.arange(-0.2,0.81,0.2)
-# plt.yticks(yticks)
-
-# # provide info on tick parameters
-# plt.minorticks_on()
-# plt.tick_params(direction='in',which='minor', length=3, bottom=False, top=False, left=True, right=True)
-# plt.tick_params(direction='in',which='major', length=6, bottom=False, top=False, left=True, right=True)
-
-# # set limits
-# fig_ax.set_ylim(ymin=ymin)
-# fig_ax.set_ylim(ymax=ymax)
-
-# ##############################################################################
-# #Generate sixth panel
-# ##############################################################################
-# # extract data from dataframe to test if their distribution is gaussian
-# data_1to1d = df_hs[df_hs["keys"]=="AR1to1d_hs"]["REI"].to_numpy()
-# data_1to1s = df_hs[df_hs["keys"]=="AR1to1s_hs"]["REI"].to_numpy()
-# # if test_if_gaussian(data_1to1d,data_1to1s,'REI'):
-# #     test = 't-test_ind'
-# # else:
-# test = 'Mann-Whitney'
-
-# ymin = -0.2
-# ymax = 0.8
-# stat_annotation_offset = 0.7
-
-# # the grid spec is rows, then columns
-# fig_ax = fig.add_subplot(gs[1,2])
-
-# # set plot variables
-# x = 'keys'
-# y = 'REI'
-
-# # create box- and swarmplots
-# sns.swarmplot(x=x, y=y, data=df_hs, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
-# bp = sns.boxplot(x=x, y=y, data=df_hs, ax=fig_ax,linewidth=linewidth_bp,notch=True, showfliers = False, width=width)
-
-# order = ['AR1to1d_hs', 'AR1to1s_hs']
-# add_stat_annotation(bp, data=df_hs, x=x, y=y, order=order, box_pairs=[('AR1to1d_hs', 'AR1to1s_hs')], 
-#                     line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
-
-# # make boxplots transparent
-# for patch in bp.artists:
-#     r, g, b, a = patch.get_facecolor()
-#     patch.set_facecolor((r, g, b, alpha_bp))
-
-# plt.setp(bp.artists, edgecolor = 'k')
-# plt.setp(bp.lines, color='k')
-
-# # set labels
-# fig_ax.set_xticklabels(['doublet', 'singlet'])
-# fig_ax.set_xlabel(xlabel=None)
-# fig_ax.set_ylabel(ylabel='REI', labelpad=ylabeloffset)
-# fig_ax.set_title(label='Relative energy increase', pad=titleoffset)
-# fig_ax.set()
-
-# # Define where you want ticks
-# yticks = np.arange(-0.2,0.81,0.2)
-# plt.yticks(yticks)
-
-# # provide info on tick parameters
-# plt.minorticks_on()
-# plt.tick_params(direction='in',which='minor', length=3, bottom=False, top=False, left=True, right=True)
-# plt.tick_params(direction='in',which='major', length=6, bottom=False, top=False, left=True, right=True)
-
-# # set limits
-# fig_ax.set_ylim(ymin=ymin)
-# fig_ax.set_ylim(ymax=ymax)
-
-# save plot to file
-# plt.savefig(figfolder+'E.png', dpi=300, dpi=300, bbox_inches="tight")
-# plt.close()
-
-# #%% Plot figure 3A
-# x = np.arange(0,60)
-# y1 = AR1to1d_fullstim_long["TFM_data"]["relEs"]
-# y2 = AR1to1s_fullstim_long["TFM_data"]["relEs"]
-# ylim = (0.9,1.2)
-# xlabel = "time [min]"
-# ylabel = "Es_{rel}"
-# titleleft = "doublet"
-# titleright = "singlet"
-# titleboth = "Relative strain energy full stim"
-# plot_twovalues_over_time(x, y1, y2, ylim, xlabel, ylabel,titleleft, titleright, titleboth)
-
-# #%% Plot figure 3B
-# x = np.arange(0,60)
-# y1 = AR1to1d_halfstim["TFM_data"]["relEs"]
-# y2 = AR1to1s_halfstim["TFM_data"]["relEs"]
-# ylim = (0.9,1.2)
-# xlabel = "time [min]"
-# ylabel = "Es_{rel}"
-# titleleft = "doublet"
-# titleright = "singlet"
-# titleboth = "Relative strain energy half stim"
-# plot_twovalues_over_time(x, y1, y2, ylim, xlabel, ylabel,titleleft, titleright, titleboth)
-
-# #%% Plot figure 3C
-# x = np.arange(0,60)
-# y1 = AR1to1d_fullstim_long["MSM_data"]["relsigma_xx_average"]
-# y2 = AR1to1s_fullstim_long["MSM_data"]["relsigma_xx_average"]
-# ylim = (0.9,1.2)
-# xlabel = "time [min]"
-# ylabel = "sigma_{xx, rel}"
-# titleleft = "doublet"
-# titleright = "singlet"
-# titleboth = "Relative xx-stress full stim"
-# plot_twovalues_over_time(x, y1, y2, ylim, xlabel, ylabel,titleleft, titleright, titleboth)
-
-# #%% Plot figure 3D
-# x = np.arange(0,60)
-# y1 = AR1to1d_halfstim["MSM_data"]["relsigma_xx_average"]
-# y2 = AR1to1s_halfstim["MSM_data"]["relsigma_xx_average"]
-# ylim = (0.9,1.2)
-# xlabel = "time [min]"
-# ylabel = "sigma_{xx, rel}"
-# titleleft = "doublet"
-# titleright = "singlet"
-# titleboth = "Relative xx-stress half stim"
-# fig=plot_twovalues_over_time(x, y1, y2, ylim, xlabel, ylabel,titleleft, titleright, titleboth)
-# fig.savefig(folder+'a.png', dpi=300, dpi=300, bbox_inches="tight")
-# plt.close()
-
-# #%% Plot figure 3F
-# x = np.arange(0,60)
-# y1 = AR1to1d_halfstim["MSM_data"]["relsigma_yy_average"]
-# y2 = AR1to1s_halfstim["MSM_data"]["relsigma_yy_average"]
-# ylim = (0.9,1.2)
-# xlabel = "time [min]"
-# ylabel = "sigma_{yy, rel}"
-# titleleft = "doublet"
-# titleright = "singlet"
-# titleboth = "Relative yy-stress half stim"
-# fig=plot_twovalues_over_time(x, y1, y2, ylim, xlabel, ylabel,titleleft, titleright, titleboth)
-# fig.savefig(folder+'b.png', dpi=300, dpi=300, bbox_inches="tight")
-# plt.close()
-# #%% Plot figure 3G
-# x = np.arange(0,60)
-# y1 = AR1to1d_halfstim["MSM_data"]["relsigma_yy_lefthalf_average"]
-# y2 = AR1to1d_halfstim["MSM_data"]["relsigma_yy_righthalf_average"]
-# ylim = (0.9,1.2)
-# xlabel = "time [min]"
-# ylabel = "sigma_{yy, rel}"
-# titleleft = "left"
-# titleright = "right"
-# titleboth = "Relative yy-stress half stim doublet"
-# fig=plot_twovalues_over_time(x, y1, y2, ylim, xlabel, ylabel,titleleft, titleright, titleboth)
-# fig.savefig(folder+'c.png', dpi=300, dpi=300, bbox_inches="tight")
-# plt.close()
-# #%% Plot figure 3H
-# x = np.arange(0,60)
-# y1 = AR1to1d_halfstim["MSM_data"]["relsigma_xx_lefthalf_average"]
-# y2 = AR1to1d_halfstim["MSM_data"]["relsigma_xx_righthalf_average"]
-# ylim = (0.9,1.2)
-# xlabel = "time [min]"
-# ylabel = "sigma_{xx, rel}"
-# titleleft = "left"
-# titleright = "right"
-# titleboth = "Relative xx-stress half stim doublet"
-# fig=plot_twovalues_over_time(x, y1, y2, ylim, xlabel, ylabel,titleleft, titleright, titleboth)
-# fig.savefig(folder+'d.png', dpi=300, dpi=300, bbox_inches="tight")
-# plt.close()
-# #%% Plot figure 3I
-# x = np.arange(0,60)
-# y1 = AR1to1s_halfstim["MSM_data"]["relsigma_yy_lefthalf_average"]
-# y2 = AR1to1s_halfstim["MSM_data"]["relsigma_yy_righthalf_average"]
-# ylim = (0.9,1.2)
-# xlabel = "time [min]"
-# ylabel = "sigma_{yy, rel}"
-# titleleft = "left"
-# titleright = "right"
-# titleboth = "Relative yy-stress half stim doublet"
-# fig=plot_twovalues_over_time(x, y1, y2, ylim, xlabel, ylabel,titleleft, titleright, titleboth)
-# fig.savefig(folder+'e.png', dpi=300, dpi=300, bbox_inches="tight")
-# plt.close()
-# #%% Plot figure 3J
-# x = np.arange(0,60)
-# y1 = AR1to1s_halfstim["MSM_data"]["relsigma_xx_lefthalf_average"]
-# y2 = AR1to1s_halfstim["MSM_data"]["relsigma_xx_righthalf_average"]
-# ylim = (0.9,1.2)
-# xlabel = "time [min]"
-# ylabel = "sigma_{xx, rel}"
-# titleleft = "left"
-# titleright = "right"
-# titleboth = "Relative xx-stress half stim doublet"
-# fig=plot_twovalues_over_time(x, y1, y2, ylim, xlabel, ylabel,titleleft, titleright, titleboth)
-# fig.savefig(folder+'f.png', dpi=300, dpi=300, bbox_inches="tight")
-# plt.close()
-# #%% Plot figure 3L
-# x = np.arange(0,60)
-# y1 = AR1to1d_fullstim_long["MSM_data"]["relAIC"]
-# y2 = AR1to1s_fullstim_long["MSM_data"]["relAIC"]
-# ylim = (-0.1,0.1)
-# xlabel = "time [min]"
-# ylabel = "relative AIC"
-# titleleft = "doublet"
-# titleright = "singlet"
-# titleboth = "Anisotropy Coefficient fullstim"
-# plot_twovalues_over_time(x, y1, y2, ylim, xlabel, ylabel,titleleft, titleright, titleboth)
-# #%% Plot figure 3L
-# x = np.arange(0,60)
-# y1 = AR1to1d_halfstim["MSM_data"]["relAIC"]
-# y2 = AR1to1s_halfstim["MSM_data"]["relAIC"]
-# ylim = (-0.1,0.1)
-# xlabel = "time [min]"
-# ylabel = "relative AIC"
-# titleleft = "doublet"
-# titleright = "singlet"
-# titleboth = "Anisotropy Coefficient halfstim"
-# plot_twovalues_over_time(x, y1, y2, ylim, xlabel, ylabel,titleleft, titleright, titleboth)
-# #%% Plot figure 3L
-# x = np.arange(0,60)
-# y1 = AR1to1d_halfstim["MSM_data"]["AIC_left"]
-# y2 = AR1to1d_halfstim["MSM_data"]["AIC_right"]
-# ylim = (-0.2,0.2)
-# xlabel = "time [min]"
-# ylabel = "relative AIC"
-# titleleft = "left"
-# titleright = "right"
-# titleboth = "Anisotropy Coefficient doublet"
-# plot_twovalues_over_time(x, y1, y2, ylim, xlabel, ylabel,titleleft, titleright, titleboth)
-# #%% Plot figure 3M
-# x = np.arange(0,60)
-# y1 = AR1to1s_halfstim["MSM_data"]["AIC_left"]
-# y2 = AR1to1s_halfstim["MSM_data"]["AIC_right"]
-# ylim = (0.3,0.5)
-# xlabel = "time [min]"
-# ylabel = "relative AIC"
-# titleleft = "left"
-# titleright = "right"
-# titleboth = "Anisotropy Coefficient singlet"
-# plot_twovalues_over_time(x, y1, y2, ylim, xlabel, ylabel,titleleft, titleright, titleboth)

@@ -247,7 +247,6 @@ plt.show()
 ylabeloffset = 0
 xlabeloffset = 0
 colors = [colors_parent[1], colors_parent[2]]  # defines colors for scatterplot
-colors_regplot = ['#000000', '#000000', '#000000', '#000000']  # defines colors for linear regression plot
 
 dotsize = 1.8  # size of datapoints in scatterplot
 linewidth_sw = 0.3  # linewidth of dots in scatterplot
@@ -272,8 +271,7 @@ ylabel = '$\mathrm{\sigma_{x, CM}}$'
 
 sns.set_palette(sns.color_palette(colors))
 sns.scatterplot(data=df, x=x, y=y, hue=hue, style=hue, ax=axes[0], alpha=alpha_sw, linewidth=linewidth_sw, size=dotsize)
-sns.set_palette(sns.color_palette(colors_regplot))  # sets colors
-sns.regplot(data=df, x=x, y=y, scatter=False, ax=axes[0])
+sns.regplot(data=df, x=x, y=y, scatter=False, ax=axes[0], color='black')
 
 # add line with slope 1 for visualisation
 axes[0].plot([0, xmax], [0, ymax], linewidth=0.5, linestyle=':', color='grey')
@@ -324,8 +322,8 @@ ylabel = '$\mathrm{\sigma_{y, CM}}$'
 
 sns.set_palette(sns.color_palette(colors))
 sns.scatterplot(data=df, x=x, y=y, hue=hue, style=hue, ax=axes[1], alpha=alpha_sw, linewidth=linewidth_sw, size=dotsize)
-sns.set_palette(sns.color_palette(colors_regplot))  # sets colors
-sns.regplot(data=df, x=x, y=y, scatter=False, ax=axes[1])
+sns.regplot(data=df, x=x, y=y, scatter=False, ax=axes[1],color='black')
+
 
 # add line with slope 1 for visualisation
 axes[1].plot([0, xmax], [0, ymax], linewidth=0.5, linestyle=':', color='grey')

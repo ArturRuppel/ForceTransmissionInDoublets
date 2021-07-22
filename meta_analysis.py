@@ -31,17 +31,17 @@ def analyse_tfm_data(folder, stressmappixelsize):
 
     # average over whole cell and then over left and right half
     Es = np.nansum(Es_density, axis=(0, 1))
-    Es_lefthalf = np.nansum(Es_density[:, 0:x_half, :, :],
+    Es_left = np.nansum(Es_density[:, 0:x_half, :, :],
                             axis=(0, 1))  # maps are coming from matlab calculations where x and y-axes are inverted
-    Es_righthalf = np.nansum(Es_density[:, x_half:x_end, :, :], axis=(0, 1))
+    Es_right = np.nansum(Es_density[:, x_half:x_end, :, :], axis=(0, 1))
 
     # average over first twenty frames before photoactivation
     Es_baseline = np.nanmean(Es[0:20, :], axis=(0))
 
     # normalize stress data by their baseline
     relEs = np.divide(Es, Es_baseline)
-    relEs_lefthalf = np.divide(Es_lefthalf, Es_baseline)
-    relEs_righthalf = np.divide(Es_righthalf, Es_baseline)
+    relEs_left = np.divide(Es_left, Es_baseline)
+    relEs_right = np.divide(Es_right, Es_baseline)
 
     # calculate total force in x- and y-direction
     Fx = np.nansum(abs(Tx), axis=(0, 1)) * (stressmappixelsize ** 2)
@@ -51,9 +51,9 @@ def analyse_tfm_data(folder, stressmappixelsize):
     force_angle_baseline = np.nanmean(force_angle[0:20, :], axis=0)
 
     # calculate cell-cell force
-    Fx_lefthalf = np.nansum(Tx[:, 0:x_half, :, :], axis=(0, 1)) * (stressmappixelsize ** 2)
-    Fx_righthalf = np.nansum(Tx[:, x_half:x_end, :, :], axis=(0, 1)) * (stressmappixelsize ** 2)
-    F_cellcell = Fx_lefthalf - Fx_righthalf
+    Fx_left = np.nansum(Tx[:, 0:x_half, :, :], axis=(0, 1)) * (stressmappixelsize ** 2)
+    Fx_right = np.nansum(Tx[:, x_half:x_end, :, :], axis=(0, 1)) * (stressmappixelsize ** 2)
+    F_cellcell = Fx_left - Fx_right
 
     # calculate corneraverages
     Fx_topleft = np.zeros((t_end, cell_end))
@@ -140,98 +140,93 @@ def analyse_tfm_data(folder, stressmappixelsize):
             "Fx_bottomleft": Fx_bottomleft,
             "Fy_topleft": Fy_topleft, "Fy_topright": Fy_topright, "Fy_bottomright": Fy_bottomright,
             "Fy_bottomleft": Fy_bottomleft,
-            "Es": Es, "Es_lefthalf": Es_lefthalf, "Es_righthalf": Es_righthalf, "Es_baseline": Es_baseline,
-            "relEs": relEs, "relEs_lefthalf": relEs_lefthalf, "relEs_righthalf": relEs_righthalf, "REI": REI,
+            "Es": Es, "Es_left": Es_left, "Es_right": Es_right, "Es_baseline": Es_baseline,
+            "relEs": relEs, "relEs_left": relEs_left, "relEs_right": relEs_right, "REI": REI,
             "Fx": Fx, "Fy": Fy, "force_angle": force_angle, "force_angle_baseline": force_angle_baseline,
             "F_cellcell": F_cellcell}
 
     return data
 
 
-def analyse_MSM_data(folder):
+def analyse_msm_data(folder):
     sigma_xx = np.load(folder + "/sigma_xx.npy")
     sigma_yy = np.load(folder + "/sigma_yy.npy")
 
     # replace 0 with NaN to not mess up average calculations
-    # sigma_xx[sigma_xx == 0] = 'nan'
-    # sigma_yy[sigma_yy == 0] = 'nan'
+    sigma_xx[sigma_xx == 0] = 'nan'
+    sigma_yy[sigma_yy == 0] = 'nan'
 
     x_end = np.shape(sigma_xx)[1]
     x_half = np.rint(x_end / 2).astype(int)
 
     # average over whole cell and then over left and right half
     sigma_xx_average = np.nanmean(sigma_xx, axis=(0, 1))
-    sigma_xx_lefthalf_average = np.nanmean(sigma_xx[:, 0:x_half, :, :], axis=(
-    0, 1))  # maps are coming from matlab calculations where x and y-axes are inverted
-    sigma_xx_righthalf_average = np.nanmean(sigma_xx[:, x_half:x_end, :, :], axis=(0, 1))
+    sigma_xx_left_average = np.nanmean(sigma_xx[:, 0:x_half, :, :], axis=(0, 1))  # maps are coming from matlab calculations where x and y-axes are inverted
+    sigma_xx_right_average = np.nanmean(sigma_xx[:, x_half:x_end, :, :], axis=(0, 1))
     sigma_yy_average = np.nanmean(sigma_yy, axis=(0, 1))
-    sigma_yy_lefthalf_average = np.nanmean(sigma_yy[:, 0:x_half, :, :], axis=(0, 1))
-    sigma_yy_righthalf_average = np.nanmean(sigma_yy[:, x_half:x_end, :, :], axis=(0, 1))
+    sigma_yy_left_average = np.nanmean(sigma_yy[:, 0:x_half, :, :], axis=(0, 1))
+    sigma_yy_right_average = np.nanmean(sigma_yy[:, x_half:x_end, :, :], axis=(0, 1))
 
     # average over first twenty frames before photoactivation
     sigma_xx_baseline = np.nanmean(sigma_xx_average[0:20, :], axis=0)
     sigma_yy_baseline = np.nanmean(sigma_yy_average[0:20, :], axis=0)
 
     # normalize stress data by their baseline
-    relsigma_xx_average = np.divide(sigma_xx_average, sigma_xx_baseline)
-    relsigma_xx_lefthalf_average = np.divide(sigma_xx_lefthalf_average, sigma_xx_baseline)
-    relsigma_xx_righthalf_average = np.divide(sigma_xx_righthalf_average, sigma_xx_baseline)
+    relsigma_xx = np.divide(sigma_xx_average, sigma_xx_baseline)
+    relsigma_xx_left = np.divide(sigma_xx_left_average, sigma_xx_baseline)
+    relsigma_xx_right = np.divide(sigma_xx_right_average, sigma_xx_baseline)
 
-    relsigma_yy_average = np.divide(sigma_yy_average, sigma_yy_baseline)
-    relsigma_yy_lefthalf_average = np.divide(sigma_yy_lefthalf_average, sigma_yy_baseline)
-    relsigma_yy_righthalf_average = np.divide(sigma_yy_righthalf_average, sigma_yy_baseline)
+    relsigma_yy = np.divide(sigma_yy_average, sigma_yy_baseline)
+    relsigma_yy_left = np.divide(sigma_yy_left_average, sigma_yy_baseline)
+    relsigma_yy_right = np.divide(sigma_yy_right_average, sigma_yy_baseline)
 
-    # remove baseline
-    sigma_xx_lefthalf_noBL = sigma_xx_lefthalf_average-np.nanmean(sigma_xx_lefthalf_average[0:20, :], axis=0)
-    sigma_xx_righthalf_noBL = sigma_xx_righthalf_average - np.nanmean(sigma_xx_righthalf_average[0:20, :], axis=0)
+    sigma_xx_left_noBL = relsigma_xx_left-np.nanmean(relsigma_xx_left[0:20, :], axis=0)
+    sigma_xx_right_noBL = relsigma_xx_right-np.nanmean(relsigma_xx_right[0:20, :], axis=0)
+    sigma_yy_left_noBL = relsigma_yy_left-np.nanmean(relsigma_yy_left[0:20, :], axis=0)
+    sigma_yy_right_noBL = relsigma_yy_right-np.nanmean(relsigma_yy_right[0:20, :], axis=0)
 
-    sigma_yy_lefthalf_noBL = sigma_yy_lefthalf_average - np.nanmean(sigma_yy_lefthalf_average[0:20, :], axis=0)
-    sigma_yy_righthalf_noBL = sigma_yy_righthalf_average - np.nanmean(sigma_yy_righthalf_average[0:20, :], axis=0)
-    
-    # normalize by peak value
-    normsigma_xx_lefthalf = sigma_xx_lefthalf_noBL / np.max(sigma_xx_lefthalf_noBL, axis=0)
-    normsigma_xx_righthalf = sigma_xx_righthalf_noBL / np.max(sigma_xx_righthalf_noBL, axis=0)
-
-    normsigma_yy_lefthalf = sigma_yy_lefthalf_noBL / np.max(sigma_yy_lefthalf_noBL, axis=0)
-    normsigma_yy_righthalf = sigma_yy_righthalf_noBL / np.max(sigma_yy_righthalf_noBL, axis=0)
+    # normsigma_xx_left = sigma_xx_left_noBL / max(np.nanmean(sigma_xx_left_noBL, axis=1))
+    # normsigma_xx_right = sigma_xx_right_noBL / max(np.nanmean(sigma_xx_left_noBL, axis=1))
+    # normsigma_yy_left = sigma_yy_left_noBL / max(np.nanmean(sigma_yy_left_noBL, axis=1))
+    # normsigma_yy_right = sigma_yy_right_noBL / max(np.nanmean(sigma_yy_left_noBL, axis=1))
 
     # calculate anisotropy coefficient
     AIC = (sigma_xx_average - sigma_yy_average) / (sigma_xx_average + sigma_yy_average)
-    AIC_left = (sigma_xx_lefthalf_average - sigma_yy_lefthalf_average) / (
-                sigma_xx_lefthalf_average + sigma_yy_lefthalf_average)
-    AIC_right = (sigma_xx_righthalf_average - sigma_yy_righthalf_average) / (
-                sigma_xx_righthalf_average + sigma_yy_righthalf_average)
+    AIC_left = (sigma_xx_left_average - sigma_yy_left_average) / (
+                sigma_xx_left_average + sigma_yy_left_average)
+    AIC_right = (sigma_xx_right_average - sigma_yy_right_average) / (
+                sigma_xx_right_average + sigma_yy_right_average)
 
-    AIC_baseline = np.nanmean(AIC[0:20, :], axis=(0))
+    AIC_baseline = np.nanmean(AIC[0:20, :], axis=0)
     relAIC = AIC - AIC_baseline
     relAIC_left = AIC_left - AIC_baseline
     relAIC_right = AIC_right - AIC_baseline
 
     # calculate relative stress increase
-    RSI_xx = relsigma_xx_average[33, :] - relsigma_xx_average[20, :]
-    RSI_xx_left = relsigma_xx_lefthalf_average[33, :] - relsigma_xx_lefthalf_average[20, :]
-    RSI_xx_right = relsigma_xx_righthalf_average[33, :] - relsigma_xx_righthalf_average[20, :]
+    RSI_xx = relsigma_xx[33, :] - relsigma_xx[20, :]
+    RSI_xx_left = relsigma_xx_left[33, :] - relsigma_xx_left[20, :]
+    RSI_xx_right = relsigma_xx_right[33, :] - relsigma_xx_right[20, :]
 
-    RSI_yy = relsigma_yy_average[33, :] - relsigma_yy_average[20, :]
-    RSI_yy_left = relsigma_yy_lefthalf_average[33, :] - relsigma_yy_lefthalf_average[20, :]
-    RSI_yy_right = relsigma_yy_righthalf_average[33, :] - relsigma_yy_righthalf_average[20, :]
+    RSI_yy = relsigma_yy[33, :] - relsigma_yy[20, :]
+    RSI_yy_left = relsigma_yy_left[33, :] - relsigma_yy_left[20, :]
+    RSI_yy_right = relsigma_yy_right[33, :] - relsigma_yy_right[20, :]
 
     data = {"sigma_xx": sigma_xx, "sigma_yy": sigma_yy,
             "sigma_xx_average": sigma_xx_average, "sigma_yy_average": sigma_yy_average,
-            "sigma_xx_lefthalf_average": sigma_xx_lefthalf_average,
-            "sigma_yy_lefthalf_average": sigma_yy_lefthalf_average,
-            "sigma_xx_righthalf_average": sigma_xx_righthalf_average,
-            "sigma_yy_righthalf_average": sigma_yy_righthalf_average,
+            "sigma_xx_left_average": sigma_xx_left_average,
+            "sigma_yy_left_average": sigma_yy_left_average,
+            "sigma_xx_right_average": sigma_xx_right_average,
+            "sigma_yy_right_average": sigma_yy_right_average,
             "sigma_xx_baseline": sigma_xx_baseline, "sigma_yy_baseline": sigma_yy_baseline,
-            "relsigma_xx_average": relsigma_xx_average, "relsigma_yy_average": relsigma_yy_average,
-            "relsigma_xx_lefthalf_average": relsigma_xx_lefthalf_average,
-            "relsigma_yy_lefthalf_average": relsigma_yy_lefthalf_average,
-            "relsigma_xx_righthalf_average": relsigma_xx_righthalf_average,
-            "relsigma_yy_righthalf_average": relsigma_yy_righthalf_average,
-            "normsigma_xx_lefthalf": normsigma_xx_lefthalf,
-            "normsigma_yy_lefthalf": normsigma_yy_lefthalf,
-            "normsigma_xx_righthalf": normsigma_xx_righthalf,
-            "normsigma_yy_righthalf": normsigma_yy_righthalf,
+            "relsigma_xx": relsigma_xx, "relsigma_yy": relsigma_yy,
+            "relsigma_xx_left": relsigma_xx_left,
+            "relsigma_yy_left": relsigma_yy_left,
+            "relsigma_xx_right": relsigma_xx_right,
+            "relsigma_yy_right": relsigma_yy_right,
+            "sigma_xx_left_noBL": sigma_xx_left_noBL,
+            "sigma_yy_left_noBL": sigma_yy_left_noBL,
+            "sigma_xx_right_noBL": sigma_xx_right_noBL,
+            "sigma_yy_right_noBL": sigma_yy_right_noBL,
             "AIC_baseline": AIC_baseline, "AIC": AIC, "AIC_left": AIC_left, "AIC_right": AIC_right,
             "relAIC": relAIC, "relAIC_left": relAIC_left, "relAIC_right": relAIC_right,
             "RSI_xx": RSI_xx, "RSI_xx_left": RSI_xx_left, "RSI_xx_right": RSI_xx_right,
@@ -257,16 +252,31 @@ def analyse_shape_data(folder, pixelsize):
 
     spreadingsize_baseline = np.nanmean(spreadingsize[0:20, :], axis=0)
 
+    actin_angles = np.load(folder + "/actin_angles.npy").squeeze(axis=0)
+
+    actin_intensity_left = np.load(folder + "/actin_intensity_left.npy")
+    actin_intensity_right = np.load(folder + "/actin_intensity_right.npy")
+
+    relactin_intensity_left = actin_intensity_left / np.nanmean(actin_intensity_left[0:20,:], axis=0)
+    relactin_intensity_right = actin_intensity_right / np.nanmean(actin_intensity_right[0:20, :], axis=0)
+
+    RAI_left = relactin_intensity_left[33, :] - relactin_intensity_left[20, :]
+    RAI_right = relactin_intensity_right[33, :] - relactin_intensity_right[20, :]
+
     data = {"Xtop": Xtop, "Xright": Xright, "Xbottom": Xbottom, "Xleft": Xleft,
             "Ytop": Ytop, "Yright": Yright, "Ybottom": Ybottom, "Yleft": Yleft,
-            "spreadingsize": spreadingsize, "spreadingsize_baseline": spreadingsize_baseline}
+            "spreadingsize": spreadingsize, "spreadingsize_baseline": spreadingsize_baseline,
+            "actin_angles": actin_angles,
+            "actin_intensity_left": actin_intensity_left, "actin_intensity_right": actin_intensity_right,
+            "relactin_intensity_left": relactin_intensity_left, "relactin_intensity_right": relactin_intensity_right,
+            "RAI_left": RAI_left, "RAI_right": RAI_right}
 
     return data
 
 
 def create_filter(data, threshold):
     # initialize variables
-    if np.ndim(data)<3:
+    if np.ndim(data) < 3:
         data = data[..., np.newaxis]
     noVariables = np.shape(data)[2]
     t_end = np.shape(data)[0]
@@ -313,12 +323,48 @@ def apply_filter(data, baselinefilter):
     return data
 
 
+def analyse_MSM_data_after_filtering(data):
+    sigma_xx_left_average = data["sigma_xx_left_average"]
+    sigma_xx_right_average = data["sigma_xx_right_average"]
+    sigma_yy_left_average = data["sigma_yy_left_average"]
+    sigma_yy_right_average = data["sigma_yy_right_average"]
+
+    sigma_xx_left_noBL = sigma_xx_left_average-np.nanmean(sigma_xx_left_average[0:20, :], axis=0)
+    sigma_xx_right_noBL = sigma_xx_right_average - np.nanmean(sigma_xx_right_average[0:20, :], axis=0)
+    sigma_yy_left_noBL = sigma_yy_left_average - np.nanmean(sigma_yy_left_average[0:20, :], axis=0)
+    sigma_yy_right_noBL = sigma_yy_right_average - np.nanmean(sigma_yy_right_average[0:20, :], axis=0)
+
+    normsigma_xx_left = sigma_xx_left_noBL / max(np.nanmean(sigma_xx_left_noBL, axis=1))
+    normsigma_xx_right = sigma_xx_right_noBL / max(np.nanmean(sigma_xx_left_noBL, axis=1))
+    normsigma_yy_left = sigma_yy_left_noBL / max(np.nanmean(sigma_yy_left_noBL, axis=1))
+    normsigma_yy_right = sigma_yy_right_noBL / max(np.nanmean(sigma_yy_left_noBL, axis=1))
+
+    # calculate normalized stress increase
+    NSI_xx_left = normsigma_xx_left[33, :] - normsigma_xx_left[20, :]
+    NSI_xx_right = normsigma_xx_right[33, :] - normsigma_xx_right[20, :]
+
+    NSI_yy_left = normsigma_yy_left[33, :] - normsigma_yy_left[20, :]
+    NSI_yy_right = normsigma_yy_right[33, :] - normsigma_yy_right[20, :]
+
+    data["normsigma_xx_left"] = normsigma_xx_left
+    data["normsigma_xx_right"] = normsigma_xx_right
+    data["normsigma_yy_left"] = normsigma_yy_left
+    data["normsigma_yy_right"] = normsigma_yy_right
+
+    # data["NSI_xx_left"] = NSI_xx_left
+    # data["NSI_xx_right"] = NSI_xx_right
+    # data["NSI_yy_left"] = NSI_yy_left
+    # data["NSI_yy_right"] = NSI_yy_right
+
+    return data
+
+
 def main_meta_analysis(folder, title, noCells, noFrames):
     stressmappixelsize = 0.864 * 1e-6  # in meter
     pixelsize = 0.108 * 1e-6
 
     folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
-    folder = folder + title
+    folder += title
 
     # # plots movies for displacement, traction and stress data for every cell. Takes about 4 hours
     # plot_TFM_and_MSM_individual_movies(folder, stressmappixelsize)
@@ -327,27 +373,30 @@ def main_meta_analysis(folder, title, noCells, noFrames):
     TFM_data = analyse_tfm_data(folder, stressmappixelsize)
 
     # calculate averages over all cells, normalize data to baseline values etc.
-    MSM_data = analyse_MSM_data(folder)
+    MSM_data = analyse_msm_data(folder)
 
     # calculate spreading area and such
     shape_data = analyse_shape_data(folder, pixelsize)
 
-    # stack arrays together that will be used to determine the cells' baseline stability
+    # filter data to make sure that the baselines are stable
     filterdata = TFM_data["relEs"][0:20, :]#np.dstack((, TFM_data["relEs"][0:20, :]))
-    # filterdata = np.dstack((TFM_data["relEs_lefthalf"][0:20,:],TFM_data["relEs_righthalf"][0:20,:],
-    #                         MSM_data["relsigma_yy_lefthalf_average"][0:20,:],MSM_data["relsigma_yy_righthalf_average"][0:20,:],
-    #                         MSM_data["relsigma_xx_lefthalf_average"][0:20,:],MSM_data["relsigma_xx_righthalf_average"][0:20,:]))
-
-    # identifiy cells with unstable baselines
     baselinefilter = create_filter(filterdata, 0.005)
 
-    # # plot average movies with filtered data
-    # plot_TFM_and_MSM_average_movies(folder, stressmappixelsize, baselinefilter)
+    # filterdata = np.dstack((MSM_data["normsigma_xx_left"][0:20, :], MSM_data["normsigma_xx_right"][0:20, :]))
+    # baselinefilter1 = create_filter(filterdata, 0.2)
+    #
+    # filterdata = np.dstack((MSM_data["normsigma_yy_left"][0:20, :], MSM_data["normsigma_yy_right"][0:20, :]))
+    # baselinefilter2 = create_filter(filterdata, 0.2)
+
+    # baselinefilter = np.logical_and(baselinefilter1, baselinefilter2)
 
     # remove cells with unstable baselines
     TFM_data = apply_filter(TFM_data, baselinefilter)
     MSM_data = apply_filter(MSM_data, baselinefilter)
     shape_data = apply_filter(shape_data, baselinefilter)
+
+    # # after filtering, the average peaks change so we have to normalize data again
+    # MSM_data = analyse_MSM_data_after_filtering(MSM_data)
 
     new_N = np.sum(baselinefilter)
     print(title + ": " + str(baselinefilter.shape[0] - new_N) + " cells were filtered out")
@@ -370,7 +419,7 @@ if __name__ == "__main__":
     AR1to1shs = "AR1to1 singlets half stim"
     AR2to1dhs = "AR2to1 doublets half stim"
 
-    # # These functions perform a series of analyses and assemble a dictionary of dictionaries containing all the data that was used for plotting
+    # These functions perform a series of analyses and assemble a dictionary of dictionaries containing all the data that was used for plotting
     AR1to1d_fullstim_long = main_meta_analysis(folder, AR1to1dfsl, 42, 60)
     AR1to1s_fullstim_long = main_meta_analysis(folder, AR1to1sfsl, 17, 60)
     AR1to1d_fullstim_short = main_meta_analysis(folder, AR1to1dfss, 35, 50)
