@@ -14,34 +14,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from scipy.stats import pearsonr
 
 # mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['font.size'] = 8
 
-# def test_if_gaussian(data1, data2, title):
-#     # test if data follows Gaussian distribution
-#     stat, p_n1 = normaltest(data1)
-#     stat, p_s1 = shapiro(data1)
-#     stat, p_n2 = normaltest(data2)
-#     stat, p_s2 = shapiro(data2)
-#     print('#############################################')
-#     # depending on the result of the Gaussian distribution test, perform either unpaired t-test or Mann-Whitney U test
-#     if (p_n1 > 0.05 and p_s1 > 0.05 and p_n2 > 0.05 and p_s2 > 0.05):    
-#         gaussian = True
-#         print(title + ': Probably Gaussian.')
-#     else:
-#         gaussian = False
-#         print(title + ': Probably not Gaussian.') 
-
-#     return gaussian
-
-
 # %% load data for plotting
 folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
-# AR1to1d_fullstim_long =   pickle.load(open(folder + "analysed_data/AR1to1d_fullstim_long.dat", "rb"))
-# AR1to1s_fullstim_long =   pickle.load(open(folder + "analysed_data/AR1to1s_fullstim_long.dat", "rb"))
-# AR1to1d_fullstim_short =  pickle.load(open(folder + "analysed_data/AR1to1d_fullstim_short.dat", "rb"))
-# AR1to1s_fullstim_short =  pickle.load(open(folder + "analysed_data/AR1to1s_fullstim_short.dat", "rb"))
+AR1to1d_fullstim_long = pickle.load(open(folder + "analysed_data/AR1to1d_fullstim_long.dat", "rb"))
+AR1to1s_fullstim_long = pickle.load(open(folder + "analysed_data/AR1to1s_fullstim_long.dat", "rb"))
+AR1to1d_fullstim_short = pickle.load(open(folder + "analysed_data/AR1to1d_fullstim_short.dat", "rb"))
+AR1to1s_fullstim_short = pickle.load(open(folder + "analysed_data/AR1to1s_fullstim_short.dat", "rb"))
 AR1to2d_halfstim = pickle.load(open(folder + "analysed_data/AR1to2d_halfstim.dat", "rb"))
 AR1to1d_halfstim = pickle.load(open(folder + "analysed_data/AR1to1d_halfstim.dat", "rb"))
 AR1to1s_halfstim = pickle.load(open(folder + "analysed_data/AR1to1s_halfstim.dat", "rb"))
@@ -68,8 +51,10 @@ for key1 in AR1to1d_halfstim:  # keys are the same for all dictionaries so I'm j
         if AR1to1d_halfstim[key1][key2].ndim == 1:  # only 1D data can be stored in the data frame
             # concatenate values from different experiments
             concatenated_data_1to2d[key2] = AR1to2d_halfstim[key1][key2]
-            concatenated_data_1to1d[key2] = AR1to1d_halfstim[key1][key2]
-            concatenated_data_1to1s[key2] = AR1to1s_halfstim[key1][key2]
+            concatenated_data_1to1d[key2] = np.concatenate(
+                (AR1to1d_fullstim_long[key1][key2], AR1to1d_fullstim_short[key1][key2], AR1to1d_halfstim[key1][key2]))
+            concatenated_data_1to1s[key2] = np.concatenate(
+                (AR1to1s_fullstim_long[key1][key2], AR1to1s_fullstim_short[key1][key2], AR1to1s_halfstim[key1][key2]))
             concatenated_data_2to1d[key2] = AR2to1d_halfstim[key1][key2]
 
             concatenated_data[key2] = np.concatenate((concatenated_data_1to2d[key2], concatenated_data_1to1d[key2],
@@ -620,189 +605,68 @@ fig_ax.set_ylim(ymax=ymax)
 plt.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
 plt.show()
 
-# %%
-# pylustrator.load("plot2.py", offset=[1, 0])
-# # #%% Plot figure 1D
+# %% plot figure 5D correlation of actin angle and anisotropy coefficient
+# set plot parameters
+ylabeloffset = 0
+xlabeloffset = 0
+colors = colors_parent  # defines colors for scatterplot
 
-# # define plot parameters
-# fig = plt.figure(2, figsize=(5.5, 2))           # figuresize in inches
-# gs = gridspec.GridSpec(1,3)                     # sets up subplotgrid rows by columns
-# gs.update(wspace=0.4, hspace=0.25)              # adjusts space in between the boxes in the grid
-# colors = [colors_parent[1],colors_parent[2]];   # defines colors
-# sns.set_palette(sns.color_palette(colors))      # sets colors
-# linewidth_bp = 0.7                              # linewidth of boxplot borders
-# width = 0.3                                     # width of boxplots
-# dotsize = 2                                     # size of datapoints in swarmplot
-# linewidth_sw = 0.3                              # linewidth of boxplot borders
-# alpha_sw = 1                                    # transparency of dots in swarmplot
-# alpha_bp = 0.8                                  # transparency of boxplots
-# ylabeloffset = 1                                # adjusts distance of ylabel to the plot
-# titleoffset = 3                                 # adjusts distance of title to the plot
+dotsize = 1.8  # size of datapoints in scatterplot
+linewidth_sw = 0.3  # linewidth of dots in scatterplot
+alpha_sw = 1  # transparency of dots in scatterplot
 
-# ##############################################################################
-# #Generate first panel
-# ##############################################################################
-# ymin = 500
-# ymax = 2000
-# stat_annotation_offset = 0.2
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2, 2))
 
-# # the grid spec is rows, then columns
-# fig_ax = fig.add_subplot(gs[0,0])
+x = 'actin_angles'
+y = 'AIC_baseline'
+hue = 'keys'
+xmin = 15
+xmax = 75
+ymin = -1
+ymax = 1
+xticks = np.arange(15, 75.1, 15)
+yticks = np.arange(-1, 1.1, 0.2)
+xlabel = "angle"  # "'$\mathrm{\sigma_{x, MSM}}$'
+ylabel = "AIC"  # '$\mathrm{\sigma_{x, CM}}$'
 
-# # set plot variables
-# x = 'keys'
-# y = 'spreadingsize_baseline'
-# # if test_if_gaussian(spreadingsize_baseline_1to1d,spreadingsize_baseline_1to1s,'Spreading size'):
-# #     test = 't-test_ind'
-# # else:
-# #     test = 'Mann-Whitney'
+sns.set_palette(sns.color_palette(colors))
+sns.scatterplot(data=df, x=x, y=y, hue=hue, style=hue, ax=ax, alpha=alpha_sw, linewidth=linewidth_sw, size=dotsize)
+sns.regplot(data=df, x=x, y=y, scatter=False, ax=ax, color='black')
 
-# # create box- and swarmplots
-# sns.swarmplot(x=x, y=y, data=df, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
-# bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax,linewidth=linewidth_bp,notch=True, showfliers = False, width=width)
+# add line with slope 1 for visualisation
+ax.plot([45, 45], [ymax, ymin], linewidth=0.5, linestyle=':', color='grey')
+ax.plot([xmin, xmax], [0, 0], linewidth=0.5, linestyle=':', color='grey')
 
-# order = ['AR1to1d', 'AR1to1s']
-# # test_results = add_stat_annotation(bp, data=df, x=x, y=y, order=order, line_offset_to_box=stat_annotation_offset, box_pairs=[('AR1to1d', 'AR1to1s')],                      
-# #                                    test=test, text_format='star', loc='inside', verbose=2)
+# set labels
+ax.set_xlabel(xlabel=xlabel, labelpad=xlabeloffset)
+ax.set_ylabel(ylabel=ylabel, labelpad=ylabeloffset)
 
-# # make boxplots transparent
-# for patch in bp.artists:
-#     r, g, b, a = patch.get_facecolor()
-#     patch.set_facecolor((r, g, b, alpha_bp))
+# remove legend
+ax.get_legend().remove()
 
-# plt.setp(bp.artists, edgecolor = 'k')
-# plt.setp(bp.lines, color='k')
+# set limits
+# ax.set_xlim(xmin=xmin, xmax=xmax)
+# ax.set_ylim(ymin=ymin, ymax=ymax)
 
-# # set labels
-# fig_ax.set_xticklabels(['doublet', 'singlet'])
-# fig_ax.set_xlabel(xlabel=None)
-# fig_ax.set_ylabel(ylabel='A [$\mathrm{\mu m^2}$]', labelpad=ylabeloffset)
-# fig_ax.set_title(label='Spreading size', pad=titleoffset)
-# fig_ax.set()
+# Define where you want ticks
+plt.sca(ax)
+plt.xticks(xticks)
+plt.yticks(yticks)
 
-# # Define where you want ticks
-# yticks = np.arange(500,1501,250)
-# plt.yticks(yticks)
+# provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in', which='minor', length=3, bottom=True, top=True, left=True, right=True)
+plt.tick_params(direction='in', which='major', length=6, bottom=True, top=True, left=True, right=True)
 
-# # provide info on tick parameters
-# plt.minorticks_on()
-# plt.tick_params(direction='in',which='minor', length=3, bottom=False, top=False, left=True, right=True)
-# plt.tick_params(direction='in',which='major', length=6, bottom=False, top=False, left=True, right=True)
+corr, p = pearsonr(df['actin_angles'], df['AIC_baseline'])
 
-# # set limits
-# fig_ax.set_ylim(ymin=ymin)
-# fig_ax.set_ylim(ymax=ymax)
+corr = np.round(corr, decimals=3)
+# p = np.round(p,decimals=6)
 
-# ##############################################################################
-# # Generate second panel
-# ##############################################################################
-
-# ymin = 0
-# ymax = 2
-# stat_annotation_offset = -0.1 # adjust y-position of statistical annotation
-
-# # the grid spec is rows, then columns
-# fig_ax = fig.add_subplot(gs[0,1])
-
-# # set plot variables
-# x = 'keys'
-# y = 'strain_energy'
-# # if test_if_gaussian(Es_baseline_1to1d,Es_baseline_1to1s,'Strain energy'):
-# #     test = 't-test_ind'
-# # else:
-# #     test = 'Mann-Whitney'
-
-# sns.swarmplot(x=x, y=y, data=df, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
-# bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax,linewidth=linewidth_bp,notch=True, showfliers = False, width=width)
-
-# order = ['AR1to1d', 'AR1to1s']
-# # test_results = add_stat_annotation(bp, data=df, x=x, y=y, order=order, line_offset_to_box=stat_annotation_offset, box_pairs=[('AR1to1d', 'AR1to1s')],                      
-# #                                     test=test, text_format='star', loc='inside', verbose=2)
-
-# # make boxplots transparent
-# for patch in bp.artists:
-#     r, g, b, a = patch.get_facecolor()
-#     patch.set_facecolor((r, g, b, alpha_bp))
-
-# plt.setp(bp.artists, edgecolor = 'k')
-# plt.setp(bp.lines, color='k')
-
-# # set labels
-# fig_ax.set_xticklabels(['doublet', 'singlet'])
-# fig_ax.set_xlabel(xlabel=None)
-# fig_ax.set_ylabel(ylabel='$\mathrm{E_s}$ [pJ]', labelpad=ylabeloffset)
-# fig_ax.set_title(label='Strain energy', pad=titleoffset)
-# fig_ax.set()
-
-# # Define where you want ticks
-# yticks = np.arange(0,2.1,0.5)
-# plt.yticks(yticks)
-
-# #provide info on tick parameters
-# plt.minorticks_on()
-# plt.tick_params(direction='in',which='minor', length=3, bottom=False, top=False, left=True, right=True)
-# plt.tick_params(direction='in',which='major', length=6, bottom=False, top=False, left=True, right=True)
-
-# # set limits
-# fig_ax.set_ylim(ymin=ymin)
-# fig_ax.set_ylim(ymax=ymax)
-
-# ##############################################################################
-# #Generate third panel
-# ##############################################################################
-# ymin = 0
-# ymax = 90
-# stat_annotation_offset = 0.037 # adjust y-position of statistical annotation
-
-# # the grid spec is rows, then columns
-# fig_ax = fig.add_subplot(gs[0,2])
-
-# # set plot variables
-# x = 'keys'
-# y = 'force_angle'
-# # if test_if_gaussian(force_angle_baseline_1to1d,force_angle_baseline_1to1s,'Force angles'):
-# #     test = 't-test_ind'
-# # else:
-# #     test = 'Mann-Whitney'
-
-# # create box- and swarmplots
-# sns.swarmplot(x=x, y=y, data=df, ax=fig_ax,alpha=alpha_sw,linewidth=linewidth_sw, zorder=0, size=dotsize)
-# bp = sns.boxplot(x=x, y=y, data=df, ax=fig_ax,linewidth=linewidth_bp,notch=True, showfliers = False, width=width)
-
-# order = ['AR1to1d', 'AR1to1s']
-# # test_results = add_stat_annotation(bp, data=df, x=x, y=y, order=order, line_offset_to_box=stat_annotation_offset, box_pairs=[('AR1to1d', 'AR1to1s')],                      
-# #                                     test=test, text_format='star', loc='inside', verbose=2)
-
-# # make boxplots transparent
-# for patch in bp.artists:
-#     r, g, b, a = patch.get_facecolor()
-#     patch.set_facecolor((r, g, b, alpha_bp))
-
-# plt.setp(bp.artists, edgecolor = 'k')
-# plt.setp(bp.lines, color='k')
+plt.text(15, -0.8, 'R = ' + str(corr))
+plt.text(15, -0.9, 'p = ' + '{:0.2e}'.format(p))
 
 
-# # set labels
-# fig_ax.set_xticklabels(['doublet', 'singlet'])
-# fig_ax.set_xlabel(xlabel=None)
-# fig_ax.set_ylabel(ylabel=r'$\mathrm{\vartheta}$ [°]', labelpad=ylabeloffset)
-# fig_ax.set_title(label='Force angles', pad=titleoffset)
-# fig_ax.set()
 
-# # Define where you want ticks
-# yticks = np.arange(0,91,15)
-# plt.yticks(yticks)
-
-# #provide info on tick parameters
-# plt.minorticks_on()
-# plt.tick_params(direction='in',which='minor', length=3, bottom=False, top=False, left=True, right=True)
-# plt.tick_params(direction='in',which='major', length=6, bottom=False, top=False, left=True, right=True)
-
-# # set limits
-# fig_ax.set_ylim(ymin=ymin)
-# fig_ax.set_ylim(ymax=ymax)
-
-
-# # save plot to file
-# plt.savefig(folder+'fig1D.png', dpi=300, bbox_inches="tight")
-# plt.close()
+plt.savefig(figfolder + 'D.png', dpi=300, bbox_inches="tight")
+plt.show()

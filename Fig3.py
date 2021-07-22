@@ -675,17 +675,17 @@ optolinewidth = 0.1  # adjusts the linewidth of the annotations that represent t
 # Generate first panel
 ##############################################################################
 
-ymin = -0.1
-ymax = 0.2
+ymin = 0.9
+ymax = 1.2
 xticks = np.arange(0, 61, 20)
-yticks = np.arange(-0.1, 0.21, 0.1)
+yticks = np.arange(0.9, 1.21, 0.1)
 
 # the grid spec is rows, then columns
 fig_ax = fig.add_subplot(gs[0, 0])
 
 # set plot variables
 x = np.arange(60)
-y = AR1to1d_halfstim["MSM_data"]["sigma_xx_left_noBL"]
+y = AR1to1d_halfstim["MSM_data"]["relsigma_xx_left"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -697,7 +697,7 @@ fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[1], marker='
                 markeredgewidth=0.5)
 # set plot variables
 x = np.arange(60)
-y = AR1to1d_halfstim["MSM_data"]["sigma_xx_right_noBL"]
+y = AR1to1d_halfstim["MSM_data"]["relsigma_xx_right"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -735,16 +735,16 @@ fig_ax.set_ylim(ymax=ymax)
 # Generate second panel
 ##############################################################################
 
-ymin = -0.1
-ymax = 0.2
+ymin = 0.9
+ymax = 1.2
 xticks = np.arange(0, 61, 20)
-yticks = np.arange(-0.1, 0.21, 0.1)
+yticks = np.arange(0.9, 1.21, 0.1)
 # the grid spec is rows, then columns
 fig_ax = fig.add_subplot(gs[0, 1])
 
 # set plot variables
 x = np.arange(60)
-y = AR1to1d_halfstim["MSM_data"]["sigma_yy_left_noBL"]
+y = AR1to1d_halfstim["MSM_data"]["relsigma_yy_left"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -756,7 +756,7 @@ fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[1], marker='
                 markeredgewidth=0.5)
 # set plot variables
 x = np.arange(60)
-y = AR1to1d_halfstim["MSM_data"]["sigma_yy_right_noBL"]
+y = AR1to1d_halfstim["MSM_data"]["relsigma_yy_right"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -792,17 +792,17 @@ fig_ax.set_ylim(ymax=ymax)
 # Generate third panel
 ##############################################################################
 
-ymin = -0.1
-ymax = 0.2
+ymin = 0.9
+ymax = 1.2
 xticks = np.arange(0, 61, 20)
-yticks = np.arange(-0.1, 0.21, 0.1)
+yticks = np.arange(0.9, 1.21, 0.1)
 
 # the grid spec is rows, then columns
 fig_ax = fig.add_subplot(gs[1, 0])
 
 # set plot variables
 x = np.arange(60)
-y = AR1to1s_halfstim["MSM_data"]["sigma_xx_left_noBL"]
+y = AR1to1s_halfstim["MSM_data"]["relsigma_xx_left"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -814,7 +814,7 @@ fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[2], marker='
                 markeredgewidth=0.5)
 # set plot variables
 x = np.arange(60)
-y = AR1to1s_halfstim["MSM_data"]["sigma_xx_right_noBL"]
+y = AR1to1s_halfstim["MSM_data"]["relsigma_xx_right"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -851,17 +851,17 @@ fig_ax.set_ylim(ymax=ymax)
 # Generate fourth panel
 ##############################################################################
 
-ymin = -0.1
-ymax = 0.2
+ymin = 0.9
+ymax = 1.2
 xticks = np.arange(0, 61, 20)
-yticks = np.arange(-0.1, 0.21, 0.1)
+yticks = np.arange(0.9, 1.21, 0.1)
 
 # the grid spec is rows, then columns
 fig_ax = fig.add_subplot(gs[1, 1])
 
 # set plot variables
 x = np.arange(60)
-y = AR1to1s_halfstim["MSM_data"]["sigma_yy_left_noBL"]
+y = AR1to1s_halfstim["MSM_data"]["relsigma_yy_left"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -873,7 +873,7 @@ fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[2], marker='
                 markeredgewidth=0.5)
 # set plot variables
 x = np.arange(60)
-y = AR1to1s_halfstim["MSM_data"]["sigma_yy_right_noBL"]
+y = AR1to1s_halfstim["MSM_data"]["relsigma_yy_right"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)

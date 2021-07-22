@@ -169,21 +169,26 @@ def analyse_msm_data(folder):
 
     # average over first twenty frames before photoactivation
     sigma_xx_baseline = np.nanmean(sigma_xx_average[0:20, :], axis=0)
+    sigma_xx_left_baseline = np.nanmean(sigma_xx_left_average[0:20, :], axis=0)
+    sigma_xx_right_baseline = np.nanmean(sigma_xx_right_average[0:20, :], axis=0)
+
     sigma_yy_baseline = np.nanmean(sigma_yy_average[0:20, :], axis=0)
+    sigma_yy_left_baseline = np.nanmean(sigma_yy_left_average[0:20, :], axis=0)
+    sigma_yy_right_baseline = np.nanmean(sigma_yy_right_average[0:20, :], axis=0)
 
     # normalize stress data by their baseline
-    relsigma_xx = np.divide(sigma_xx_average, sigma_xx_baseline)
-    relsigma_xx_left = np.divide(sigma_xx_left_average, sigma_xx_baseline)
-    relsigma_xx_right = np.divide(sigma_xx_right_average, sigma_xx_baseline)
+    relsigma_xx = sigma_xx_average / sigma_xx_baseline
+    relsigma_xx_left = sigma_xx_left_average / sigma_xx_left_baseline
+    relsigma_xx_right = sigma_xx_right_average / sigma_xx_right_baseline
 
-    relsigma_yy = np.divide(sigma_yy_average, sigma_yy_baseline)
-    relsigma_yy_left = np.divide(sigma_yy_left_average, sigma_yy_baseline)
-    relsigma_yy_right = np.divide(sigma_yy_right_average, sigma_yy_baseline)
+    relsigma_yy = sigma_yy_average / sigma_yy_baseline
+    relsigma_yy_left = sigma_yy_left_average / sigma_yy_left_baseline
+    relsigma_yy_right = sigma_yy_right_average / sigma_yy_right_baseline
 
-    sigma_xx_left_noBL = relsigma_xx_left-np.nanmean(relsigma_xx_left[0:20, :], axis=0)
-    sigma_xx_right_noBL = relsigma_xx_right-np.nanmean(relsigma_xx_right[0:20, :], axis=0)
-    sigma_yy_left_noBL = relsigma_yy_left-np.nanmean(relsigma_yy_left[0:20, :], axis=0)
-    sigma_yy_right_noBL = relsigma_yy_right-np.nanmean(relsigma_yy_right[0:20, :], axis=0)
+    # sigma_xx_left_noBL = relsigma_xx_left-np.nanmean(relsigma_xx_left[0:20, :], axis=0)
+    # sigma_xx_right_noBL = relsigma_xx_right-np.nanmean(relsigma_xx_right[0:20, :], axis=0)
+    # sigma_yy_left_noBL = relsigma_yy_left-np.nanmean(relsigma_yy_left[0:20, :], axis=0)
+    # sigma_yy_right_noBL = relsigma_yy_right-np.nanmean(relsigma_yy_right[0:20, :], axis=0)
 
     # normsigma_xx_left = sigma_xx_left_noBL / max(np.nanmean(sigma_xx_left_noBL, axis=1))
     # normsigma_xx_right = sigma_xx_right_noBL / max(np.nanmean(sigma_xx_left_noBL, axis=1))
@@ -223,10 +228,10 @@ def analyse_msm_data(folder):
             "relsigma_yy_left": relsigma_yy_left,
             "relsigma_xx_right": relsigma_xx_right,
             "relsigma_yy_right": relsigma_yy_right,
-            "sigma_xx_left_noBL": sigma_xx_left_noBL,
-            "sigma_yy_left_noBL": sigma_yy_left_noBL,
-            "sigma_xx_right_noBL": sigma_xx_right_noBL,
-            "sigma_yy_right_noBL": sigma_yy_right_noBL,
+            # "sigma_xx_left_noBL": sigma_xx_left_noBL,
+            # "sigma_yy_left_noBL": sigma_yy_left_noBL,
+            # "sigma_xx_right_noBL": sigma_xx_right_noBL,
+            # "sigma_yy_right_noBL": sigma_yy_right_noBL,
             "AIC_baseline": AIC_baseline, "AIC": AIC, "AIC_left": AIC_left, "AIC_right": AIC_right,
             "relAIC": relAIC, "relAIC_left": relAIC_left, "relAIC_right": relAIC_right,
             "RSI_xx": RSI_xx, "RSI_xx_left": RSI_xx_left, "RSI_xx_right": RSI_xx_right,

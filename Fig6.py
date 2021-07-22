@@ -312,17 +312,18 @@ optolinewidth = 0.1  # adjusts the linewidth of the annotations that represent t
 # Generate first panel
 ##############################################################################
 
-ymin = -2
-ymax = 2
+ymin = 0.9
+ymax = 1.2
 xticks = np.arange(0, 61, 20)
-yticks = np.arange(-2, 2, 0.5)
+yticks = np.arange(0.9, 1.21, 0.1)
+
 
 # the grid spec is rows, then columns
 fig_ax = fig.add_subplot(gs[0, 0])
 
 # set plot variables
 x = np.arange(60)
-y = AR1to2d_halfstim["MSM_data"]["normsigma_xx_left"]
+y = AR1to2d_halfstim["MSM_data"]["relsigma_xx_left"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -334,7 +335,7 @@ fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[0], marker='
                 markeredgewidth=0.5)
 # set plot variables
 x = np.arange(60)
-y = AR1to2d_halfstim["MSM_data"]["normsigma_xx_right"]
+y = AR1to2d_halfstim["MSM_data"]["relsigma_xx_right"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -372,17 +373,13 @@ fig_ax.set_ylim(ymax=ymax)
 # Generate second panel
 ##############################################################################
 
-ymin = -2
-ymax = 2
-xticks = np.arange(0, 61, 20)
-yticks = np.arange(-2, 2, 0.5)
 
 # the grid spec is rows, then columns
 fig_ax = fig.add_subplot(gs[0, 1])
 
 # set plot variables
 x = np.arange(60)
-y = AR1to2d_halfstim["MSM_data"]["normsigma_yy_left"]
+y = AR1to2d_halfstim["MSM_data"]["relsigma_yy_left"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -394,7 +391,7 @@ fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[0], marker='
                 markeredgewidth=0.5)
 # set plot variables
 x = np.arange(60)
-y = AR1to2d_halfstim["MSM_data"]["normsigma_yy_right"]
+y = AR1to2d_halfstim["MSM_data"]["relsigma_yy_right"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -434,17 +431,13 @@ fig_ax.set_ylim(ymax=ymax)
 # Generate third panel
 ##############################################################################
 
-ymin = -2
-ymax = 2
-xticks = np.arange(0, 61, 20)
-yticks = np.arange(-2, 2, 0.5)
 
 # the grid spec is rows, then columns
 fig_ax = fig.add_subplot(gs[1, 0])
 
 # set plot variables
 x = np.arange(60)
-y = AR1to1d_halfstim["MSM_data"]["normsigma_xx_left"]
+y = AR1to1d_halfstim["MSM_data"]["relsigma_xx_left"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -456,7 +449,7 @@ fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[1], marker='
                 markeredgewidth=0.5)
 # set plot variables
 x = np.arange(60)
-y = AR1to1d_halfstim["MSM_data"]["normsigma_xx_right"]
+y = AR1to1d_halfstim["MSM_data"]["relsigma_xx_right"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -494,17 +487,13 @@ fig_ax.set_ylim(ymax=ymax)
 # Generate fourth panel
 ##############################################################################
 
-ymin = -2
-ymax = 2
-xticks = np.arange(0, 61, 20)
-yticks = np.arange(-2, 2, 0.5)
 
 # the grid spec is rows, then columns
 fig_ax = fig.add_subplot(gs[1, 1])
 
 # set plot variables
 x = np.arange(60)
-y = AR1to1d_halfstim["MSM_data"]["normsigma_yy_left"]
+y = AR1to1d_halfstim["MSM_data"]["relsigma_yy_left"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -516,7 +505,7 @@ fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[1], marker='
                 markeredgewidth=0.5)
 # set plot variables
 x = np.arange(60)
-y = AR1to1d_halfstim["MSM_data"]["normsigma_yy_right"]
+y = AR1to1d_halfstim["MSM_data"]["relsigma_yy_right"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -555,17 +544,13 @@ fig_ax.set_ylim(ymax=ymax)
 # Generate fifth panel
 ##############################################################################
 
-ymin = -2
-ymax = 2
-xticks = np.arange(0, 61, 20)
-yticks = np.arange(-2, 2, 0.5)
 
 # the grid spec is rows, then columns
 fig_ax = fig.add_subplot(gs[2, 0])
 
 # set plot variables
 x = np.arange(60)
-y = AR1to1s_halfstim["MSM_data"]["normsigma_xx_left"]
+y = AR1to1s_halfstim["MSM_data"]["relsigma_xx_left"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -577,7 +562,7 @@ fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[2], marker='
                 markeredgewidth=0.5)
 # set plot variables
 x = np.arange(60)
-y = AR1to1s_halfstim["MSM_data"]["normsigma_xx_right"]
+y = AR1to1s_halfstim["MSM_data"]["relsigma_xx_right"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -598,10 +583,6 @@ fig_ax.set()
 for i in np.arange(10):
     plt.axline((20 + i, ymin), (20 + i, ymax), linewidth=optolinewidth, color="cyan")
 
-# Define where you want ticks
-xticks = np.arange(0, 61, 20)
-yticks = np.arange(0.8, 1.31, 0.1)
-
 
 # provide info on tick parameters
 plt.minorticks_on()
@@ -616,17 +597,12 @@ fig_ax.set_ylim(ymax=ymax)
 # Generate sixth panel
 ##############################################################################
 
-ymin = -2
-ymax = 2
-xticks = np.arange(0, 61, 20)
-yticks = np.arange(-2, 2, 0.5)
-
 # the grid spec is rows, then columns
 fig_ax = fig.add_subplot(gs[2, 1])
 
 # set plot variables
 x = np.arange(60)
-y = AR1to1s_halfstim["MSM_data"]["normsigma_yy_left"]
+y = AR1to1s_halfstim["MSM_data"]["relsigma_yy_left"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -638,7 +614,7 @@ fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[2], marker='
                 markeredgewidth=0.5)
 # set plot variables
 x = np.arange(60)
-y = AR1to1s_halfstim["MSM_data"]["normsigma_yy_right"]
+y = AR1to1s_halfstim["MSM_data"]["relsigma_yy_right"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -677,17 +653,12 @@ fig_ax.set_ylim(ymax=ymax)
 # Generate seventh panel
 ##############################################################################
 
-ymin = -2
-ymax = 2
-xticks = np.arange(0, 61, 20)
-yticks = np.arange(-2, 2, 0.5)
-
 # the grid spec is rows, then columns
 fig_ax = fig.add_subplot(gs[3, 0])
 
 # set plot variables
 x = np.arange(60)
-y = AR2to1d_halfstim["MSM_data"]["normsigma_xx_left"]
+y = AR2to1d_halfstim["MSM_data"]["relsigma_xx_left"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -699,7 +670,7 @@ fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[3], marker='
                 markeredgewidth=0.5)
 # set plot variables
 x = np.arange(60)
-y = AR2to1d_halfstim["MSM_data"]["normsigma_xx_right"]
+y = AR2to1d_halfstim["MSM_data"]["relsigma_xx_right"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -737,17 +708,13 @@ fig_ax.set_ylim(ymax=ymax)
 # Generate eighth panel
 ##############################################################################
 
-ymin = -2
-ymax = 2
-xticks = np.arange(0, 61, 20)
-yticks = np.arange(-2, 2, 0.5)
 
 # the grid spec is rows, then columns
 fig_ax = fig.add_subplot(gs[3, 1])
 
 # set plot variables
 x = np.arange(60)
-y = AR2to1d_halfstim["MSM_data"]["normsigma_yy_left"]
+y = AR2to1d_halfstim["MSM_data"]["relsigma_yy_left"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -759,7 +726,7 @@ fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[3], marker='
                 markeredgewidth=0.5)
 # set plot variables
 x = np.arange(60)
-y = AR2to1d_halfstim["MSM_data"]["normsigma_yy_right"]
+y = AR2to1d_halfstim["MSM_data"]["relsigma_yy_right"]
 x = x[::2]  # downsample data for nicer plotting
 y = y[::2, :]
 y_mean = np.nanmean(y, axis=1)
@@ -839,7 +806,7 @@ fig_ax.set_xticklabels(
     ['left \n         $\mathrm{\sigma _ {xx}}$', 'right', 'left \n         $\mathrm{\sigma _ {yy}}$', 'right'])
 fig_ax.set_xlabel(xlabel=None)
 fig_ax.set_ylabel(ylabel=None, labelpad=ylabeloffset)
-fig_ax.set_title(label='normative stress \n increase', pad=titleoffset)
+fig_ax.set_title(label='relative stress \n increase', pad=titleoffset)
 fig_ax.set()
 
 # Define where you want ticks
@@ -1045,14 +1012,15 @@ plt.show()
 
 # set plot parameters
 ylabeloffset = -5
-colors = colors_parent;  # defines colors for scatterplot
+colors = colors_parent  # defines colors for scatterplot
 colors_regplot = ['#000000', '#000000', '#000000', '#000000'];  # defines colors for linear regression plot
-
-fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(4, 1.8))
+hue = 'keys'
+fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(4.5, 2))
+plt.subplots_adjust(wspace=0.35, hspace=-0.02)
 
 ############# first panel ####################
 sns.set_palette(sns.color_palette(colors))
-sns.scatterplot(data=df, x='AIC_baseline', y='RSI_xx_left', hue='keys', ax=axes[0])
+sns.scatterplot(data=df, x='AIC_baseline', y='RSI_xx_left', hue=hue, style=hue, ax=axes[0])
 sns.set_palette(sns.color_palette(colors_regplot))  # sets colors
 sns.regplot(data=df, x='AIC_baseline', y='RSI_xx_left', scatter=False, ax=axes[0])
 
@@ -1085,15 +1053,15 @@ p = np.round(p, decimals=3)
 plt.text(-0.9, -0.14, 'Pearson R = ' + str(corr))
 plt.text(-0.9, -0.17, 'p = ' + str(p))
 
-############# second panel ####################
+############# second ####################
 sns.set_palette(sns.color_palette(colors))
-sns.scatterplot(data=df, x='AIC_baseline', y='RSI_yy_left', hue='keys', ax=axes[1])
+sns.scatterplot(data=df, x='AIC_baseline', y='RSI_xx_right', hue=hue, style=hue, ax=axes[1])
 sns.set_palette(sns.color_palette(colors_regplot))  # sets colors
-sns.regplot(data=df, x='AIC_baseline', y='RSI_yy_left', scatter=False, ax=axes[1])
+sns.regplot(data=df, x='AIC_baseline', y='RSI_xx_right', scatter=False, ax=axes[1])
 
 # set labels
 axes[1].set_xlabel(xlabel='Anisotropy coefficient')
-axes[1].set_ylabel(ylabel='$\mathrm{RSI_{yy, left}}$', labelpad=ylabeloffset)
+axes[1].set_ylabel(ylabel='$\mathrm{RSI_{xx, right}}$', labelpad=ylabeloffset)
 
 # remove legend
 axes[1].get_legend().remove()
@@ -1113,14 +1081,13 @@ plt.minorticks_on()
 plt.tick_params(direction='in', which='minor', length=3, bottom=True, top=True, left=True, right=True)
 plt.tick_params(direction='in', which='major', length=6, bottom=True, top=True, left=True, right=True)
 
-corr, p = pearsonr(df['AIC_baseline'], df['RSI_yy_left'])
+corr, p = pearsonr(df['AIC_baseline'], df['RSI_xx_right'])
+
 corr = np.round(corr, decimals=3)
 p = np.round(p, decimals=3)
 
 plt.text(-0.9, -0.14, 'Pearson R = ' + str(corr))
 plt.text(-0.9, -0.17, 'p = ' + str(p))
-
-plt.subplots_adjust(wspace=0.4, hspace=0.4)
 
 plt.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
 plt.show()
@@ -1129,19 +1096,21 @@ plt.show()
 # set plot parameters
 ylabeloffset = -5
 colors = colors_parent;  # defines colors for scatterplot
-colors_regplot = ['#000000', '#000000', '#000000', '#000000'];  # defines colors for linear regression plot
+colors_regplot = ['#000000', '#000000', '#000000', '#000000']  # defines colors for linear regression plot
+hue = 'keys'
 
-fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(4, 1.8))
+fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(4.5, 2))
+plt.subplots_adjust(wspace=0.35, hspace=-0.02)
 
 ############# first panel ####################
 sns.set_palette(sns.color_palette(colors))
-sns.scatterplot(data=df, x='AIC_baseline', y='RSI_xx_right', hue='keys', ax=axes[0])
+sns.scatterplot(data=df, x='AIC_baseline', y='RSI_yy_left', hue=hue, style=hue, ax=axes[0])
 sns.set_palette(sns.color_palette(colors_regplot))  # sets colors
-sns.regplot(data=df, x='AIC_baseline', y='RSI_xx_right', scatter=False, ax=axes[0])
+sns.regplot(data=df, x='AIC_baseline', y='RSI_yy_left', scatter=False, ax=axes[0])
 
 # set labels
 axes[0].set_xlabel(xlabel='Anisotropy coefficient')
-axes[0].set_ylabel(ylabel='$\mathrm{RSI_{xx, right}}$', labelpad=ylabeloffset)
+axes[0].set_ylabel(ylabel='$\mathrm{RSI_{yy, left}}$', labelpad=ylabeloffset)
 
 # remove legend
 axes[0].get_legend().remove()
@@ -1161,17 +1130,17 @@ plt.minorticks_on()
 plt.tick_params(direction='in', which='minor', length=3, bottom=True, top=True, left=True, right=True)
 plt.tick_params(direction='in', which='major', length=6, bottom=True, top=True, left=True, right=True)
 
-corr, p = pearsonr(df['AIC_baseline'], df['RSI_xx_right'])
-
+corr, p = pearsonr(df['AIC_baseline'], df['RSI_yy_left'])
 corr = np.round(corr, decimals=3)
 p = np.round(p, decimals=3)
 
 plt.text(-0.9, -0.14, 'Pearson R = ' + str(corr))
 plt.text(-0.9, -0.17, 'p = ' + str(p))
 
+
 ############# second panel ####################
 sns.set_palette(sns.color_palette(colors))
-sns.scatterplot(data=df, x='AIC_baseline', y='RSI_yy_right', hue='keys', ax=axes[1])
+sns.scatterplot(data=df, x='AIC_baseline', y='RSI_yy_right', hue=hue, style=hue, ax=axes[1])
 sns.set_palette(sns.color_palette(colors_regplot))  # sets colors
 sns.regplot(data=df, x='AIC_baseline', y='RSI_yy_right', scatter=False, ax=axes[1])
 
@@ -1213,19 +1182,20 @@ plt.show()
 
 # set plot parameters
 ylabeloffset = -5
-colors = colors_parent;  # defines colors for scatterplot
+colors = colors_parent  # defines colors for scatterplot
 colors_regplot = ['#000000', '#000000', '#000000', '#000000'];  # defines colors for linear regression plot
+hue = 'keys'
 
 fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(4, 1.8))
 
 ############# first panel ####################
 sns.set_palette(sns.color_palette(colors))
-sns.scatterplot(data=df, x='RSI_xx_left', y='RSI_xx_right', hue='keys', ax=axes[0])
+sns.scatterplot(data=df, x='RSI_xx_left', y='RSI_xx_right', hue=hue, style=hue, ax=axes[0])
 sns.set_palette(sns.color_palette(colors_regplot))  # sets colors
 sns.regplot(data=df, x='RSI_xx_left', y='RSI_xx_right', scatter=False, ax=axes[0])
 
 # set labels
-axes[0].set_xlabel(xlabel='$\mathrm{RSI_{xx, left}$')
+axes[0].set_xlabel(xlabel='$\mathrm{RSI_{xx, left}}$')
 axes[0].set_ylabel(ylabel='$\mathrm{RSI_{xx, right}}$', labelpad=ylabeloffset)
 
 # remove legend
@@ -1256,7 +1226,7 @@ plt.text(-0.9, -0.17, 'p = ' + str(p))
 
 ############# second panel ####################
 sns.set_palette(sns.color_palette(colors))
-sns.scatterplot(data=df, x='RSI_yy_left', y='RSI_yy_right', hue='keys', ax=axes[1])
+sns.scatterplot(data=df, x='RSI_yy_left', y='RSI_yy_right', hue=hue, style=hue, ax=axes[1])
 sns.set_palette(sns.color_palette(colors_regplot))  # sets colors
 sns.regplot(data=df, x='RSI_yy_left', y='RSI_yy_right', scatter=False, ax=axes[1])
 
@@ -1293,4 +1263,113 @@ plt.text(-0.9, -0.17, 'p = ' + str(p))
 plt.subplots_adjust(wspace=0.4, hspace=0.4)
 
 plt.savefig(figfolder + 'sup.png', dpi=300, bbox_inches="tight")
+plt.show()
+
+# %% plot figure 6plus2, RSIxx vs RSIyy
+
+# set plot parameters
+ylabeloffset = -5
+colors = colors_parent  # defines colors for scatterplot
+colors_regplot = ['#000000', '#000000', '#000000', '#000000']  # defines colors for linear regression plot
+
+hue = 'keys'
+
+xmin = -0.1
+xmax = 0.3
+ymin = -0.1
+ymax = 0.3
+
+xticks = np.arange(-0.1, 0.31, 0.1)
+yticks = np.arange(-0.1, 0.31, 0.1)
+
+fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(4, 1.8))
+
+############# first panel ####################
+sns.set_palette(sns.color_palette(colors))
+sns.scatterplot(data=df, x='RSI_xx_left', y='RSI_yy_left', hue=hue, style=hue, ax=axes[0])
+sns.set_palette(sns.color_palette(colors_regplot))  # sets colors
+sns.regplot(data=df, x='RSI_xx_left', y='RSI_yy_left', scatter=False, ax=axes[0])
+axes[0].plot([xmin, xmax], [ymin, ymax], linewidth=0.5, linestyle=':', color='grey')
+# set labels
+# axes[0].set_xlabel(xlabel='$\mathrm{RSI_{xx, left}}$')
+# axes[0].set_ylabel(ylabel='$\mathrm{RSI_{yy, left}}$', labelpad=ylabeloffset)
+
+# remove legend
+axes[0].get_legend().remove()
+
+# set limits
+axes[0].set_xlim(xmin=xmin, xmax=xmax)
+axes[0].set_ylim(ymin=ymin, ymax=ymax)
+
+# Define where you want ticks
+plt.sca(axes[0])
+
+plt.xticks(xticks)
+plt.yticks(yticks)
+
+# provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in', which='minor', length=3, bottom=True, top=True, left=True, right=True)
+plt.tick_params(direction='in', which='major', length=6, bottom=True, top=True, left=True, right=True)
+
+corr, p = pearsonr(df['RSI_xx_left'], df['RSI_yy_left'])
+
+corr = np.round(corr, decimals=3)
+p = np.round(p, decimals=3)
+
+# plt.text(-0.9, -0.14, 'Pearson R = ' + str(corr))
+# plt.text(-0.9, -0.17, 'p = ' + str(p))
+
+############# second panel ####################
+hue = 'keys'
+
+xmin = -0.2
+xmax = 0.2
+ymin = -0.2
+ymax = 0.2
+
+xticks = np.arange(-0.2, 0.21, 0.1)
+yticks = np.arange(-0.2, 0.21, 0.1)
+
+
+sns.set_palette(sns.color_palette(colors))
+sns.scatterplot(data=df, x='RSI_xx_right', y='RSI_yy_right', hue=hue, style=hue, ax=axes[1])
+sns.set_palette(sns.color_palette(colors_regplot))  # sets colors
+sns.regplot(data=df, x='RSI_xx_right', y='RSI_yy_right', scatter=False, ax=axes[1])
+
+axes[1].plot([xmin, xmax], [ymin, ymax], linewidth=0.5, linestyle=':', color='grey')
+
+
+# set labels
+# axes[1].set_xlabel(xlabel='$\mathrm{RSI_{xx, right}}$')
+# axes[1].set_ylabel(ylabel='$\mathrm{RSI_{yy, right}}$', labelpad=ylabeloffset)
+
+# remove legend
+axes[1].get_legend().remove()
+
+# set limits
+axes[1].set_xlim(xmin=xmin, xmax=xmax)
+axes[1].set_ylim(ymin=ymin, ymax=ymax)
+
+# Define where you want ticks
+plt.sca(axes[1])
+plt.yticks(yticks)
+plt.xticks(xticks)
+
+# provide info on tick parameters
+plt.minorticks_on()
+plt.tick_params(direction='in', which='minor', length=3, bottom=True, top=True, left=True, right=True)
+plt.tick_params(direction='in', which='major', length=6, bottom=True, top=True, left=True, right=True)
+
+corr, p = pearsonr(df['RSI_xx_right'], df['RSI_yy_right'])
+
+corr = np.round(corr, decimals=3)
+p = np.round(p, decimals=3)
+
+# plt.text(-0.9, -0.14, 'Pearson R = ' + str(corr))
+# plt.text(-0.9, -0.17, 'p = ' + str(p))
+
+plt.subplots_adjust(wspace=0.4, hspace=0.4)
+
+plt.savefig(figfolder + 'sup2.png', dpi=300, bbox_inches="tight")
 plt.show()
