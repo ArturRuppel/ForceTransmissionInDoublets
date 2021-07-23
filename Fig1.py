@@ -389,7 +389,11 @@ def make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, a
                             x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title):
     # create box- and swarmplots
     sns.swarmplot(x=x, y=y, data=df, ax=ax, alpha=alpha_sw, linewidth=linewidth_sw, zorder=0, size=dotsize)
-    bp = sns.boxplot(x=x, y=y, data=df, ax=ax, linewidth=linewidth_bp, notch=True, showfliers=False, width=width_bp)
+    bp = sns.boxplot(x=x, y=y, data=df, ax=ax, linewidth=linewidth_bp, notch=True, showfliers=False, width=width_bp, showmeans=True,
+                     meanprops={"marker": "o",
+                       "markerfacecolor": "white",
+                       "markeredgecolor": "black",
+                      "markersize":"3", "markeredgewidth":"0.5"})
 
     statannot.add_stat_annotation(bp, data=df, x=x, y=y, box_pairs=box_pairs,
                                   line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
