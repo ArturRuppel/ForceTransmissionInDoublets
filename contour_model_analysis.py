@@ -1392,43 +1392,29 @@ def main(inputpath, outputpath, pixelsize, shortcut=False):
 
     
 if __name__ == '__main__':
-    pixelsize = 0.108#*1e-6 # in m
+    pixelsize = 0.108 # in µm
     shortcut = True
     
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1d_fullstim_long"    
-    main(path+".dat", path+"_CM_data.dat", pixelsize, shortcut)
+    main(path+".dat", path+"_CM.dat", pixelsize, shortcut)
     
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1s_fullstim_long"    
-    main(path+".dat", path+"_CM_data.dat", pixelsize, shortcut)
+    main(path+".dat", path+"_CM.dat", pixelsize, shortcut)
     
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1d_fullstim_short"    
-    main(path+".dat", path+"_CM_data.dat", pixelsize, shortcut)
+    main(path+".dat", path+"_CM.dat", pixelsize, shortcut)
     
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1s_fullstim_short"    
-    main(path+".dat", path+"_CM_data.dat", pixelsize, shortcut)
+    main(path+".dat", path+"_CM.dat", pixelsize, shortcut)
     
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to2d_halfstim"    
-    main(path+".dat", path+"_CM_data.dat", pixelsize, shortcut)
+    main(path+".dat", path+"_CM.dat", pixelsize, shortcut)
     
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1d_halfstim"    
-    main(path+".dat", path+"_CM_data.dat", pixelsize, shortcut)
+    main(path+".dat", path+"_CM.dat", pixelsize, shortcut)
     
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1s_halfstim"    
-    main(path+".dat", path+"_CM_data.dat", pixelsize, shortcut)
+    main(path+".dat", path+"_CM.dat", pixelsize, shortcut)
     
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR2to1d_halfstim"    
-    main(path+".dat", path+"_CM_data.dat", pixelsize, shortcut)
-    
-    
-    # # run main_ellipse_approx
-    # if do_ellipse_approx is True:
-    #     main_ellipse_approx(directory)
-    # else:
-    #     print("main_ellipse_approx is not called!")
-    
-    # # run main_ellipse_fit
-    # if do_ellipse_fit is True:
-    #     main_ellipse_fit(directory)
-    # else:
-    #     print("main_ellipse_fit is not called!")
-
+    main(path+".dat", path+"_CM.dat", pixelsize, shortcut)
