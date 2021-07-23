@@ -38,7 +38,7 @@ def analyse_tfm_data(folder, stressmappixelsize):
     # average over first twenty frames before photoactivation
     Es_baseline = np.nanmean(Es[0:20, :], axis=(0))
 
-    # normalize stress data by their baseline
+    # normalize energy data by their baseline
     relEs = np.divide(Es, Es_baseline)
     relEs_left = np.divide(Es_left, Es_baseline)
     relEs_right = np.divide(Es_right, Es_baseline)
@@ -69,7 +69,7 @@ def analyse_tfm_data(folder, stressmappixelsize):
     REI = relEs[33, :] - relEs[20, :]
 
     # find peak and sum up all values within radius r
-    r = 12  # ~10 uM
+    r = 12  # ~10 µM
     x = np.arange(0, x_half)
     y = np.arange(0, y_half)
     for cell in np.arange(cell_end):
@@ -185,16 +185,6 @@ def analyse_msm_data(folder):
     relsigma_yy_left = sigma_yy_left_average / sigma_yy_left_baseline
     relsigma_yy_right = sigma_yy_right_average / sigma_yy_right_baseline
 
-    # sigma_xx_left_noBL = relsigma_xx_left-np.nanmean(relsigma_xx_left[0:20, :], axis=0)
-    # sigma_xx_right_noBL = relsigma_xx_right-np.nanmean(relsigma_xx_right[0:20, :], axis=0)
-    # sigma_yy_left_noBL = relsigma_yy_left-np.nanmean(relsigma_yy_left[0:20, :], axis=0)
-    # sigma_yy_right_noBL = relsigma_yy_right-np.nanmean(relsigma_yy_right[0:20, :], axis=0)
-
-    # normsigma_xx_left = sigma_xx_left_noBL / max(np.nanmean(sigma_xx_left_noBL, axis=1))
-    # normsigma_xx_right = sigma_xx_right_noBL / max(np.nanmean(sigma_xx_left_noBL, axis=1))
-    # normsigma_yy_left = sigma_yy_left_noBL / max(np.nanmean(sigma_yy_left_noBL, axis=1))
-    # normsigma_yy_right = sigma_yy_right_noBL / max(np.nanmean(sigma_yy_left_noBL, axis=1))
-
     # calculate anisotropy coefficient
     AIC = (sigma_xx_average - sigma_yy_average) / (sigma_xx_average + sigma_yy_average)
     AIC_left = (sigma_xx_left_average - sigma_yy_left_average) / (
@@ -228,10 +218,6 @@ def analyse_msm_data(folder):
             "relsigma_yy_left": relsigma_yy_left,
             "relsigma_xx_right": relsigma_xx_right,
             "relsigma_yy_right": relsigma_yy_right,
-            # "sigma_xx_left_noBL": sigma_xx_left_noBL,
-            # "sigma_yy_left_noBL": sigma_yy_left_noBL,
-            # "sigma_xx_right_noBL": sigma_xx_right_noBL,
-            # "sigma_yy_right_noBL": sigma_yy_right_noBL,
             "AIC_baseline": AIC_baseline, "AIC": AIC, "AIC_left": AIC_left, "AIC_right": AIC_right,
             "relAIC": relAIC, "relAIC_left": relAIC_left, "relAIC_right": relAIC_right,
             "RSI_xx": RSI_xx, "RSI_xx_left": RSI_xx_left, "RSI_xx_right": RSI_xx_right,
@@ -371,9 +357,6 @@ def main_meta_analysis(folder, title, noCells, noFrames):
     folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
     folder += title
 
-    # # plots movies for displacement, traction and stress data for every cell. Takes about 4 hours
-    # plot_TFM_and_MSM_individual_movies(folder, stressmappixelsize)
-
     # calculate strain energies over all cells, normalize data to baseline values etc.
     TFM_data = analyse_tfm_data(folder, stressmappixelsize)
 
@@ -384,24 +367,13 @@ def main_meta_analysis(folder, title, noCells, noFrames):
     shape_data = analyse_shape_data(folder, pixelsize)
 
     # filter data to make sure that the baselines are stable
-    filterdata = TFM_data["relEs"][0:20, :]#np.dstack((, TFM_data["relEs"][0:20, :]))
+    filterdata = TFM_data["relEs"][0:20, :]
     baselinefilter = create_filter(filterdata, 0.005)
-
-    # filterdata = np.dstack((MSM_data["normsigma_xx_left"][0:20, :], MSM_data["normsigma_xx_right"][0:20, :]))
-    # baselinefilter1 = create_filter(filterdata, 0.2)
-    #
-    # filterdata = np.dstack((MSM_data["normsigma_yy_left"][0:20, :], MSM_data["normsigma_yy_right"][0:20, :]))
-    # baselinefilter2 = create_filter(filterdata, 0.2)
-
-    # baselinefilter = np.logical_and(baselinefilter1, baselinefilter2)
 
     # remove cells with unstable baselines
     TFM_data = apply_filter(TFM_data, baselinefilter)
     MSM_data = apply_filter(MSM_data, baselinefilter)
     shape_data = apply_filter(shape_data, baselinefilter)
-
-    # # after filtering, the average peaks change so we have to normalize data again
-    # MSM_data = analyse_MSM_data_after_filtering(MSM_data)
 
     new_N = np.sum(baselinefilter)
     print(title + ": " + str(baselinefilter.shape[0] - new_N) + " cells were filtered out")
