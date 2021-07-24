@@ -16,7 +16,8 @@ def analyse_tfm_data(folder, stressmappixelsize):
     Dy = np.load(folder + "/Dy.npy")
     Tx = np.load(folder + "/Tx.npy")
     Ty = np.load(folder + "/Ty.npy")
-
+    
+    
     # calculate force amplitude
     T = np.sqrt(Tx ** 2 + Ty ** 2)
 
@@ -226,7 +227,7 @@ def analyse_msm_data(folder):
     return data
 
 
-def analyse_shape_data(folder, pixelsize):
+def analyse_shape_data(folder, stressmappixelsize):
     Xtop = np.load(folder + "/Xtop.npy")
     Xright = np.load(folder + "/Xright.npy")
     Xbottom = np.load(folder + "/Xbottom.npy")
@@ -237,9 +238,11 @@ def analyse_shape_data(folder, pixelsize):
     Ybottom = np.load(folder + "/Ybottom.npy")
     Yleft = np.load(folder + "/Yleft.npy")
 
+    actin_images = np.load(folder + "/actin_images.npy")
+
     masks = np.load(folder + "/mask.npy")
 
-    spreadingsize = (pixelsize ** 2) * np.nansum(masks, axis=(0, 1))
+    spreadingsize = (stressmappixelsize ** 2) * np.nansum(masks, axis=(0, 1))
 
     spreadingsize_baseline = np.nanmean(spreadingsize[0:20, :], axis=0)
 
@@ -256,6 +259,7 @@ def analyse_shape_data(folder, pixelsize):
 
     data = {"Xtop": Xtop, "Xright": Xright, "Xbottom": Xbottom, "Xleft": Xleft,
             "Ytop": Ytop, "Yright": Yright, "Ybottom": Ybottom, "Yleft": Yleft,
+            "masks": masks, "actin_images": actin_images,
             "spreadingsize": spreadingsize, "spreadingsize_baseline": spreadingsize_baseline,
             "actin_angles": actin_angles,
             "actin_intensity_left": actin_intensity_left, "actin_intensity_right": actin_intensity_right,
@@ -364,7 +368,7 @@ def main_meta_analysis(folder, title, noCells, noFrames):
     MSM_data = analyse_msm_data(folder)
 
     # calculate spreading area and such
-    shape_data = analyse_shape_data(folder, pixelsize)
+    shape_data = analyse_shape_data(folder, stressmappixelsize)
 
     # filter data to make sure that the baselines are stable
     filterdata = TFM_data["relEs"][0:20, :]

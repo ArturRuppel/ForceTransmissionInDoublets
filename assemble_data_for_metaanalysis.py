@@ -7,15 +7,15 @@ Created on Thu Jul  1 09:33:36 2021
 import numpy as np
 import scipy.io
 from scipy import ndimage
-from skimage import transform
+from skimage import transform, io
 from skimage.draw import polygon
 from skimage.morphology import closing, disk
+from skimage.util import img_as_ubyte
+import matplotlib.pyplot as plt
 
 
-def load_fibertracking_data(folder, fibertrackingshape, noCells):
-    # this function was used to load the TFM and stress maps that resulted from the TFM and MSM analysis. It takes those maps and a mask with the cell border,
-    # centers the maps around the mask, sets all values outside to 0, crops all maps to a consistent size and saves them in a data structure. The result of this
-    # process is going to be used as input for all subse
+def load_fibertracking_data(folder, fibertrackingshape, stressmapshape, noCells):
+
     x_end = fibertrackingshape[0]
     t_end = fibertrackingshape[1]  # nomber of frames
     cell_end = noCells
@@ -31,7 +31,7 @@ def load_fibertracking_data(folder, fibertrackingshape, noCells):
     Ybottom_all = np.zeros([x_end, t_end, cell_end])
     Yleft_all = np.zeros([x_end, t_end, cell_end])
 
-    mask_all = np.zeros((600, 600, t_end, cell_end), dtype=bool)
+    mask_all = np.zeros((stressmapshape[0], stressmapshape[1], t_end, cell_end), dtype=bool)
 
     # loop over all folders (one folder per cell/tissue)
     for cell in range(cell_end):
@@ -72,7 +72,12 @@ def load_fibertracking_data(folder, fibertrackingshape, noCells):
             mask = np.logical_or(img1, img2)
             footprint = disk(20)
 
-            mask_all[:, :, t, cell] = closing(mask[200:800, 200:800], footprint)  # crop around center
+            # crop a 92*8 by 92*8 window around center
+            mask_cropped = closing(mask[132:868, 132:868], footprint)
+
+            # resize to stressmapshape
+            mask_resized = transform.resize(mask_cropped, (92, 92))
+            mask_all[:, :, t, cell] = mask_resized
             print('Load fibertracking: cell' + str(cell) + ', frame' + str(t))
 
         # plt.figure()
@@ -94,10 +99,10 @@ def load_fibertracking_data(folder, fibertrackingshape, noCells):
     return Xtop_all, Xright_all, Xbottom_all, Xleft_all, Ytop_all, Yright_all, Ybottom_all, Yleft_all, mask_all
 
 
-def load_MSM_and_TFM_data(folder, noCells, stressmapshape, stressmappixelsize):
-    # this function was used to load the TFM and stress maps that resulted from the TFM and MSM analysis. It takes those maps and a mask with the cell border,
+def load_MSM_and_TFM_data_and_actin_images(folder, noCells, stressmapshape, stressmappixelsize):
+    '''this function was used to load the TFM and stress maps that resulted from the TFM and MSM analysis. It takes those maps and a mask with the cell border,
     # centers the maps around the mask, sets all values outside to 0, crops all maps to a consistent size and saves them in a data structure. The result of this
-    # process is going to be used as input for all subse
+    # process is going to be used as input for all subsequent analyses'''
     x_end = stressmapshape[0]
     y_end = stressmapshape[1]
     t_end = stressmapshape[2]  # nomber of frames
@@ -110,14 +115,29 @@ def load_MSM_and_TFM_data(folder, noCells, stressmapshape, stressmappixelsize):
     Dy_all = np.zeros([x_end, y_end, t_end, cell_end])
     sigma_xx_all = np.zeros([x_end, y_end, t_end, cell_end])
     sigma_yy_all = np.zeros([x_end, y_end, t_end, cell_end])
+    images_all = np.zeros([x_end, y_end, t_end, cell_end])
+
 
     # loop over all folders (one folder per cell/tissue)
     for cell in range(cell_end):
+        print('Load TFM data, MSM data and actin images: cell' + str(cell))
         # assemble paths to load stres smaps
         if cell < 9:
             foldercellpath = folder + "/cell0" + str(cell + 1)
         else:
             foldercellpath = folder + "/cell" + str(cell + 1)
+            
+        # read stack of actin images
+        image = io.imread(foldercellpath + '/actin_ec.tif')
+        
+        # move t-axis to the last index
+        image = np.moveaxis(image, 0, -1)
+
+        # crop out a 92*8 by 92*8 window around the center
+        image = image[132:868, 132:868, :]
+
+        # scale down to resolution of traction maps
+        image = transform.resize(image, stressmapshape)
 
         # load masks, stress and displacement maps
         TFM_mat = scipy.io.loadmat(foldercellpath + "/Allresults2.mat")
@@ -126,19 +146,12 @@ def load_MSM_and_TFM_data(folder, noCells, stressmapshape, stressmappixelsize):
 
         # recover mask from stress maps
         mask = stresstensor[0, :, :, 0] > 0
-        # mask_all = stresstensor[0,:,:,:] > 0
-
-        # mask has some holes that have to be closed, because MSM analysis gave NaN on some pixels.
-        # footprint = disk(10)
-        # for t in range(t_end):
-        #     mask_all[:,:,t] = closing(mask_all[:,:,t],footprint)
-        # mask = mask_all[:,:,0]
 
         # set TFM values outside of mask to 0
-        Tx_new = TFM_mat["Tx"]  # *mask_all
-        Ty_new = TFM_mat["Ty"]  # *mask_all
-        Dx_new = TFM_mat["Dx"]  # *mask_all
-        Dy_new = TFM_mat["Dy"]  # *mask_all
+        Tx_new = TFM_mat["Tx"]
+        Ty_new = TFM_mat["Ty"]
+        Dx_new = TFM_mat["Dx"]
+        Dy_new = TFM_mat["Dy"]
 
         # find the center of the mask
         x_center, y_center = np.rint(ndimage.measurements.center_of_mass(mask))
@@ -155,69 +168,26 @@ def load_MSM_and_TFM_data(folder, noCells, stressmapshape, stressmappixelsize):
         Dx_all[:, :, :, cell] = Dx_new[x_crop_start:x_crop_end, y_crop_start:y_crop_end, :]
         Dy_all[:, :, :, cell] = Dy_new[x_crop_start:x_crop_end, y_crop_start:y_crop_end, :]
         sigma_xx_all[:, :, :, cell], sigma_yy_all[:, :, :, cell] = stresstensor[(0, 1), x_crop_start:x_crop_end, y_crop_start:y_crop_end, :]
+        images_all[:, :, :, cell] = image
 
-        print("TFM and MSM data from cell " + str(cell) + " loaded")
-
-    return sigma_xx_all, sigma_yy_all, Tx_all, Ty_all, Dx_all, Dy_all
-
-
-def load_masks(folder, noCells, noFrames):
-    # this function was used to load the masks and stores them in a bigger structure
-    # initialize arrays to store stress masks
-    masks = np.zeros([92, 92, noFrames, noCells])
-    masks = masks > 0
-    x_end = 92
-    y_end = 92
-
-    # loop over all folders (one folder per cell/tissue)
-    for cell in range(noCells):
-        # assemble paths to load stres smaps
-        if cell < 9:
-            foldercellpath = folder + "/cell0" + str(cell + 1)
-        else:
-            foldercellpath = folder + "/cell" + str(cell + 1)
-
-        # load masks, stress and displacement maps
-        mask_mat = scipy.io.loadmat(foldercellpath + "/mask.mat")
-        mask = mask_mat["mask"] > 0
-
-        mask_small = transform.resize(mask, (112, 112, 60))
-
-        # find the center of the mask
-        x_center, y_center = np.rint(ndimage.measurements.center_of_mass(mask_small[:, :, cell]))
-
-        # find the cropboundaries around the center, round and convert to integer
-        x_crop_start = np.rint(x_center - x_end / 2).astype(int)
-        x_crop_end = np.rint(x_center + x_end / 2).astype(int)
-        y_crop_start = np.rint(y_center - y_end / 2).astype(int)
-        y_crop_end = np.rint(y_center + y_end / 2).astype(int)
-
-        # mask has some holes that have to be closed, because MSM analysis gave NaN on some pixels.
-        kernel = disk(5)
-        for t in range(noFrames):
-            mask_current = mask_small[x_crop_start:x_crop_end, y_crop_start:y_crop_end, t]
-            mask_current = closing(mask_current, kernel)
-            # plt.imshow(mask_current)
-            # plt.show()
-            masks[:, :, t, cell] = mask_current
-
-        print("Cell " + str(cell) + " done")
-
-    return masks
+    return sigma_xx_all, sigma_yy_all, Tx_all, Ty_all, Dx_all, Dy_all, images_all
 
 
-def load_actin_angle_data(folder_old, noCells):
-    actin_angles = scipy.io.loadmat(folder_old + "/actin_angles.mat")
+
+def load_actin_angle_data(folder):
+    actin_angles = scipy.io.loadmat(folder + "/actin_angles.mat")
     actin_angles = actin_angles["angles"]
 
     return actin_angles
 
-def load_actin_intensity_data(folder_old, noCells):
-    actin_intensities = scipy.io.loadmat(folder_old + "/actin_intensities.mat")
+
+def load_actin_intensity_data(folder):
+    actin_intensities = scipy.io.loadmat(folder + "/actin_intensities.mat")
     actin_intensity_left = actin_intensities["intensity_left"]
     actin_intensity_right = actin_intensities["intensity_right"]
 
     return actin_intensity_left, actin_intensity_right
+
 
 
 def main(folder_old, folder_new, title, noCells, noFrames):
@@ -226,35 +196,38 @@ def main(folder_old, folder_new, title, noCells, noFrames):
     fibertrackingshape = [50, noFrames]
 
     print('Data loading of ' + title + ' started!')
-    # Xtop, Xright, Xbottom, Xleft, Ytop, Yright, Ybottom, Yleft, mask = load_fibertracking_data(folder_old, fibertrackingshape, noCells)
-    # sigma_xx, sigma_yy, Tx, Ty, Dx, Dy = load_MSM_and_TFM_data(folder_old, noCells, stressmapshape, stressmappixelsize)
-    # masks = load_masks(folder_old, noCells, noFrames)
-    actin_angles = load_actin_angle_data(folder_old, noCells)
-    actin_intensity_left, actin_intensity_right = load_actin_intensity_data(folder_old, noCells)
+    # Xtop, Xright, Xbottom, Xleft, Ytop, Yright, Ybottom, Yleft, mask = \
+    #     load_fibertracking_data(folder_old, fibertrackingshape, stressmapshape, noCells)
+    sigma_xx, sigma_yy, Tx, Ty, Dx, Dy, actin_images = load_MSM_and_TFM_data_and_actin_images(folder_old, noCells, stressmapshape, stressmappixelsize)
+    actin_angles = load_actin_angle_data(folder_old)
+    actin_intensity_left, actin_intensity_right = load_actin_intensity_data(folder_old)
+    # actin_images = load_actin_images(folder_old, stressmapshape, noCells)
 
-    # np.save(folder_new+title+"/Xtop.npy",Xtop)
-    # np.save(folder_new+title+"/Xright.npy",Xright)
-    # np.save(folder_new+title+"/Xbottom.npy",Xbottom)
-    # np.save(folder_new+title+"/Xleft.npy",Xleft)
-    #
-    # np.save(folder_new+title+"/Ytop.npy",Ytop)
-    # np.save(folder_new+title+"/Yright.npy",Yright)
-    # np.save(folder_new+title+"/Ybottom.npy",Ybottom)
-    # np.save(folder_new+title+"/Yleft.npy",Yleft)
-    #
-    # np.save(folder_new+title+"/mask.npy",mask)
-    #
-    # np.save(folder_new+title+"/Dx.npy",Dx)
-    # np.save(folder_new+title+"/Dy.npy",Dy)
-    # np.save(folder_new+title+"/Tx.npy",Tx)
-    # np.save(folder_new+title+"/Ty.npy",Ty)
-    # np.save(folder_new+title+"/sigma_xx.npy",sigma_xx)
-    # np.save(folder_new+title+"/sigma_yy.npy",sigma_yy)
+    # np.save(folder_new + title + "/Xtop.npy", Xtop)
+    # np.save(folder_new + title + "/Xright.npy", Xright)
+    # np.save(folder_new + title + "/Xbottom.npy", Xbottom)
+    # np.save(folder_new + title + "/Xleft.npy", Xleft)
+
+    # np.save(folder_new + title + "/Ytop.npy", Ytop)
+    # np.save(folder_new + title + "/Yright.npy", Yright)
+    # np.save(folder_new + title + "/Ybottom.npy", Ybottom)
+    # np.save(folder_new + title + "/Yleft.npy", Yleft)
+
+    # np.save(folder_new + title + "/mask.npy", mask)
+
+    np.save(folder_new + title + "/Dx.npy", Dx)
+    np.save(folder_new + title + "/Dy.npy", Dy)
+    np.save(folder_new + title + "/Tx.npy", Tx)
+    np.save(folder_new + title + "/Ty.npy", Ty)
+    np.save(folder_new + title + "/sigma_xx.npy", sigma_xx)
+    np.save(folder_new + title + "/sigma_yy.npy", sigma_yy)
 
     np.save(folder_new + title + "/actin_angles.npy", actin_angles)
 
     np.save(folder_new + title + "/actin_intensity_left.npy", actin_intensity_left)
     np.save(folder_new + title + "/actin_intensity_right.npy", actin_intensity_right)
+
+    np.save(folder_new + title + "/actin_images.npy", actin_images)
 
     print('Data loading of ' + title + ' terminated!')
 

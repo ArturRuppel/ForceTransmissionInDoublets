@@ -38,7 +38,7 @@ figfolder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alld
 if not os.path.exists(figfolder):
     os.mkdir(figfolder)
 
-# %% prepare dataframe for box- and swarmplots
+# %% set up pandas data frame to use with seaborn for box- and swarmplots
 
 # initialize empty dictionaries
 concatenated_data_1to1d = {}
@@ -46,7 +46,7 @@ concatenated_data_1to1s = {}
 concatenated_data = {}
 
 # loop over all keys
-for key1 in AR1to1d_fullstim_long:  # keys are the same for all dictionaries so I'm just taking one example here
+for key1 in AR1to1d_fullstim_long:
     for key2 in AR1to1d_fullstim_long[key1]:
         if AR1to1d_fullstim_long[key1][key2].ndim == 1:  # only 1D data can be stored in the data frame
 
@@ -58,7 +58,7 @@ for key1 in AR1to1d_fullstim_long:  # keys are the same for all dictionaries so 
 
             # concatenate doublet and singlet data to create pandas dataframe
             concatenated_data[key2] = np.concatenate((concatenated_data_1to1d[key2], concatenated_data_1to1s[key2]))
-key2 = 'spreadingsize_baseline'
+
 # get number of elements for both conditions
 n_doublets = concatenated_data_1to1d[key2].shape[0]
 n_singlets = concatenated_data_1to1s[key2].shape[0]
@@ -71,15 +71,14 @@ keys = np.concatenate((keys1to1d, keys1to1s))
 # add keys to dictionary with concatenated data
 concatenated_data['keys'] = keys
 
-# Creates DataFrame
+# create DataFrame
 df = pd.DataFrame(concatenated_data)
 
 # convert to more convenient units for plotting
-df_plot_units = df  # all units here are in SI units
-df_plot_units['Es_baseline'] *= 1e12  # convert to fJ
-df_plot_units['spreadingsize_baseline'] *= 1e12  # convert to µm²
-df_plot_units['sigma_xx_baseline'] *= 1e3  # convert to mN/m
-df_plot_units['sigma_yy_baseline'] *= 1e3  # convert to mN/m
+df['Es_baseline'] *= 1e12  # convert to fJ
+df['spreadingsize_baseline'] *= 1e12  # convert to µm²
+df['sigma_xx_baseline'] *= 1e3  # convert to mN/m
+df['sigma_yy_baseline'] *= 1e3  # convert to mN/m
 
 # %% plot figure 1C, force maps
 
@@ -370,7 +369,6 @@ plt.show()
 # define plot parameters that are valid for the whole figure
 # ******************************************************************************************************************************************
 colors = [colors_parent[1], colors_parent[2]]               # defines colors
-sns.set_palette(sns.color_palette(colors))                  # sets colors
 linewidth_bp = 0.7                                          # linewidth of boxplot borders
 width_bp = 0.3                                              # width of boxplots
 dotsize = 1.8                                               # size of datapoints in swarmplot
@@ -386,7 +384,11 @@ fig, axes = plt.subplots(nrows=1, ncols=5, figsize=(9, 2))  # create figure inst
 plt.subplots_adjust(wspace=0.5, hspace=0)                   # adjust space in between plots
 # ******************************************************************************************************************************************
 def make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset, test,
-                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title):
+                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors):
+
+    # set colors
+    sns.set_palette(sns.color_palette(colors))
+
     # create box- and swarmplots
     sns.swarmplot(x=x, y=y, data=df, ax=ax, alpha=alpha_sw, linewidth=linewidth_sw, zorder=0, size=dotsize)
     bp = sns.boxplot(x=x, y=y, data=df, ax=ax, linewidth=linewidth_bp, notch=True, showfliers=False, width=width_bp, showmeans=True,
@@ -426,7 +428,7 @@ def make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, a
 
 
 # Set up plot parameters for first panel
-############################################################################################################################################
+#######################################################################################################
 x = 'keys'                              # variable by which to group the data
 y = 'spreadingsize_baseline'            # variable that goes on the y-axis
 ax = axes[0]                            # define on which axis the plot goes
@@ -442,7 +444,7 @@ make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha
                             x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title)
 
 # Set up plot parameters for second panel
-############################################################################################################################################
+#######################################################################################################
 x = 'keys'                              # variable by which to group the data
 y = 'Es_baseline'                       # variable that goes on the y-axis
 ax = axes[1]                            # define on which axis the plot goes
@@ -459,7 +461,7 @@ make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha
 
 
 # Set up plot parameters for third panel
-############################################################################################################################################
+#######################################################################################################
 x = 'keys'                                  # variable by which to group the data
 y = 'sigma_xx_baseline'                     # variable that goes on the y-axis
 ax = axes[2]                                # define on which axis the plot goes
@@ -476,7 +478,7 @@ make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha
 
 
 # Set up plot parameters for fourth panel
-############################################################################################################################################
+#######################################################################################################
 x = 'keys'                                  # variable by which to group the data
 y = 'sigma_xx_baseline'                     # variable that goes on the y-axis
 ax = axes[3]                                # define on which axis the plot goes
@@ -492,7 +494,7 @@ make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha
                             x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title)
 
 # Set up plot parameters for fifth panel
-############################################################################################################################################
+#######################################################################################################
 x = 'keys'                              # variable by which to group the data
 y = 'AIC_baseline'                      # variable that goes on the y-axis
 ax = axes[4]                            # define on which axis the plot goes

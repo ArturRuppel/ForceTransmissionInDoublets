@@ -36,6 +36,20 @@ AR1to1d_halfstim = pickle.load(open(folder + "analysed_data/AR1to1d_halfstim.dat
 AR1to1s_halfstim = pickle.load(open(folder + "analysed_data/AR1to1s_halfstim.dat", "rb"))
 # AR2to1d_halfstim =        pickle.load(open(folder + "analysed_data/AR2to1d_halfstim.dat", "rb"))
 
+sim_Es_1to1d = np.load(folder + "AR1to1 doublets full stim long/simulation_strain_energy.npz")["energy"]
+sim_stress_xx_1to1d = np.load(folder + "AR1to1 doublets full stim long/simulation_stress_xx_yy.npz")["stress_xx"]
+sim_stress_yy_1to1d = np.load(folder + "AR1to1 doublets full stim long/simulation_stress_xx_yy.npz")["stress_yy"]
+
+sim_stress_xx_1to1d = np.nanmean(np.absolute(sim_stress_xx_1to1d), axis=1)
+sim_stress_yy_1to1d = np.nanmean(np.absolute(sim_stress_yy_1to1d), axis=1)
+
+sim_Es_1to1d = np.delete(sim_Es_1to1d,0)
+sim_stress_xx_1to1d = np.delete(sim_stress_xx_1to1d,0)
+sim_stress_yy_1to1d = np.delete(sim_stress_yy_1to1d,0)
+
+sim_relEs_1to1d = sim_Es_1to1d / np.nanmean(sim_Es_1to1d[0:20])
+sim_relstress_xx_1to1d = sim_stress_xx_1to1d / np.nanmean(sim_stress_xx_1to1d[0:20])
+sim_relstress_yy_1to1d = sim_stress_yy_1to1d / np.nanmean(sim_stress_yy_1to1d[0:20])
 
 figfolder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_Figure3/"
 if not os.path.exists(figfolder):
@@ -259,7 +273,7 @@ y_sem = y_std / np.sqrt(np.shape(y)[1])
 # create box- and swarmplots
 fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[1], marker='o', ms=2, linewidth=0.5, ls='none',
                 markeredgewidth=0.5)
-
+fig_ax.plot(x, sim_relEs_1to1d[::2], color=colors_parent[1])
 # set labels
 fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
 fig_ax.set_ylabel(ylabel='doublet', labelpad=ylabeloffset)
@@ -1478,7 +1492,7 @@ y_sem = y_std / np.sqrt(np.shape(y)[1])
 # create box- and swarmplots
 fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[1], marker='o', ms=2, linewidth=0.5, ls='none',
                 markeredgewidth=0.5)
-
+fig_ax.plot(x, sim_relstress_xx_1to1d[::2], color=colors_parent[1])
 # set labels
 fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
 fig_ax.set_ylabel(ylabel='doublet', labelpad=ylabeloffset)
@@ -1527,7 +1541,7 @@ y_sem = y_std / np.sqrt(np.shape(y)[1])
 # create box- and swarmplots
 fig_ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors_parent[1], marker='o', ms=2, linewidth=0.5, ls='none',
                 markeredgewidth=0.5)
-
+fig_ax.plot(x, sim_relstress_yy_1to1d[::2], color=colors_parent[1])
 # set labels
 fig_ax.set_xlabel(xlabel='time [min]', labelpad=xlabeloffset)
 # fig_ax.set_ylabel(ylabel='doublet', labelpad=ylabeloffset)
