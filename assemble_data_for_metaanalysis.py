@@ -4,18 +4,18 @@ Created on Thu Jul  1 09:33:36 2021
 
 @author: Artur Ruppel
 """
+import os
+
 import numpy as np
 import scipy.io
 from scipy import ndimage
 from skimage import transform, io
 from skimage.draw import polygon
 from skimage.morphology import closing, disk
-from skimage.util import img_as_ubyte
-import matplotlib.pyplot as plt
+import matplotlib
 
 
 def load_fibertracking_data(folder, fibertrackingshape, stressmapshape, noCells):
-
     x_end = fibertrackingshape[0]
     t_end = fibertrackingshape[1]  # nomber of frames
     cell_end = noCells
@@ -117,7 +117,6 @@ def load_MSM_and_TFM_data_and_actin_images(folder, noCells, stressmapshape, stre
     sigma_yy_all = np.zeros([x_end, y_end, t_end, cell_end])
     images_all = np.zeros([x_end, y_end, t_end, cell_end])
 
-
     # loop over all folders (one folder per cell/tissue)
     for cell in range(cell_end):
         print('Load TFM data, MSM data and actin images: cell' + str(cell))
@@ -126,10 +125,10 @@ def load_MSM_and_TFM_data_and_actin_images(folder, noCells, stressmapshape, stre
             foldercellpath = folder + "/cell0" + str(cell + 1)
         else:
             foldercellpath = folder + "/cell" + str(cell + 1)
-            
+
         # read stack of actin images
         image = io.imread(foldercellpath + '/actin_ec.tif')
-        
+
         # move t-axis to the last index
         image = np.moveaxis(image, 0, -1)
 
@@ -173,7 +172,6 @@ def load_MSM_and_TFM_data_and_actin_images(folder, noCells, stressmapshape, stre
     return sigma_xx_all, sigma_yy_all, Tx_all, Ty_all, Dx_all, Dy_all, images_all
 
 
-
 def load_actin_angle_data(folder):
     actin_angles = scipy.io.loadmat(folder + "/actin_angles.mat")
     actin_angles = actin_angles["angles"]
@@ -189,6 +187,32 @@ def load_actin_intensity_data(folder):
     return actin_intensity_left, actin_intensity_right
 
 
+def save_actin_images_as_png(folder_old, folder_new, title, noCells, stressmapshape, stressmappixelsize):
+    savepath = folder_new + title + "/actin_images"
+    if not os.path.exists(savepath):
+        os.mkdir(savepath)
+    # loop over all folders (one folder per cell/tissue)
+    for cell in range(noCells):
+        print('Load actin images: cell' + str(cell))
+        # assemble paths to load stres smaps
+        if cell < 9:
+            foldercellpath = folder_old + "/cell0" + str(cell + 1)
+        else:
+            foldercellpath = folder_old + "/cell" + str(cell + 1)
+
+        # read stack of actin images
+        image = io.imread(foldercellpath + '/actin_ec.tif')
+
+        # move t-axis to the last index
+        image = np.moveaxis(image, 0, -1)
+
+        # crop out a 92*8 by 92*8 window around the center
+        image = image[132:868, 132:868, :]
+
+        for frame in range(stressmapshape[2]):
+            imagepath = savepath + "/cell" + str(cell) + "frame" + str(frame) + ".png"
+            matplotlib.image.imsave(imagepath, image[:, :, frame], cmap="gray")
+
 
 def main(folder_old, folder_new, title, noCells, noFrames):
     stressmappixelsize = 0.864 * 10 ** -6  # in meter
@@ -198,11 +222,11 @@ def main(folder_old, folder_new, title, noCells, noFrames):
     print('Data loading of ' + title + ' started!')
     # Xtop, Xright, Xbottom, Xleft, Ytop, Yright, Ybottom, Yleft, mask = \
     #     load_fibertracking_data(folder_old, fibertrackingshape, stressmapshape, noCells)
-    sigma_xx, sigma_yy, Tx, Ty, Dx, Dy, actin_images = load_MSM_and_TFM_data_and_actin_images(folder_old, noCells, stressmapshape, stressmappixelsize)
-    actin_angles = load_actin_angle_data(folder_old)
-    actin_intensity_left, actin_intensity_right = load_actin_intensity_data(folder_old)
+    # sigma_xx, sigma_yy, Tx, Ty, Dx, Dy, actin_images = load_MSM_and_TFM_data_and_actin_images(folder_old, noCells, stressmapshape, stressmappixelsize)
+    # actin_angles = load_actin_angle_data(folder_old)
+    # actin_intensity_left, actin_intensity_right = load_actin_intensity_data(folder_old)
     # actin_images = load_actin_images(folder_old, stressmapshape, noCells)
-
+    save_actin_images_as_png(folder_old, folder_new, title, noCells, stressmapshape, stressmappixelsize)
     # np.save(folder_new + title + "/Xtop.npy", Xtop)
     # np.save(folder_new + title + "/Xright.npy", Xright)
     # np.save(folder_new + title + "/Xbottom.npy", Xbottom)
@@ -215,19 +239,19 @@ def main(folder_old, folder_new, title, noCells, noFrames):
 
     # np.save(folder_new + title + "/mask.npy", mask)
 
-    np.save(folder_new + title + "/Dx.npy", Dx)
-    np.save(folder_new + title + "/Dy.npy", Dy)
-    np.save(folder_new + title + "/Tx.npy", Tx)
-    np.save(folder_new + title + "/Ty.npy", Ty)
-    np.save(folder_new + title + "/sigma_xx.npy", sigma_xx)
-    np.save(folder_new + title + "/sigma_yy.npy", sigma_yy)
-
-    np.save(folder_new + title + "/actin_angles.npy", actin_angles)
-
-    np.save(folder_new + title + "/actin_intensity_left.npy", actin_intensity_left)
-    np.save(folder_new + title + "/actin_intensity_right.npy", actin_intensity_right)
-
-    np.save(folder_new + title + "/actin_images.npy", actin_images)
+    # np.save(folder_new + title + "/Dx.npy", Dx)
+    # np.save(folder_new + title + "/Dy.npy", Dy)
+    # np.save(folder_new + title + "/Tx.npy", Tx)
+    # np.save(folder_new + title + "/Ty.npy", Ty)
+    # np.save(folder_new + title + "/sigma_xx.npy", sigma_xx)
+    # np.save(folder_new + title + "/sigma_yy.npy", sigma_yy)
+    #
+    # np.save(folder_new + title + "/actin_angles.npy", actin_angles)
+    #
+    # np.save(folder_new + title + "/actin_intensity_left.npy", actin_intensity_left)
+    # np.save(folder_new + title + "/actin_intensity_right.npy", actin_intensity_right)
+    #
+    # np.save(folder_new + title + "/actin_images.npy", actin_images)
 
     print('Data loading of ' + title + ' terminated!')
 
@@ -239,7 +263,6 @@ if __name__ == "__main__":
     main("D:/2021_OPTO H2000 stimulate all for 10 minutes/singlets", folder, "AR1to1 singlets full stim long", 17, 60)
     main("D:/2021_OPTO H2000 stimulate all for 3 minutes/doublets", folder, "AR1to1 doublets full stim short", 35, 50)
     main("D:/2021_OPTO H2000 stimulate all for 3 minutes/singlets", folder, "AR1to1 singlets full stim short", 14, 50)
-    main("D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_doublets/AR1to1", folder, "AR1to1 doublets half stim", 29, 60)
     main("D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_doublets/AR1to2", folder, "AR1to2 doublets half stim", 43, 60)
     main("D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_doublets/AR1to1", folder, "AR1to1 doublets half stim", 29, 60)
     main("D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_singlets", folder, "AR1to1 singlets half stim", 41, 60)

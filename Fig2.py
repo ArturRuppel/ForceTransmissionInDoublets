@@ -15,6 +15,7 @@ import pandas as pd
 import seaborn as sns
 import statannot
 from scipy.stats import pearsonr
+import matplotlib.image as mpimg
 
 # mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['font.size'] = 8
@@ -45,6 +46,8 @@ figfolder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alld
 if not os.path.exists(figfolder):
     os.mkdir(figfolder)
 
+def rgb2gray(rgb):
+    return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140])
 # %% set up pandas data frame to use with seaborn for box- and swarmplots
 
 # initialize empty dictionaries
@@ -106,8 +109,8 @@ df['sigma_yy_baseline'] *= 1e3  # convert to mN/m
 pixelsize = 0.864  # in µm
 initial_pixelsize = 0.108  # in µm
 # concatenate TFM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
-doublet_example = 0
-singlet_example = 0
+doublet_example = 2
+singlet_example = 2
 
 # get data for one example
 # forces
@@ -118,9 +121,10 @@ Tx_1to1s = AR1to1s_fullstim_long["TFM_data"]["Tx"][:, :, 0, singlet_example]
 Ty_1to1s = AR1to1s_fullstim_long["TFM_data"]["Ty"][:, :, 0, singlet_example]
 
 # actin images
-actin_image_1to1d = AR1to1d_fullstim_long["shape_data"]["actin_images"][:, :, 0, doublet_example]
-
-actin_image_1to1s = AR1to1s_fullstim_long["shape_data"]["actin_images"][:, :, 0, singlet_example]
+actin_image_path = folder + "AR1to1 doublets full stim long/actin_images/cell" + str(doublet_example) + "frame0.png"
+actin_image_1to1d = rgb2gray(mpimg.imread(actin_image_path))
+actin_image_path = folder + "AR1to1 singlets full stim long/actin_images/cell" + str(singlet_example) + "frame0.png"
+actin_image_1to1s = rgb2gray(mpimg.imread(actin_image_path))
 
 # ellipse data
 a_top_1to1d = AR1to1d_fullstim_long_CM["ellipse_data"]["a top [um]"][0, doublet_example]
@@ -173,6 +177,7 @@ ty_bottomright_1to1d = AR1to1d_fullstim_long_CM["tangent_data"]["ty bottom right
 xc_bottomright_1to1d = AR1to1d_fullstim_long_CM["tangent_data"]["xTouch bottom right"][0, doublet_example] * initial_pixelsize
 yc_bottomright_1to1d = AR1to1d_fullstim_long_CM["tangent_data"]["yTouch bottom right"][0, doublet_example] * initial_pixelsize
 
+
 tx_topleft_1to1s = AR1to1s_fullstim_long_CM["tangent_data"]["tx top left"][0, singlet_example] * initial_pixelsize
 ty_topleft_1to1s = AR1to1s_fullstim_long_CM["tangent_data"]["ty top left"][0, singlet_example] * initial_pixelsize
 xc_topleft_1to1s = AR1to1s_fullstim_long_CM["tangent_data"]["xTouch top left"][0, singlet_example] * initial_pixelsize
@@ -209,9 +214,9 @@ Tx_1to1s_crop = Tx_1to1s[crop_start:crop_end, crop_start:crop_end] * 1e-3
 Ty_1to1s_crop = Ty_1to1s[crop_start:crop_end, crop_start:crop_end] * 1e-3
 T_1to1s_crop = T_1to1s[crop_start:crop_end, crop_start:crop_end] * 1e-3
 
-actin_image_1to1d_crop = actin_image_1to1d[crop_start:crop_end, crop_start:crop_end]
+actin_image_1to1d_crop = actin_image_1to1d[crop_start*8:crop_end*8, crop_start*8:crop_end*8]
 
-actin_image_1to1s_crop = actin_image_1to1s[crop_start:crop_end, crop_start:crop_end]
+actin_image_1to1s_crop = actin_image_1to1s[crop_start*8:crop_end*8, crop_start*8:crop_end*8]
 
 # remove 0 values from tracking data
 x_tracking_top_1to1d = x_tracking_top_1to1d[x_tracking_top_1to1d != 0]
@@ -235,10 +240,10 @@ x_end = np.shape(T_1to1d_crop)[1]  # create x- and y-axis for plotting maps
 y_end = np.shape(T_1to1d_crop)[0]
 extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
 xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))  # create mesh for vectorplot
-fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(4, 2), gridspec_kw={'width_ratios': [3, 3, 1]})  # create figure and axes
-plt.subplots_adjust(wspace=-0.2, hspace=0)  # adjust space in between plots
+fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(5, 2), gridspec_kw={'width_ratios': [5, 5, 1]})  # create figure and axes
+plt.subplots_adjust(wspace=-0.5, hspace=0)  # adjust space in between plots
 
-
+# fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2, 2))
 # ******************************************************************************************************************************************
 def plot_actin_image_forces_ellipses_tracking_tangents(actin_image, x, y, Tx, Ty, T, a_top, b_top, a_bottom, b_bottom,
                                                        tx_topleft, ty_topleft, tx_topright, ty_topright, tx_bottomleft, ty_bottomleft,
@@ -254,15 +259,15 @@ def plot_actin_image_forces_ellipses_tracking_tangents(actin_image, x, y, Tx, Ty
     sm.set_array([])
 
     # plot actin image
-    im = ax.imshow(actin_image, cmap=plt.get_cmap("Greys"), interpolation="bilinear", extent=extent)
+    ax.imshow(actin_image, cmap=plt.get_cmap("Greys"), interpolation="bilinear", extent=extent, aspect=(1))
 
     # plot forces
     ax.quiver(x, y, Tx, Ty, angles='xy', scale_units='xy', scale=0.2, color=colormap(norm(T)))
 
     # plot ellipses
-    t = np.linspace(1.2 * np.pi, 1.8 * np.pi, 100)
+    t = np.linspace(0, 2 * np.pi, 100)
     ax.plot(xc_top + a_top * np.cos(t), yc_top + b_top * np.sin(t), color=colors_parent[2], linewidth=2)
-    t = np.linspace(0.2 * np.pi, 0.8 * np.pi, 100)
+    t = np.linspace(0, 2 * np.pi, 100)
     ax.plot(xc_bottom + a_bottom * np.cos(t), yc_bottom + b_bottom * np.sin(t), color=colors_parent[2], linewidth=2)
 
     # plot tracking data
@@ -281,11 +286,18 @@ def plot_actin_image_forces_ellipses_tracking_tangents(actin_image, x, y, Tx, Ty
     ax.plot([xc_bottomright, xc_bottomright + 150 * tx_bottomright], [yc_bottomright, yc_bottomright + 150 * ty_bottomright],
             color='white', linewidth=2, linestyle=':')
 
+    ax.set_xlim([-0.1 * extent[1], 1.1 * extent[1]])
+    ax.set_ylim([-0.1 * extent[3], 1.1 * extent[3]])
+
+    ax.axis('off')
+
     return sm
+
 
 # Set up plot parameters for first panel
 #######################################################################################################
 actin_image = actin_image_1to1d_crop
+ax = axes[0]
 x = xq[::n, ::n].flatten()
 y = yq[::n, ::n].flatten()
 Tx = Tx_1to1d_crop[::n, ::n].flatten()
@@ -328,11 +340,17 @@ plot_actin_image_forces_ellipses_tracking_tangents(actin_image, x, y, Tx, Ty, T,
                                                    xc_top, yc_top, xc_bottom, yc_bottom, x_tracking_top, y_tracking_top, x_tracking_bottom,
                                                    y_tracking_bottom,
                                                    xc_topleft, yc_topleft, xc_topright, yc_topright, xc_bottomleft, yc_bottomleft,
-                                                   xc_bottomright, yc_bottomright, axes[0])
+                                                   xc_bottomright, yc_bottomright, ax)
 
-# Set up plot parameters for first panel
+# ax.axis('off')
+# plt.show()
+# fig.savefig(figfolder + 'C1.svg', dpi=300, bbox_inches="tight")
+
+# fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2, 2))
+# Set up plot parameters for second panel
 #######################################################################################################
 actin_image = actin_image_1to1s_crop
+ax = axes[1]
 x = xq[::n, ::n].flatten()
 y = yq[::n, ::n].flatten()
 Tx = Tx_1to1s_crop[::n, ::n].flatten()
@@ -375,18 +393,14 @@ sm = plot_actin_image_forces_ellipses_tracking_tangents(actin_image, x, y, Tx, T
                                                    xc_top, yc_top, xc_bottom, yc_bottom, x_tracking_top, y_tracking_top, x_tracking_bottom,
                                                    y_tracking_bottom,
                                                    xc_topleft, yc_topleft, xc_topright, yc_topright, xc_bottomleft, yc_bottomleft,
-                                                   xc_bottomright, yc_bottomright, axes[1])
+                                                   xc_bottomright, yc_bottomright, ax)
 
-
-for ax in axes.flat:
-    ax.axis('off')
-    aspectratio = 1.0
-    ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
-    ax.set_aspect(ratio_default * aspectratio)
-cbar = fig.colorbar(sm, ax=axes[2])
+# add colorbar
+cbar = plt.colorbar(sm, ax=axes[2])
 cbar.ax.set_title(axtitle)
-plt.show()
+axes[2].axis('off')
 
+plt.show()
 fig.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
 # %% plot figure 2D, line tension and force of adherent fiber
 
