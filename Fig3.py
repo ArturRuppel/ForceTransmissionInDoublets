@@ -36,9 +36,9 @@ AR1to1d_halfstim = pickle.load(open(folder + "analysed_data/AR1to1d_halfstim.dat
 AR1to1s_halfstim = pickle.load(open(folder + "analysed_data/AR1to1s_halfstim.dat", "rb"))
 # AR2to1d_halfstim =        pickle.load(open(folder + "analysed_data/AR2to1d_halfstim.dat", "rb"))
 
-sim_Es_1to1d = np.load(folder + "AR1to1 doublets full stim long/simulation_strain_energy.npz")["energy"]
-sim_stress_xx_1to1d = np.load(folder + "AR1to1 doublets full stim long/simulation_stress_xx_yy.npz")["stress_xx"]
-sim_stress_yy_1to1d = np.load(folder + "AR1to1 doublets full stim long/simulation_stress_xx_yy.npz")["stress_yy"]
+sim_Es_1to1d = np.load(folder + "AR1to1_doublets_full_stim_long/simulation_strain_energy.npz")["energy"]
+sim_stress_xx_1to1d = np.load(folder + "AR1to1_doublets_full_stim_long/simulation_stress_xx_yy.npz")["stress_xx"]
+sim_stress_yy_1to1d = np.load(folder + "AR1to1_doublets_full_stim_long/simulation_stress_xx_yy.npz")["stress_yy"]
 
 sim_stress_xx_1to1d = np.nanmean(np.absolute(sim_stress_xx_1to1d), axis=1)
 sim_stress_yy_1to1d = np.nanmean(np.absolute(sim_stress_yy_1to1d), axis=1)
