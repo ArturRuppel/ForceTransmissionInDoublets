@@ -229,16 +229,55 @@ def analyse_msm_data(folder):
 
 def analyse_shape_data(folder, stressmappixelsize):
     Xtop = np.load(folder + "/Xtop.npy")
-    Xright = np.load(folder + "/Xright.npy")
+    # Xright = np.load(folder + "/Xright.npy")
     Xbottom = np.load(folder + "/Xbottom.npy")
-    Xleft = np.load(folder + "/Xleft.npy")
+    # Xleft = np.load(folder + "/Xleft.npy")
 
     Ytop = np.load(folder + "/Ytop.npy")
-    Yright = np.load(folder + "/Yright.npy")
+    # Yright = np.load(folder + "/Yright.npy")
     Ybottom = np.load(folder + "/Ybottom.npy")
-    Yleft = np.load(folder + "/Yleft.npy")
+    # Yleft = np.load(folder + "/Yleft.npy")
 
-    actin_images = np.load(folder + "/actin_images.npy")
+    noFrames = Xtop.shape[1]
+    noCells = Xtop.shape[2]
+
+    # I want to calculate the deformation of the contour, but the fibertracks have varying lengths, so to calculate the strain
+    # I first need to interpolate them to a grid so that all tracks have the same shape
+    nb_points_interpl = 50
+    Xtop_interpl = np.zeros((nb_points_interpl, noFrames, noCells))
+    Xbottom_interpl = np.zeros((nb_points_interpl, noFrames, noCells))
+
+    Ytop_interpl = np.zeros((nb_points_interpl, noFrames, noCells))
+    Ybottom_interpl = np.zeros((nb_points_interpl, noFrames, noCells))
+
+    for cell in range(noCells):
+        Xtop_current = Xtop[:, :, cell]
+        Xbottom_current = Xbottom[:, :, cell]
+
+        Ytop_current = Ytop[:, :, cell]
+        Ybottom_current = Ybottom[:, :, cell]
+
+        # remove zero lines
+        Xtop_current = Xtop_current[~np.all(Xtop_current == 0, axis=1)]
+        Xbottom_current = Xbottom_current[~np.all(Xbottom_current == 0, axis=1)]
+
+        Ytop_current = Ytop_current[~np.all(Ytop_current == 0, axis=1)]
+        Ybottom_current = Ybottom_current[~np.all(Ybottom_current == 0, axis=1)]
+
+        # apply interpolation
+        for frame in range(noFrames):
+            Xtop_interpl[:, frame, cell] = np.linspace(Xtop_current[0, frame], Xtop_current[-1, frame], nb_points_interpl)
+            Xbottom_interpl[:, frame, cell] = np.linspace(Xbottom_current[0, frame], Xbottom_current[-1, frame], nb_points_interpl)
+
+            Ytop_interpl[:, frame, cell] = np.interp(Xtop_interpl[:, frame, cell], Xtop_current[:, frame], Ytop_current[:, frame])
+            Ybottom_interpl[:, frame, cell] = np.interp(Xbottom_interpl[:, frame, cell], Xbottom_current[:, frame], Ybottom_current[:, frame])
+
+    # calculate width of the cell as function of x
+    W = Ybottom_interpl - Ytop_interpl
+
+    # calculate strain
+    epsilon = 1-np.nanmean(W[:, 1:20, :], axis=1) / np.nanmean(W[:, 31:33, :], axis=1)
+
 
     masks = np.load(folder + "/mask.npy")
 
@@ -257,9 +296,8 @@ def analyse_shape_data(folder, stressmappixelsize):
     RAI_left = relactin_intensity_left[33, :] - relactin_intensity_left[20, :]
     RAI_right = relactin_intensity_right[33, :] - relactin_intensity_right[20, :]
 
-    data = {"Xtop": Xtop, "Xright": Xright, "Xbottom": Xbottom, "Xleft": Xleft,
-            "Ytop": Ytop, "Yright": Yright, "Ybottom": Ybottom, "Yleft": Yleft,
-            "masks": masks, "actin_images": actin_images,
+    data = {"Xtop": Xtop, "Xbottom": Xbottom, "Ytop": Ytop, "Ybottom": Ybottom,
+            "masks": masks, "cell_width(x)": W, "contour_strain" : epsilon,
             "spreadingsize": spreadingsize, "spreadingsize_baseline": spreadingsize_baseline,
             "actin_angles": actin_angles,
             "actin_intensity_left": actin_intensity_left, "actin_intensity_right": actin_intensity_right,
@@ -334,31 +372,27 @@ def analyse_MSM_data_after_filtering(data):
     normsigma_yy_left = sigma_yy_left_noBL / max(np.nanmean(sigma_yy_left_noBL, axis=1))
     normsigma_yy_right = sigma_yy_right_noBL / max(np.nanmean(sigma_yy_left_noBL, axis=1))
 
-    # calculate normalized stress increase
-    NSI_xx_left = normsigma_xx_left[33, :] - normsigma_xx_left[20, :]
-    NSI_xx_right = normsigma_xx_right[33, :] - normsigma_xx_right[20, :]
-
-    NSI_yy_left = normsigma_yy_left[33, :] - normsigma_yy_left[20, :]
-    NSI_yy_right = normsigma_yy_right[33, :] - normsigma_yy_right[20, :]
 
     data["normsigma_xx_left"] = normsigma_xx_left
     data["normsigma_xx_right"] = normsigma_xx_right
     data["normsigma_yy_left"] = normsigma_yy_left
     data["normsigma_yy_right"] = normsigma_yy_right
 
-    # data["NSI_xx_left"] = NSI_xx_left
-    # data["NSI_xx_right"] = NSI_xx_right
-    # data["NSI_yy_left"] = NSI_yy_left
-    # data["NSI_yy_right"] = NSI_yy_right
 
     return data
 
+# def remove_actin_of_filtered_cells(folder, baselinefilter, noFrames):
+#     path_actin = folder + "/actin_images"
+#
+#     for cell in range(baselinefilter.shape[0]):
+#         if ~baselinefilter[cell]:
+#             for frame in range(noFrames):
+#                 os.remove(path_actin + "/cell" + str(cell) + "frame" + str(frame) + ".png")
 
-def main_meta_analysis(folder, title, noCells, noFrames):
+
+def main_meta_analysis(folder, title, noFrames):
     stressmappixelsize = 0.864 * 1e-6  # in meter
-    pixelsize = 0.108 * 1e-6
 
-    folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
     folder += title
 
     # calculate strain energies over all cells, normalize data to baseline values etc.
@@ -379,6 +413,9 @@ def main_meta_analysis(folder, title, noCells, noFrames):
     MSM_data = apply_filter(MSM_data, baselinefilter)
     shape_data = apply_filter(shape_data, baselinefilter)
 
+    # # remove actin images of cells with unstable baselines
+    # remove_actin_of_filtered_cells(folder, baselinefilter, noFrames)
+
     new_N = np.sum(baselinefilter)
     print(title + ": " + str(baselinefilter.shape[0] - new_N) + " cells were filtered out")
 
@@ -387,28 +424,30 @@ def main_meta_analysis(folder, title, noCells, noFrames):
     return alldata
 
 
+
+
 if __name__ == "__main__":
     # This is the folder where all the input data is stored
     folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
 
-    AR1to1dfsl = "AR1to1 doublets full stim long"
-    AR1to1sfsl = "AR1to1 singlets full stim long"
-    AR1to1dfss = "AR1to1 doublets full stim short"
-    AR1to1sfss = "AR1to1 singlets full stim short"
-    AR1to2dhs = "AR1to2 doublets half stim"
-    AR1to1dhs = "AR1to1 doublets half stim"
-    AR1to1shs = "AR1to1 singlets half stim"
-    AR2to1dhs = "AR2to1 doublets half stim"
+    AR1to1dfsl = "AR1to1_doublets_full_stim_long"
+    AR1to1sfsl = "AR1to1_singlets_full_stim_long"
+    AR1to1dfss = "AR1to1_doublets_full_stim_short"
+    AR1to1sfss = "AR1to1_singlets_full_stim_short"
+    AR1to2dhs = "AR1to2_doublets_half_stim"
+    AR1to1dhs = "AR1to1_doublets_half_stim"
+    AR1to1shs = "AR1to1_singlets_half_stim"
+    AR2to1dhs = "AR2to1_doublets_half_stim"
 
     # These functions perform a series of analyses and assemble a dictionary of dictionaries containing all the data that was used for plotting
-    AR1to1d_fullstim_long = main_meta_analysis(folder, AR1to1dfsl, 42, 60)
-    AR1to1s_fullstim_long = main_meta_analysis(folder, AR1to1sfsl, 17, 60)
-    AR1to1d_fullstim_short = main_meta_analysis(folder, AR1to1dfss, 35, 50)
-    AR1to1s_fullstim_short = main_meta_analysis(folder, AR1to1sfss, 14, 50)
-    AR1to2d_halfstim = main_meta_analysis(folder, AR1to2dhs, 43, 60)
-    AR1to1d_halfstim = main_meta_analysis(folder, AR1to1dhs, 29, 60)
-    AR1to1s_halfstim = main_meta_analysis(folder, AR1to1shs, 41, 60)
-    AR2to1d_halfstim = main_meta_analysis(folder, AR2to1dhs, 18, 60)
+    AR1to1d_fullstim_long = main_meta_analysis(folder, AR1to1dfsl, 60)
+    AR1to1s_fullstim_long = main_meta_analysis(folder, AR1to1sfsl, 60)
+    AR1to1d_fullstim_short = main_meta_analysis(folder, AR1to1dfss, 50)
+    AR1to1s_fullstim_short = main_meta_analysis(folder, AR1to1sfss, 50)
+    AR1to2d_halfstim = main_meta_analysis(folder, AR1to2dhs, 60)
+    AR1to1d_halfstim = main_meta_analysis(folder, AR1to1dhs, 60)
+    AR1to1s_halfstim = main_meta_analysis(folder, AR1to1shs, 60)
+    AR2to1d_halfstim = main_meta_analysis(folder, AR2to1dhs, 60)
 
     # save dictionaries to a file using pickle
     if not os.path.exists(folder + "analysed_data"):

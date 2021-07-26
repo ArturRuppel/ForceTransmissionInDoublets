@@ -2,13 +2,11 @@ import os
 import pickle
 
 import matplotlib as mpl
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import seaborn as sns
-import statannot
-from scipy.stats import pearsonr
 import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
+import moviepy.video.io.ImageSequenceClip
+import numpy as np
+from moviepy.editor import *
 
 # mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['font.size'] = 8
@@ -67,50 +65,50 @@ def plot_actin_image_forces_ellipses_tracking_tangents(actin_image, x, y, Tx, Ty
     ax.axis('off')
 
     return sm
-def make_actin_ellipse_plots(data_TFM, data_CM, cell, frame,  pixelsize, initial_pixelsize, title):
-    Tx = data_TFM["TFM_data"]["Tx"][:, :, 0, cell]
-    Ty = data_TFM["TFM_data"]["Ty"][:, :, 0, cell]
+def make_actin_ellipse_plots(data_TFM, data_CM, cell, cell_image, frame,  pixelsize, initial_pixelsize, title):
+    Tx = data_TFM["TFM_data"]["Tx"][:, :, frame, cell]
+    Ty = data_TFM["TFM_data"]["Ty"][:, :, frame, cell]
 
     # actin images
-    actin_image_path = folder + title + "/actin_images/cell" + str(cell) + "frame0.png"
+    actin_image_path = folder + title + "/actin_images/cell" + str(cell_image) + "frame" + str(frame) + ".png"
     actin_image = rgb2gray(mpimg.imread(actin_image_path))
 
     # ellipse data
-    a_top = data_CM["ellipse_data"]["a top [um]"][0, cell]
-    b_top = data_CM["ellipse_data"]["b top [um]"][0, cell]
-    xc_top = data_CM["ellipse_data"]["xc top [um]"][0, cell]
-    yc_top = data_CM["ellipse_data"]["yc top [um]"][0, cell]
-    a_bottom = data_CM["ellipse_data"]["a bottom [um]"][0, cell]
-    b_bottom = data_CM["ellipse_data"]["b bottom [um]"][0, cell]
-    xc_bottom = data_CM["ellipse_data"]["xc bottom [um]"][0, cell]
-    yc_bottom = data_CM["ellipse_data"]["yc bottom [um]"][0, cell]
+    a_top = data_CM["ellipse_data"]["a top [um]"][frame, cell]
+    b_top = data_CM["ellipse_data"]["b top [um]"][frame, cell]
+    xc_top = data_CM["ellipse_data"]["xc top [um]"][frame, cell]
+    yc_top = data_CM["ellipse_data"]["yc top [um]"][frame, cell]
+    a_bottom = data_CM["ellipse_data"]["a bottom [um]"][frame, cell]
+    b_bottom = data_CM["ellipse_data"]["b bottom [um]"][frame, cell]
+    xc_bottom = data_CM["ellipse_data"]["xc bottom [um]"][frame, cell]
+    yc_bottom = data_CM["ellipse_data"]["yc bottom [um]"][frame, cell]
 
     # tracking data
-    x_tracking_top = data_TFM["shape_data"]["Xtop"][:, 0, cell] * initial_pixelsize
-    y_tracking_top = data_TFM["shape_data"]["Ytop"][:, 0, cell] * initial_pixelsize
-    x_tracking_bottom = data_TFM["shape_data"]["Xbottom"][:, 0, cell] * initial_pixelsize
-    y_tracking_bottom = data_TFM["shape_data"]["Ybottom"][:, 0, cell] * initial_pixelsize
+    x_tracking_top = data_TFM["shape_data"]["Xtop"][:, frame, cell] * initial_pixelsize
+    y_tracking_top = data_TFM["shape_data"]["Ytop"][:, frame, cell] * initial_pixelsize
+    x_tracking_bottom = data_TFM["shape_data"]["Xbottom"][:, frame, cell] * initial_pixelsize
+    y_tracking_bottom = data_TFM["shape_data"]["Ybottom"][:, frame, cell] * initial_pixelsize
 
     # tangent data
-    tx_topleft = data_CM["tangent_data"]["tx top left"][0, cell] * initial_pixelsize  # convert to µm
-    ty_topleft = data_CM["tangent_data"]["ty top left"][0, cell] * initial_pixelsize
-    xc_topleft = data_CM["tangent_data"]["xTouch top left"][0, cell] * initial_pixelsize
-    yc_topleft = data_CM["tangent_data"]["yTouch top left"][0, cell] * initial_pixelsize
+    tx_topleft = data_CM["tangent_data"]["tx top left"][frame, cell] * initial_pixelsize  # convert to µm
+    ty_topleft = data_CM["tangent_data"]["ty top left"][frame, cell] * initial_pixelsize
+    xc_topleft = data_CM["tangent_data"]["xTouch top left"][frame, cell] * initial_pixelsize
+    yc_topleft = data_CM["tangent_data"]["yTouch top left"][frame, cell] * initial_pixelsize
 
-    tx_topright = data_CM["tangent_data"]["tx top right"][0, cell] * initial_pixelsize
-    ty_topright = data_CM["tangent_data"]["ty top right"][0, cell] * initial_pixelsize
-    xc_topright = data_CM["tangent_data"]["xTouch top right"][0, cell] * initial_pixelsize
-    yc_topright = data_CM["tangent_data"]["yTouch top right"][0, cell] * initial_pixelsize
+    tx_topright = data_CM["tangent_data"]["tx top right"][frame, cell] * initial_pixelsize
+    ty_topright = data_CM["tangent_data"]["ty top right"][frame, cell] * initial_pixelsize
+    xc_topright = data_CM["tangent_data"]["xTouch top right"][frame, cell] * initial_pixelsize
+    yc_topright = data_CM["tangent_data"]["yTouch top right"][frame, cell] * initial_pixelsize
 
-    tx_bottomleft = data_CM["tangent_data"]["tx bottom left"][0, cell] * initial_pixelsize
-    ty_bottomleft = data_CM["tangent_data"]["ty bottom left"][0, cell] * initial_pixelsize
-    xc_bottomleft = data_CM["tangent_data"]["xTouch bottom left"][0, cell] * initial_pixelsize
-    yc_bottomleft = data_CM["tangent_data"]["yTouch bottom left"][0, cell] * initial_pixelsize
+    tx_bottomleft = data_CM["tangent_data"]["tx bottom left"][frame, cell] * initial_pixelsize
+    ty_bottomleft = data_CM["tangent_data"]["ty bottom left"][frame, cell] * initial_pixelsize
+    xc_bottomleft = data_CM["tangent_data"]["xTouch bottom left"][frame, cell] * initial_pixelsize
+    yc_bottomleft = data_CM["tangent_data"]["yTouch bottom left"][frame, cell] * initial_pixelsize
 
-    tx_bottomright = data_CM["tangent_data"]["tx bottom right"][0, cell] * initial_pixelsize
-    ty_bottomright = data_CM["tangent_data"]["ty bottom right"][0, cell] * initial_pixelsize
-    xc_bottomright = data_CM["tangent_data"]["xTouch bottom right"][0, cell] * initial_pixelsize
-    yc_bottomright = data_CM["tangent_data"]["yTouch bottom right"][0, cell] * initial_pixelsize
+    tx_bottomright = data_CM["tangent_data"]["tx bottom right"][frame, cell] * initial_pixelsize
+    ty_bottomright = data_CM["tangent_data"]["ty bottom right"][frame, cell] * initial_pixelsize
+    xc_bottomright = data_CM["tangent_data"]["xTouch bottom right"][frame, cell] * initial_pixelsize
+    yc_bottomright = data_CM["tangent_data"]["yTouch bottom right"][frame, cell] * initial_pixelsize
 
 
     # calculate force amplitudes
@@ -185,10 +183,10 @@ def make_actin_ellipse_plots(data_TFM, data_CM, cell, frame,  pixelsize, initial
     cbar.ax.set_title(axtitle)
     ax.axis('off')
 
-    plt.show()
+
     actin_image__result_path = folder + title + "/actin_images/_ellipses_cell" + str(cell) + "frame" + str(frame) + ".png"
     fig.savefig(actin_image__result_path, dpi=300, bbox_inches="tight")
-
+    plt.close()
 
 
 def main(folder, title, datafile):
@@ -201,20 +199,39 @@ def main(folder, title, datafile):
     frame_end = data_TFM["TFM_data"]["Dx"].shape[2]
     cell_end = data_TFM["TFM_data"]["Dx"].shape[3]
 
+    # actin image numeration has holes because some cells have been filtered out, so I create a separate index
+    cell_image = 0
     for cell in range(cell_end):
-        print("cell" + str(cell))
+        print("start making movies for cell" + str(cell_image))
+        while not os.path.isfile(folder + title + "/actin_images/cell" + str(cell_image) + "frame0.png"):
+            print("cell" + str(cell_image) + " was not found")
+            cell_image += 1
         for frame in range(frame_end):
-            make_actin_ellipse_plots(data_TFM, data_CM, cell, frame, pixelsize, initial_pixelsize, title)
+            make_actin_ellipse_plots(data_TFM, data_CM, cell, cell_image, frame, pixelsize, initial_pixelsize, title)
+
+        # make movies out of images
+        inputfile = folder + title + "/actin_images/_ellipses_cell" + str(cell) + "frame%01d.png"
+
+        outputfile = folder + title + "/actin_images/_ellipses_cell" + str(cell) + ".mp4"
+        os.system("ffmpeg -r 10 -i " + inputfile + " -vcodec mpeg4 -y " + outputfile)
+
+        image_files = []
+        for frame in range(frame_end):
+            image_files.append(folder + title + "/actin_images/_ellipses_cell" + str(cell) + "frame" + str(frame) + ".png")
+
+        for img in image_files:
+            os.remove(img)
+
+        cell_image += 1
 
 if __name__ == "__main__":
     folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
 
-    main(folder, "AR1to1 doublets full stim long", "AR1to1d_fullstim_long")
-    main(folder, "AR1to1 singlets full stim long", "AR1to1s_fullstim_long")
-    main(folder, "AR1to1 doublets full stim short", "AR1to1d_fullstim_short")
-    main(folder, "AR1to1 singlets full stim short", "AR1to1s_fullstim_short")
-
-    main(folder, "AR1to2 doublets half stim", "AR1to2d_halfstim")
-    main(folder, "AR1to1 doublets half stim", "AR1to1d_halfstim")
-    main(folder, "AR1to1 singlets half stim", "AR1to1s_halfstim")
-    main(folder, "AR2to1 doublets half stim", "AR2to1d_halfstim")
+    main(folder, "AR1to1_doublets_full_stim_long", "AR1to1d_fullstim_long")
+    main(folder, "AR1to1_singlets_full_stim_long", "AR1to1s_fullstim_long")
+    main(folder, "AR1to1_doublets_full_stim_short", "AR1to1d_fullstim_short")
+    main(folder, "AR1to1_singlets_full_stim_short", "AR1to1s_fullstim_short")
+    main(folder, "AR1to2_doublets_half_stim", "AR1to2d_halfstim")
+    main(folder, "AR1to1_doublets_half_stim", "AR1to1d_halfstim")
+    main(folder, "AR1to1_singlets_half_stim", "AR1to1s_halfstim")
+    main(folder, "AR2to1_doublets_half_stim", "AR2to1d_halfstim")

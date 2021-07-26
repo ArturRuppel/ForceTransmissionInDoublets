@@ -109,8 +109,8 @@ df['sigma_yy_baseline'] *= 1e3  # convert to mN/m
 pixelsize = 0.864  # in µm
 initial_pixelsize = 0.108  # in µm
 # concatenate TFM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
-doublet_example = 2
-singlet_example = 2
+doublet_example = 0
+singlet_example = 0
 
 # get data for one example
 # forces
@@ -121,9 +121,9 @@ Tx_1to1s = AR1to1s_fullstim_long["TFM_data"]["Tx"][:, :, 0, singlet_example]
 Ty_1to1s = AR1to1s_fullstim_long["TFM_data"]["Ty"][:, :, 0, singlet_example]
 
 # actin images
-actin_image_path = folder + "AR1to1 doublets full stim long/actin_images/cell" + str(doublet_example) + "frame0.png"
+actin_image_path = folder + "AR1to1_doublets_full_stim_long/actin_images/cell" + str(doublet_example) + "frame0.png"
 actin_image_1to1d = rgb2gray(mpimg.imread(actin_image_path))
-actin_image_path = folder + "AR1to1 singlets full stim long/actin_images/cell" + str(singlet_example) + "frame0.png"
+actin_image_path = folder + "AR1to1_singlets_full_stim_long/actin_images/cell" + str(singlet_example+1) + "frame0.png" # cell 1 got filtered out so the data is not corresponding to the same index of the actin image
 actin_image_1to1s = rgb2gray(mpimg.imread(actin_image_path))
 
 # ellipse data

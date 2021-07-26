@@ -441,7 +441,7 @@ title = 'Spreading size'                # title of plot
 
 # make plots
 make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset, test,
-                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title)
+                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for second panel
 #######################################################################################################
@@ -457,7 +457,7 @@ title = 'Strain energy'                 # title of plot
 
 # make plots
 make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset, test,
-                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title)
+                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 
 # Set up plot parameters for third panel
@@ -474,7 +474,7 @@ title = 'xx-Stress'                         # title of plot
 
 # make plots
 make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset, test,
-                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title)
+                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 
 # Set up plot parameters for fourth panel
@@ -491,7 +491,7 @@ title = 'yy-Stress'                         # title of plot
 
 # make plots
 make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset, test,
-                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title)
+                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for fifth panel
 #######################################################################################################
@@ -508,7 +508,7 @@ ylabeloffset = -5                      # adjusts distance of ylabel to the plot
 
 # make plots
 make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset, test,
-                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title)
+                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 # save plot to file
 plt.savefig(figfolder + 'E.svg', dpi=300, bbox_inches="tight")
