@@ -40,9 +40,12 @@ def analyse_tfm_data(folder, stressmappixelsize):
     Es_baseline = np.nanmean(Es[0:20, :], axis=(0))
 
     # normalize energy data by their baseline
-    relEs = np.divide(Es, Es_baseline)
-    relEs_left = np.divide(Es_left, Es_baseline)
-    relEs_right = np.divide(Es_right, Es_baseline)
+    # relEs = np.divide(Es, np.nanmean(Es_baseline))
+    # relEs = np.divide(Es, Es_baseline)
+    # relEs_left = np.divide(Es_left, Es_baseline)
+    # relEs_right = np.divide(Es_right, Es_baseline)
+
+    relEs = (Es - np.nanmean(Es[0:20], axis=0)) / np.nanmean(Es[0:20], axis=(0, 1))
 
     # calculate total force in x- and y-direction
     Fx = np.nansum(abs(Tx), axis=(0, 1)) * (stressmappixelsize ** 2)
@@ -142,7 +145,7 @@ def analyse_tfm_data(folder, stressmappixelsize):
             "Fy_topleft": Fy_topleft, "Fy_topright": Fy_topright, "Fy_bottomright": Fy_bottomright,
             "Fy_bottomleft": Fy_bottomleft,
             "Es": Es, "Es_left": Es_left, "Es_right": Es_right, "Es_baseline": Es_baseline,
-            "relEs": relEs, "relEs_left": relEs_left, "relEs_right": relEs_right, "REI": REI,
+            "relEs": relEs, "REI": REI,
             "Fx": Fx, "Fy": Fy, "force_angle": force_angle, "force_angle_baseline": force_angle_baseline,
             "F_cellcell": F_cellcell}
 
@@ -356,30 +359,33 @@ def apply_filter(data, baselinefilter):
     return data
 
 
-def analyse_MSM_data_after_filtering(data):
-    sigma_xx_left_average = data["sigma_xx_left_average"]
-    sigma_xx_right_average = data["sigma_xx_right_average"]
-    sigma_yy_left_average = data["sigma_yy_left_average"]
-    sigma_yy_right_average = data["sigma_yy_right_average"]
-
-    sigma_xx_left_noBL = sigma_xx_left_average-np.nanmean(sigma_xx_left_average[0:20, :], axis=0)
-    sigma_xx_right_noBL = sigma_xx_right_average - np.nanmean(sigma_xx_right_average[0:20, :], axis=0)
-    sigma_yy_left_noBL = sigma_yy_left_average - np.nanmean(sigma_yy_left_average[0:20, :], axis=0)
-    sigma_yy_right_noBL = sigma_yy_right_average - np.nanmean(sigma_yy_right_average[0:20, :], axis=0)
-
-    normsigma_xx_left = sigma_xx_left_noBL / max(np.nanmean(sigma_xx_left_noBL, axis=1))
-    normsigma_xx_right = sigma_xx_right_noBL / max(np.nanmean(sigma_xx_left_noBL, axis=1))
-    normsigma_yy_left = sigma_yy_left_noBL / max(np.nanmean(sigma_yy_left_noBL, axis=1))
-    normsigma_yy_right = sigma_yy_right_noBL / max(np.nanmean(sigma_yy_left_noBL, axis=1))
-
-
-    data["normsigma_xx_left"] = normsigma_xx_left
-    data["normsigma_xx_right"] = normsigma_xx_right
-    data["normsigma_yy_left"] = normsigma_yy_left
-    data["normsigma_yy_right"] = normsigma_yy_right
-
-
-    return data
+# def analyse_TFM_data_after_filtering(data):
+    # sigma_xx_left_average = data["sigma_xx_left_average"]
+    # sigma_xx_right_average = data["sigma_xx_right_average"]
+    # sigma_yy_left_average = data["sigma_yy_left_average"]
+    # sigma_yy_right_average = data["sigma_yy_right_average"]
+    #
+    # sigma_xx_left_noBL = sigma_xx_left_average-np.nanmean(sigma_xx_left_average[0:20, :], axis=0)
+    # sigma_xx_right_noBL = sigma_xx_right_average - np.nanmean(sigma_xx_right_average[0:20, :], axis=0)
+    # sigma_yy_left_noBL = sigma_yy_left_average - np.nanmean(sigma_yy_left_average[0:20, :], axis=0)
+    # sigma_yy_right_noBL = sigma_yy_right_average - np.nanmean(sigma_yy_right_average[0:20, :], axis=0)
+    #
+    # normsigma_xx_left = sigma_xx_left_noBL / max(np.nanmean(sigma_xx_left_noBL, axis=1))
+    # normsigma_xx_right = sigma_xx_right_noBL / max(np.nanmean(sigma_xx_left_noBL, axis=1))
+    # normsigma_yy_left = sigma_yy_left_noBL / max(np.nanmean(sigma_yy_left_noBL, axis=1))
+    # normsigma_yy_right = sigma_yy_right_noBL / max(np.nanmean(sigma_yy_left_noBL, axis=1))
+    #
+    #
+    # data["normsigma_xx_left"] = normsigma_xx_left
+    # data["normsigma_xx_right"] = normsigma_xx_right
+    # data["normsigma_yy_left"] = normsigma_yy_left
+    # data["normsigma_yy_right"] = normsigma_yy_right
+    # Es = data["Es"]
+    # relEs = data["Es"] / np.nanmean([Es[0:20, :]])
+    # data["relEs"] = relEs
+    #
+    #
+    # return data
 
 # def remove_actin_of_filtered_cells(folder, baselinefilter, noFrames):
 #     path_actin = folder + "/actin_images"
@@ -406,12 +412,15 @@ def main_meta_analysis(folder, title, noFrames):
 
     # filter data to make sure that the baselines are stable
     filterdata = TFM_data["relEs"][0:20, :]
-    baselinefilter = create_filter(filterdata, 0.005)
+    baselinefilter = create_filter(filterdata, 0.0075)
 
     # remove cells with unstable baselines
     TFM_data = apply_filter(TFM_data, baselinefilter)
     MSM_data = apply_filter(MSM_data, baselinefilter)
     shape_data = apply_filter(shape_data, baselinefilter)
+
+    # test
+    # TFM_data = analyse_TFM_data_after_filtering(TFM_data)
 
     # # remove actin images of cells with unstable baselines
     # remove_actin_of_filtered_cells(folder, baselinefilter, noFrames)
