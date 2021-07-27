@@ -181,13 +181,26 @@ def analyse_msm_data(folder):
     sigma_yy_right_baseline = np.nanmean(sigma_yy_right_average[0:20, :], axis=0)
 
     # normalize stress data by their baseline
-    relsigma_xx = sigma_xx_average / sigma_xx_baseline
-    relsigma_xx_left = sigma_xx_left_average / sigma_xx_left_baseline
-    relsigma_xx_right = sigma_xx_right_average / sigma_xx_right_baseline
+    # relsigma_xx = sigma_xx_average / sigma_xx_baseline
+    # relsigma_xx_left = sigma_xx_left_average / sigma_xx_left_baseline
+    # relsigma_xx_right = sigma_xx_right_average / sigma_xx_right_baseline
+    #
+    # relsigma_yy = sigma_yy_average / sigma_yy_baseline
+    # relsigma_yy_left = sigma_yy_left_average / sigma_yy_left_baseline
+    # relsigma_yy_right = sigma_yy_right_average / sigma_yy_right_baseline
 
-    relsigma_yy = sigma_yy_average / sigma_yy_baseline
-    relsigma_yy_left = sigma_yy_left_average / sigma_yy_left_baseline
-    relsigma_yy_right = sigma_yy_right_average / sigma_yy_right_baseline
+    # new way of normalizing
+    relsigma_xx = (sigma_xx_average - np.nanmean(sigma_xx_average[0:20], axis=0)) / np.nanmean(sigma_xx_average[0:20], axis=(0, 1))
+    relsigma_xx_left = \
+        (sigma_xx_left_average - np.nanmean(sigma_xx_left_average[0:20], axis=0)) / np.nanmean(sigma_xx_left_average[0:20], axis=(0, 1))
+    relsigma_xx_right = \
+        (sigma_xx_right_average - np.nanmean(sigma_xx_right_average[0:20], axis=0)) / np.nanmean(sigma_xx_right_average[0:20], axis=(0, 1))
+
+    relsigma_yy = (sigma_yy_average - np.nanmean(sigma_yy_average[0:20], axis=0)) / np.nanmean(sigma_yy_average[0:20], axis=(0, 1))
+    relsigma_yy_left = \
+        (sigma_yy_left_average - np.nanmean(sigma_yy_left_average[0:20], axis=0)) / np.nanmean(sigma_yy_left_average[0:20], axis=(0, 1))
+    relsigma_yy_right = \
+        (sigma_yy_right_average - np.nanmean(sigma_yy_right_average[0:20], axis=0)) / np.nanmean(sigma_yy_right_average[0:20], axis=(0, 1))
 
     # calculate anisotropy coefficient
     AIC = (sigma_xx_average - sigma_yy_average) / (sigma_xx_average + sigma_yy_average)
