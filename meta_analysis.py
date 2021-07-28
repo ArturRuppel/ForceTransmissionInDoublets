@@ -70,7 +70,7 @@ def analyse_tfm_data(folder, stressmappixelsize):
     Fy_bottomleft = np.zeros((t_end, cell_end))
 
     # calculate relative energy increase
-    REI = relEs[33, :] - relEs[20, :]
+    REI = relEs[32, :] - relEs[20, :]
 
     # find peak and sum up all values within radius r
     r = 12  # ~10 µM
@@ -215,13 +215,13 @@ def analyse_msm_data(folder):
     relAIC_right = AIC_right - AIC_baseline
 
     # calculate relative stress increase
-    RSI_xx = relsigma_xx[33, :] - relsigma_xx[20, :]
-    RSI_xx_left = relsigma_xx_left[33, :] - relsigma_xx_left[20, :]
-    RSI_xx_right = relsigma_xx_right[33, :] - relsigma_xx_right[20, :]
+    RSI_xx = relsigma_xx[32, :] - relsigma_xx[20, :]
+    RSI_xx_left = relsigma_xx_left[32, :] - relsigma_xx_left[20, :]
+    RSI_xx_right = relsigma_xx_right[32, :] - relsigma_xx_right[20, :]
 
-    RSI_yy = relsigma_yy[33, :] - relsigma_yy[20, :]
-    RSI_yy_left = relsigma_yy_left[33, :] - relsigma_yy_left[20, :]
-    RSI_yy_right = relsigma_yy_right[33, :] - relsigma_yy_right[20, :]
+    RSI_yy = relsigma_yy[32, :] - relsigma_yy[20, :]
+    RSI_yy_left = relsigma_yy_left[32, :] - relsigma_yy_left[20, :]
+    RSI_yy_right = relsigma_yy_right[32, :] - relsigma_yy_right[20, :]
 
     data = {"sigma_xx": sigma_xx, "sigma_yy": sigma_yy,
             "sigma_xx_average": sigma_xx_average, "sigma_yy_average": sigma_yy_average,
@@ -309,8 +309,8 @@ def analyse_shape_data(folder, stressmappixelsize):
     relactin_intensity_left = actin_intensity_left / np.nanmean(actin_intensity_left[0:20,:], axis=0)
     relactin_intensity_right = actin_intensity_right / np.nanmean(actin_intensity_right[0:20, :], axis=0)
 
-    RAI_left = relactin_intensity_left[33, :] - relactin_intensity_left[20, :]
-    RAI_right = relactin_intensity_right[33, :] - relactin_intensity_right[20, :]
+    RAI_left = relactin_intensity_left[32, :] - relactin_intensity_left[20, :]
+    RAI_right = relactin_intensity_right[32, :] - relactin_intensity_right[20, :]
 
     data = {"Xtop": Xtop, "Xbottom": Xbottom, "Ytop": Ytop, "Ybottom": Ybottom,
             "masks": masks, "cell_width(x)": W, "contour_strain" : epsilon,
@@ -424,8 +424,10 @@ def main_meta_analysis(folder, title, noFrames):
     shape_data = analyse_shape_data(folder, stressmappixelsize)
 
     # filter data to make sure that the baselines are stable
-    filterdata = TFM_data["relEs"][0:20, :]
-    baselinefilter = create_filter(filterdata, 0.0075)
+    # filterdata = TFM_data["relEs"][0:20, :]
+    # baselinefilter = create_filter(filterdata, 0.0075)
+    filterdata = TFM_data["Es"][0:20, :] / TFM_data["Es_baseline"]
+    baselinefilter = create_filter(filterdata, 0.005)
 
     # remove cells with unstable baselines
     TFM_data = apply_filter(TFM_data, baselinefilter)

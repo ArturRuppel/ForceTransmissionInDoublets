@@ -1243,6 +1243,9 @@ def calculate_various_stuff(circle_fit_data, tangent_data, TEM_data, ellipse_dat
     ellipse_data['std'] = std_fit
     ellipse_data['std_baseline'] = std_fit_baseline
 
+    ellipse_data['a_baseline'] = np.nanmean((ellipse_data['a top [um]'][0:20, :] + ellipse_data['a bottom [um]'][0:20, :]) / 2, axis=0)
+    ellipse_data['b_baseline'] = np.nanmean((ellipse_data['b top [um]'][0:20, :] + ellipse_data['b bottom [um]'][0:20, :]) / 2, axis=0)
+
     landa_top_left = TEM_data['line tension top left [nN]']
     landa_top_right = TEM_data['line tension top right [nN]']
     landa_bottom_right = TEM_data['line tension bottom right [nN]']
