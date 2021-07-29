@@ -10,6 +10,17 @@ import pickle
 import numpy as np
 from sklearn.linear_model import LinearRegression
 
+def detrend(y):
+    '''removes a linear trend from the input vector, based on a linear fit of the first
+    twenty frames before activation'''
+    t = np.arange(y.shape[0])
+    model = LinearRegression(fit_intercept=True).fit(t[0:20].reshape((-1, 1)), y[0:20])
+    # plt.figure()
+    # # plt.plot(y - np.transpose(model.coef_ * t))
+    # plt.plot(np.transpose(model.coef_ * t))
+    # plt.show()
+    return y - np.transpose(model.coef_ * t)
+
 
 def analyse_tfm_data(folder, stressmappixelsize):
     Dx = np.load(folder + "/Dx.npy")
@@ -46,6 +57,10 @@ def analyse_tfm_data(folder, stressmappixelsize):
     # relEs_right = np.divide(Es_right, Es_baseline)
 
     relEs = (Es - np.nanmean(Es[0:20], axis=0)) / np.nanmean(Es[0:20], axis=(0, 1))
+    
+    # remove linear trend
+    Es_detrend = detrend(Es)
+    relEs_detrend = (Es_detrend - np.nanmean(Es_detrend[0:20], axis=0)) / np.nanmean(Es_detrend[0:20], axis=(0, 1))
 
     # calculate total force in x- and y-direction
     Fx = np.nansum(abs(Tx), axis=(0, 1)) * (stressmappixelsize ** 2)
@@ -145,7 +160,7 @@ def analyse_tfm_data(folder, stressmappixelsize):
             "Fy_topleft": Fy_topleft, "Fy_topright": Fy_topright, "Fy_bottomright": Fy_bottomright,
             "Fy_bottomleft": Fy_bottomleft,
             "Es": Es, "Es_left": Es_left, "Es_right": Es_right, "Es_baseline": Es_baseline,
-            "relEs": relEs, "REI": REI,
+            "relEs": relEs, "REI": REI, "relEs_detrend": relEs_detrend, 
             "Fx": Fx, "Fy": Fy, "force_angle": force_angle, "force_angle_baseline": force_angle_baseline,
             "F_cellcell": F_cellcell}
 
@@ -179,7 +194,24 @@ def analyse_msm_data(folder):
     sigma_yy_baseline = np.nanmean(sigma_yy_average[0:20, :], axis=0)
     sigma_yy_left_baseline = np.nanmean(sigma_yy_left_average[0:20, :], axis=0)
     sigma_yy_right_baseline = np.nanmean(sigma_yy_right_average[0:20, :], axis=0)
-
+    
+    # detrend stresses
+    sigma_xx_average_detrend = detrend(sigma_xx_average)
+    sigma_xx_left_average_detrend = detrend(sigma_xx_left_average)
+    sigma_xx_right_average_detrend = detrend(sigma_xx_right_average)
+    
+    sigma_yy_average_detrend = detrend(sigma_yy_average)
+    sigma_yy_left_average_detrend = detrend(sigma_yy_left_average)
+    sigma_yy_right_average_detrend = detrend(sigma_yy_right_average)
+    
+    relsigma_xx_detrend = (sigma_xx_average_detrend - np.nanmean(sigma_xx_average_detrend[0:20], axis=0)) / np.nanmean(sigma_xx_average_detrend[0:20], axis=(0, 1))
+    relsigma_xx_left_detrend = (sigma_xx_left_average_detrend - np.nanmean(sigma_xx_left_average_detrend[0:20], axis=0)) / np.nanmean(sigma_xx_left_average_detrend[0:20], axis=(0, 1))
+    relsigma_xx_right_detrend = (sigma_xx_right_average_detrend - np.nanmean(sigma_xx_right_average_detrend[0:20], axis=0)) / np.nanmean(sigma_xx_right_average_detrend[0:20], axis=(0, 1))
+    
+    relsigma_yy_detrend = (sigma_yy_average_detrend - np.nanmean(sigma_yy_average_detrend[0:20], axis=0)) / np.nanmean(sigma_yy_average_detrend[0:20], axis=(0, 1))
+    relsigma_yy_left_detrend = (sigma_yy_left_average_detrend - np.nanmean(sigma_yy_left_average_detrend[0:20], axis=0)) / np.nanmean(sigma_yy_left_average_detrend[0:20], axis=(0, 1))
+    relsigma_yy_right_detrend = (sigma_yy_right_average_detrend - np.nanmean(sigma_yy_right_average_detrend[0:20], axis=0)) / np.nanmean(sigma_yy_right_average_detrend[0:20], axis=(0, 1))
+    
     # normalize stress data by their baseline
     # relsigma_xx = sigma_xx_average / sigma_xx_baseline
     # relsigma_xx_left = sigma_xx_left_average / sigma_xx_left_baseline
@@ -235,6 +267,11 @@ def analyse_msm_data(folder):
             "relsigma_yy_left": relsigma_yy_left,
             "relsigma_xx_right": relsigma_xx_right,
             "relsigma_yy_right": relsigma_yy_right,
+            "relsigma_xx_detrend": relsigma_xx_detrend, "relsigma_yy_detrend": relsigma_yy_detrend,
+            "relsigma_xx_left_detrend": relsigma_xx_left_detrend,
+            "relsigma_yy_left_detrend": relsigma_yy_left_detrend,
+            "relsigma_xx_right_detrend": relsigma_xx_right_detrend,
+            "relsigma_yy_right_detrend": relsigma_yy_right_detrend,
             "AIC_baseline": AIC_baseline, "AIC": AIC, "AIC_left": AIC_left, "AIC_right": AIC_right,
             "relAIC": relAIC, "relAIC_left": relAIC_left, "relAIC_right": relAIC_right,
             "RSI_xx": RSI_xx, "RSI_xx_left": RSI_xx_left, "RSI_xx_right": RSI_xx_right,
@@ -297,10 +334,16 @@ def analyse_shape_data(folder, stressmappixelsize):
     center_right = int(nb_points_interpl / 2 + windowlength)
     W_center = np.nanmean(W[center_left:center_right, :, :], axis=0)
     relW_center = (W_center - np.nanmean(W_center[0:20], axis=0)) / np.nanmean(W_center[0:20])
+    
+    W_center_detrend = detrend(W_center)
+    relW_center_detrend = (W_center_detrend - np.nanmean(W_center_detrend[0:20], axis=0)) / np.nanmean(W_center_detrend[0:20])
 
     # calculate contour strain at peak contraction
-    epsilon = 1-np.nanmean(W[:, 1:20, :], axis=1) / np.nanmean(W[:, 30:33, :], axis=1)
+    epsilon = 1 - np.nanmean(W[:, 1:20, :], axis=1) / np.nanmean(W[:, 30:33, :], axis=1)
+    # epsilon_end = 1 - np.nanmean(W[:, 1:20, :], axis=1) / np.nanmean(W[:, 56:59, :], axis=1)
 
+    epsilon_asymmetry_curve = epsilon - np.flipud(epsilon)
+    epsilon_asymmetry_coefficient = np.nansum(epsilon_asymmetry_curve[0:int(epsilon_asymmetry_curve.shape[0]/2)], axis=0)
 
     masks = np.load(folder + "/mask.npy")
 
@@ -320,7 +363,9 @@ def analyse_shape_data(folder, stressmappixelsize):
     RAI_right = relactin_intensity_right[32, :] - relactin_intensity_right[20, :]
 
     data = {"Xtop": Xtop, "Xbottom": Xbottom, "Ytop": Ytop, "Ybottom": Ybottom,
-            "masks": masks, "cell_width(x)": W, "cell_width_center": W_center, "relcell_width_center": relW_center, "contour_strain" : epsilon,
+            "masks": masks, "cell_width(x)": W, "cell_width_center": W_center, "relcell_width_center": relW_center, 
+            "relcell_width_center_detrend": relW_center_detrend, 
+            "contour_strain": epsilon, "ASC": epsilon_asymmetry_coefficient,
             "spreadingsize": spreadingsize, "spreadingsize_baseline": spreadingsize_baseline,
             "actin_angles": actin_angles,
             "actin_intensity_left": actin_intensity_left, "actin_intensity_right": actin_intensity_right,

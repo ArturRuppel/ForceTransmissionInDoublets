@@ -5,14 +5,12 @@ Created on Wed Jul  7 21:56:01 2021
 @author: Artur Ruppel
 
 """
-import matplotlib.pyplot as plt
-import numpy as np
-import matplotlib as mpl
-import pickle
-import seaborn as sns
-import pandas as pd
-import statannot
 import os
+import pickle
+import matplotlib as mpl
+import pandas as pd
+
+from plot_functions import *
 
 # mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['font.size'] = 8
@@ -383,48 +381,6 @@ xticklabels = ['Doublet', 'Singlet']                        # which labels to pu
 fig, axes = plt.subplots(nrows=1, ncols=5, figsize=(9, 2))  # create figure instance
 plt.subplots_adjust(wspace=0.5, hspace=0)                   # adjust space in between plots
 # ******************************************************************************************************************************************
-def make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset, test,
-                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors):
-
-    # set colors
-    sns.set_palette(sns.color_palette(colors))
-
-    # create box- and swarmplots
-    sns.swarmplot(x=x, y=y, data=df, ax=ax, alpha=alpha_sw, linewidth=linewidth_sw, zorder=0, size=dotsize)
-    bp = sns.boxplot(x=x, y=y, data=df, ax=ax, linewidth=linewidth_bp, notch=True, showfliers=False, width=width_bp, showmeans=True,
-                     meanprops={"marker": "o",
-                       "markerfacecolor": "white",
-                       "markeredgecolor": "black",
-                      "markersize":"3", "markeredgewidth":"0.5"})
-
-    statannot.add_stat_annotation(bp, data=df, x=x, y=y, box_pairs=box_pairs,
-                                  line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
-
-    # make boxplots transparent
-    for patch in bp.artists:
-        r, g, b, a = patch.get_facecolor()
-        patch.set_facecolor((r, g, b, alpha_bp))
-
-    plt.setp(bp.artists, edgecolor='k')
-    plt.setp(bp.lines, color='k')
-
-    # set labels
-    ax.set_xticklabels(xticklabels)
-    ax.set_xlabel(xlabel=None)
-    ax.set_ylabel(ylabel=ylabel, labelpad=ylabeloffset)
-    ax.set_title(label=title, pad=titleoffset)
-
-    # set yaxis ticks
-    ax.yaxis.set_ticks(yticks)
-
-    # provide info on tick parameters
-    ax.minorticks_on()
-    ax.tick_params(direction='in', which='minor', length=3, bottom=False, top=False, left=True, right=True)
-    ax.tick_params(direction='in', which='major', length=6, bottom=False, top=False, left=True, right=True)
-
-    # set limits
-    ax.set_ylim(ymin=ymin)
-    ax.set_ylim(ymax=ymax)
 
 
 # Set up plot parameters for first panel
