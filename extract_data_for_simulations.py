@@ -137,7 +137,7 @@ df.rename(columns={'line tension baseline [nN]': 'line tension [nN]', 'sigma_x_b
                    'a_baseline': 'a [um]', 'b_baseline': 'b [um]'}, inplace=True)
 
 
-# df.to_csv(folder + 'analysed_data/halfstim_data.csv', index=False)
+df.to_csv(folder + 'analysed_data/halfstim_data.csv', index=False)
 df_halfstim = df
 #%% create dataframe for fullstim data
 # initialize empty dictionaries
@@ -148,24 +148,24 @@ concatenated_data = {}
 # select keys which should end up in the dataframe
 keys_to_load = {'a_baseline', 'b_baseline', 'line tension baseline [nN]', 'sigma_x_baseline', 'sigma_y_baseline', 'RSI_xx', 'RSI_yy'}
 # loop over all keys for contour model analysis data
-for key1 in AR1to1d_halfstim_CM:
-    for key2 in AR1to1d_halfstim_CM[key1]:    # keys are the same for all dictionaries so I'm just taking one example here
+for key1 in AR1to1d_fullstim_long_CM:
+    for key2 in AR1to1d_fullstim_long_CM[key1]:    # keys are the same for all dictionaries so I'm just taking one example here
         if key2 in keys_to_load:  # only 1D data can be stored in the data frame
             # concatenate values from different experiments
-            concatenated_data_1to1d[key2] = AR1to1d_halfstim_CM[key1][key2]
-            concatenated_data_1to1s[key2] = AR1to1s_halfstim_CM[key1][key2]
+            concatenated_data_1to1d[key2] = AR1to1d_fullstim_long_CM[key1][key2]
+            concatenated_data_1to1s[key2] = AR1to1s_fullstim_long_CM[key1][key2]
 
             # concatenate doublet and singlet data to create pandas dataframe
             concatenated_data[key2] = np.concatenate((concatenated_data_1to1d[key2], concatenated_data_1to1s[key2]))
 
 # select keys to be imported
 # loop over all keys
-for key1 in AR1to1d_halfstim:
-    for key2 in AR1to1d_halfstim[key1]:
+for key1 in AR1to1d_fullstim_long:
+    for key2 in AR1to1d_fullstim_long[key1]:
         if key2 in keys_to_load:  # only 1D data can be stored in the data frame
             # concatenate values from different experiments
-            concatenated_data_1to1d[key2] = AR1to1d_halfstim[key1][key2]
-            concatenated_data_1to1s[key2] = AR1to1s_halfstim[key1][key2]
+            concatenated_data_1to1d[key2] = AR1to1d_fullstim_long[key1][key2]
+            concatenated_data_1to1s[key2] = AR1to1s_fullstim_long[key1][key2]
 
             # concatenate doublet and singlet data to create pandas dataframe
             concatenated_data[key2] = np.concatenate((concatenated_data_1to1d[key2], concatenated_data_1to1s[key2]))
@@ -191,7 +191,7 @@ df.rename(columns={'line tension baseline [nN]': 'line tension [nN]', 'sigma_x_b
                    'a_baseline': 'a [um]', 'b_baseline': 'b [um]'}, inplace=True)
 
 
-# df.to_csv(folder + 'analysed_data/fullstim_data.csv', index=False)
+df.to_csv(folder + 'analysed_data/fullstim_data.csv', index=False)
 df_fullstim = df
 
 # %% calculate mean and CI
@@ -210,6 +210,8 @@ def calculate_and_print_mean_and_CI(df, quantity):
 
     return stats
 
+
+# caluclate mean and CI for fullstim data
 list_of_quantities = {'a [um]', 'b [um]', 'line tension [nN]', 'sigma_x_CM [mN/m]', 'sigma_y_CM [mN/m]', 'RSI_xx', 'RSI_yy'}
 stats = []
 for quantity in list_of_quantities:
@@ -217,6 +219,8 @@ for quantity in list_of_quantities:
 stats = pd.concat(stats)
 stats.to_csv(folder + 'analysed_data/stats_fullstim.csv')
 
+
+# caluclate mean and CI for halfstim data
 list_of_quantities = {'a [um]', 'b [um]', 'line tension [nN]', 'sigma_x_CM [mN/m]', 'sigma_y_CM [mN/m]', 'RSI_xx_left', 'RSI_xx_right', 'RSI_yy_left', 'RSI_yy_right'}
 stats = []
 for quantity in list_of_quantities:
