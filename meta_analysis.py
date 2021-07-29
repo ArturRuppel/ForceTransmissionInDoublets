@@ -288,11 +288,18 @@ def analyse_shape_data(folder, stressmappixelsize):
             Ytop_interpl[:, frame, cell] = np.interp(Xtop_interpl[:, frame, cell], Xtop_current[:, frame], Ytop_current[:, frame])
             Ybottom_interpl[:, frame, cell] = np.interp(Xbottom_interpl[:, frame, cell], Xbottom_current[:, frame], Ybottom_current[:, frame])
 
-    # calculate width of the cell as function of x
+    # calculate width of the cell as function of x and t
     W = Ybottom_interpl - Ytop_interpl
 
-    # calculate strain
-    epsilon = 1-np.nanmean(W[:, 1:20, :], axis=1) / np.nanmean(W[:, 31:33, :], axis=1)
+    # calculate width of the cell center (where the junction is in the doublets) as function of t
+    windowlength = 2
+    center_left = int(nb_points_interpl / 2 - windowlength)
+    center_right = int(nb_points_interpl / 2 + windowlength)
+    W_center = np.nanmean(W[center_left:center_right, :, :], axis=0)
+    relW_center = (W_center - np.nanmean(W_center[0:20], axis=0)) / np.nanmean(W_center[0:20])
+
+    # calculate contour strain at peak contraction
+    epsilon = 1-np.nanmean(W[:, 1:20, :], axis=1) / np.nanmean(W[:, 30:33, :], axis=1)
 
 
     masks = np.load(folder + "/mask.npy")
@@ -313,7 +320,7 @@ def analyse_shape_data(folder, stressmappixelsize):
     RAI_right = relactin_intensity_right[32, :] - relactin_intensity_right[20, :]
 
     data = {"Xtop": Xtop, "Xbottom": Xbottom, "Ytop": Ytop, "Ybottom": Ybottom,
-            "masks": masks, "cell_width(x)": W, "contour_strain" : epsilon,
+            "masks": masks, "cell_width(x)": W, "cell_width_center": W_center, "relcell_width_center": relW_center, "contour_strain" : epsilon,
             "spreadingsize": spreadingsize, "spreadingsize_baseline": spreadingsize_baseline,
             "actin_angles": actin_angles,
             "actin_intensity_left": actin_intensity_left, "actin_intensity_right": actin_intensity_right,
