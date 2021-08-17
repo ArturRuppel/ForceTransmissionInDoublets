@@ -1394,7 +1394,7 @@ def main(inputpath, outputpath, pixelsize, shortcut=False):
 
 if __name__ == '__main__':
     pixelsize = 0.108  # in µm
-    shortcut = True
+    shortcut = False
 
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1d_fullstim_long"
     main(path + ".dat", path + "_CM.dat", pixelsize, shortcut)

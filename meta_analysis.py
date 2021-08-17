@@ -478,13 +478,15 @@ def main_meta_analysis(folder, title, noFrames):
     # filter data to make sure that the baselines are stable
     # filterdata = TFM_data["relEs"][0:20, :]
     # baselinefilter = create_filter(filterdata, 0.0075)
-    filterdata = TFM_data["Es"][0:20, :] / TFM_data["Es_baseline"]
-    baselinefilter = create_filter(filterdata, 0.005)
-
-    # remove cells with unstable baselines
-    TFM_data = apply_filter(TFM_data, baselinefilter)
-    MSM_data = apply_filter(MSM_data, baselinefilter)
-    shape_data = apply_filter(shape_data, baselinefilter)
+    # filterdata = TFM_data["Es"][0:20, :] / TFM_data["Es_baseline"]
+    # filterdata = np.concatenate((TFM_data["relEs"][0:20, :], MSM_data["relsigma_xx_left"][0:20, :], MSM_data["relsigma_xx_left"][0:20, :],
+    #                              MSM_data["relsigma_yy_left"][0:20, :], MSM_data["relsigma_yy_left"][0:20, :]))
+    # baselinefilter = create_filter(filterdata, 1.00005)
+    #
+    # # remove cells with unstable baselines
+    # TFM_data = apply_filter(TFM_data, baselinefilter)
+    # MSM_data = apply_filter(MSM_data, baselinefilter)
+    # shape_data = apply_filter(shape_data, baselinefilter)
 
     # test
     # TFM_data = analyse_TFM_data_after_filtering(TFM_data)
@@ -492,9 +494,10 @@ def main_meta_analysis(folder, title, noFrames):
     # # remove actin images of cells with unstable baselines
     # remove_actin_of_filtered_cells(folder, baselinefilter, noFrames)
 
-    new_N = np.sum(baselinefilter)
-    print(title + ": " + str(baselinefilter.shape[0] - new_N) + " cells were filtered out")
+    # new_N = np.sum(baselinefilter)
+    # print(title + ": " + str(baselinefilter.shape[0] - new_N) + " cells were filtered out")
 
+    print(title + ": done!")
     alldata = {"TFM_data": TFM_data, "MSM_data": MSM_data, "shape_data": shape_data}
 
     return alldata

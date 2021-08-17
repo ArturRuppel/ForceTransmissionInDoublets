@@ -714,8 +714,6 @@ ylabel = 'doublet'
 title = 'xx-Stress'
 y1 = AR1to1d_halfstim["MSM_data"]["relsigma_xx_left"]
 y2 = AR1to1d_halfstim["MSM_data"]["relsigma_xx_right"]
-# y1 = detrend(y1)
-# y2 = detrend(y2)
 y1 = y1[::2, :]
 y2 = y2[::2, :]
 

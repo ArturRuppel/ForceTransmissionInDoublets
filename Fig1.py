@@ -189,7 +189,7 @@ plt.text(0.55, 0.455, 'n=' + str(n_singlets), transform=plt.figure(1).transFigur
 plt.text(0.55, 0.83, 'n=' + str(n_doublets), transform=plt.figure(1).transFigure, color='w')
 
 plt.show()
-fig.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
 
 # %% plot figure 1D_1, xx-stress maps
 
@@ -273,7 +273,7 @@ plt.text(0.55, 0.455, 'n=' + str(n_singlets), transform=plt.figure(1).transFigur
 plt.text(0.55, 0.83, 'n=' + str(n_doublets), transform=plt.figure(1).transFigure, color='w')
 
 # save figure
-fig.savefig(figfolder + 'D1.svg', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'D1.png', dpi=300, bbox_inches="tight")
 plt.show()
 
 # %% plot figure 1D_2, yy-stress maps
@@ -359,7 +359,7 @@ plt.text(0.55, 0.455, 'n=' + str(n_singlets), transform=plt.figure(1).transFigur
 plt.text(0.55, 0.83, 'n=' + str(n_doublets), transform=plt.figure(1).transFigure, color='w')
 
 # save figure
-fig.savefig(figfolder + 'D2.svg', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'D2.png', dpi=300, bbox_inches="tight")
 plt.show()
 
 # %% plot figure 1E boxplots
@@ -467,5 +467,5 @@ make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha
                             x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 # save plot to file
-plt.savefig(figfolder + 'E.svg', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")
 plt.show()

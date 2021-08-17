@@ -9,21 +9,21 @@ from scipy.ndimage.morphology import binary_fill_holes
 import os
 import scipy.io
 from skimage.morphology import closing, dilation
+from skimage import io
 from skimage.morphology import disk
 
 # %% setting parameters and initialize variables
-folder = "D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_doublets/AR1to1"
-noCells = 29
-ps1 = 0.108  # pixel size of the image of the beads in µm
-ps2 = 0.864  # pixel size of of the deformation field
+folder = "C:/Users/Balland/Desktop/_collaborations/Vladimir Misiak/40micr - lefthalf stim"
+noCells = 8
+ps1 = 0.162  # pixel size of the image of the beads in µm
+ps2 = 1.296  # pixel size of of the deformation field
 print("Outputfolder: " + folder)
 for cell in np.arange(1, noCells + 1):
     if cell <= 9:
-        foldercellpath = folder + "/cell0" + str(cell)
+        foldercellpath = folder + "/tissue0" + str(cell)
     else:
-        foldercellpath = folder + "/cell" + str(cell)
+        foldercellpath = folder + "/tissue" + str(cell)
     mat = scipy.io.loadmat(foldercellpath + "/Allresults2.mat")
-    mat2 = scipy.io.loadmat(foldercellpath + "/mask.mat")
 
     u_all = mat["Dx"]
     v_all = mat["Dy"]
@@ -39,7 +39,7 @@ for cell in np.arange(1, noCells + 1):
 
     strain_energy_all = np.zeros(noFrames)
 
-    mask_all = mat2["mask"] > 0
+    # mask_all = mat2["mask"] > 0
     for t in np.arange(0, noFrames):
         u = u_all[:, :, t] / (ps1 * 1e-6)  # u and v are given in m/s but MSM script expects pixel/s
         v = v_all[:, :, t] / (ps1 * 1e-6)
@@ -47,16 +47,13 @@ for cell in np.arange(1, noCells + 1):
         ty = ty_all[:, :, t]
 
         # prepare masks
-        mask_original = mask_all[:, :, t]
-
+        mask_original = io.imread(folder + '/mask.tif')
+        #
         mask = interpolation(mask_original, dims=u.shape)
-
-        footprint = disk(5)
-        mask_closed = closing(mask, footprint)
-
+        #
         footprint = disk(12)
-        mask_dilated = dilation(mask_closed, footprint)
-        mask_FEM = dilation(mask_original, footprint)
+        mask_dilated = dilation(mask, footprint)
+        mask_FEM = dilation(mask, footprint)
 
         # fig = plt.figure()
         # im = plt.imshow(tx, cmap=plt.get_cmap('hot'), interpolation='bilinear', extent=extent, vmin=-800, vmax=1300)
@@ -102,16 +99,18 @@ for cell in np.arange(1, noCells + 1):
         sigma_yx_all[:, :, t] = stress_tensor[:, :, 1, 0]
 
         # extent = [0, 112*0.108*8, 0, 112*0.108*8]
-
+        #
         # fig = plt.figure()
-        # im = plt.imshow(sigmax, cmap=plt.get_cmap('hot'), interpolation='bilinear', extent=extent, vmin=0, vmax=1e-8)
+        # im = plt.imshow(stress_tensor[:, :, 0, 0], cmap=plt.get_cmap('hot'), interpolation='bilinear', extent=extent, vmin=0, vmax=1e-8)
         # plt.colorbar(im)
+        # plt.show()
         # #fig.savefig(sigmaxpath)
         # #plt.close(fig)
-
+        #
         # fig = plt.figure()
-        # im = plt.imshow(sigmay, cmap=plt.get_cmap('hot'), interpolation='bilinear', extent=extent, vmin=0, vmax=1e-8)
+        # im = plt.imshow(stress_tensor[:, :, 1, 1], cmap=plt.get_cmap('hot'), interpolation='bilinear', extent=extent, vmin=0, vmax=1e-8)
         # plt.colorbar(im)
+        # plt.show()
         # #fig.savefig(sigmaypath)
         # #plt.close(fig)
     np.save(foldercellpath + "/stressmaps.npy", [sigma_x_all, sigma_y_all, sigma_xy_all, sigma_yx_all])
