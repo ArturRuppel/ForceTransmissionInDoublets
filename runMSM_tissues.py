@@ -13,8 +13,8 @@ from skimage import io
 from skimage.morphology import disk
 
 # %% setting parameters and initialize variables
-folder = "C:/Users/Balland/Desktop/_collaborations/Vladimir Misiak/40micr - lefthalf stim"
-noCells = 8
+folder = "C:/Users/Balland/Desktop/_collaborations/Vladimir Misiak/40micr - full stim"
+noCells = 13
 ps1 = 0.162  # pixel size of the image of the beads in µm
 ps2 = 1.296  # pixel size of of the deformation field
 print("Outputfolder: " + folder)

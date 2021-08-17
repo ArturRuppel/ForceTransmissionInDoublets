@@ -108,22 +108,10 @@ ymax = 0
 xticks = np.arange(-15, 15.1, 15)  # define where the major ticks are gonna be
 yticks = np.arange(ymin, ymax + 0.001, 0.02)
 xlabel = 'position [µm]'
-xlabeloffset = 1  # adjusts distance of xlabel to the plot
-ylabeloffset = 1  # adjusts distance of ylabel to the plot
-titleoffset = 5  # adjusts distance of title to the plot
-optolinewidth = 0.1  # adjusts the linewidth of the annotations that represent the optogenetic activation
-linewidth_bp = 0.7  # linewidth of boxplot borders
-width_bp = 0.3  # width of boxplots
-dotsize = 1.8  # size of datapoints in swarmplot
-linewidth_sw = 0.3  # linewidth of boxplot borders
-alpha_sw = 1  # transparency of dots in swarmplot
-alpha_bp = 0.8  # transparency of boxplots
-test = 'Mann-Whitney'  # which statistical test to compare different conditions
 xticklabels = ['global \n act.', 'local \n act.']  # which labels to put on x-axis
 fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(5, 3))  # create figure and axes
 plt.subplots_adjust(wspace=0.4, hspace=0.35)  # adjust space in between plots
 # ******************************************************************************************************************************************
-
 
 # Set up plot parameters for first panel
 #######################################################################################################
@@ -134,8 +122,7 @@ title = 'global activation'
 y = AR1to1d_fullstim_long["shape_data"]["contour_strain"]
 y = y[::2, :]
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                         False, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
 
 # Set up plot parameters for second panel
 #######################################################################################################
@@ -146,8 +133,7 @@ title = 'local activation'
 y = AR1to1d_halfstim["shape_data"]["contour_strain"]
 y = y[::2, :]
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                         False, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
 
 # Set up plot parameters for third panel
 #######################################################################################################
@@ -158,8 +144,7 @@ title = None
 y = AR1to1s_fullstim_long["shape_data"]["contour_strain"]
 y = y[::2, :]
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                         False, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
 
 # Set up plot parameters for fourth panel
 #######################################################################################################
@@ -170,8 +155,7 @@ title = None
 y = AR1to1s_halfstim["shape_data"]["contour_strain"]
 y = y[::2, :]
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                         False, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
 
 
 
@@ -187,12 +171,10 @@ yticks = np.arange(-1, 1.1, 0.5)  # define where to put major ticks on y-axis
 stat_annotation_offset = -0.15  # vertical offset of statistical annotation
 ylabel = None  # which label to put on y-axis
 title = None  # title of plot
-ylabeloffset = -1
 box_pairs = [('AR1to1d_fs', 'AR1to1d_hs')]  # which groups to perform statistical test on
 
 # make plots
-make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset, test,
-                            x, y, df_doublet, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_two_box_and_swarmplots(x, y, df_doublet, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for sixth panel
 # #######################################################################################################
@@ -207,8 +189,7 @@ ylabeloffset = -1
 box_pairs = [('AR1to1s_fs', 'AR1to1s_hs')]  # which groups to perform statistical test on
 
 # make plots
-make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset, test,
-                            x, y, df_singlet, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_two_box_and_swarmplots(x, y, df_singlet, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 plt.savefig(figfolder + 'B.png', dpi=300, bbox_inches="tight")
 plt.show()
@@ -223,9 +204,6 @@ ymax = 0.02
 xticks = np.arange(0, 61, 20)  # define where the major ticks are gonna be
 yticks = np.arange(ymin, ymax + 0.001, 0.02)
 xlabel = 'time [min]'
-xlabeloffset = 1  # adjusts distance of xlabel to the plot
-ylabeloffset = 1  # adjusts distance of ylabel to the plot
-titleoffset = 5  # adjusts distance of title to the plot
 fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(5, 3))  # create figure and axes
 plt.subplots_adjust(wspace=0.35, hspace=0.35)  # adjust space in between plots
 # ******************************************************************************************************************************************
@@ -241,8 +219,7 @@ y = AR1to1d_fullstim_long["shape_data"]["relcell_width_center"]
 
 y = y[::2, :]
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                         optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
 
 # Set up plot parameters for second panel
 #######################################################################################################
@@ -256,8 +233,7 @@ y = y[::2, :]
 x = np.arange(50)
 x = x[::2]  # downsample data for nicer plotting
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                         optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
 
 # Set up plot parameters for third panel
 #######################################################################################################
@@ -271,8 +247,7 @@ y = y[::2, :]
 x = np.arange(60)
 x = x[::2]  # downsample data for nicer plotting
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                         optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
 
 # Set up plot parameters for fourth panel
 #######################################################################################################
@@ -284,8 +259,7 @@ y = AR1to1s_fullstim_long["shape_data"]["relcell_width_center"]
 
 y = y[::2, :]
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                         optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
 
 # Set up plot parameters for fifth panel
 #######################################################################################################
@@ -298,8 +272,7 @@ y = y[::2, :]
 x = np.arange(50)
 x = x[::2]  # downsample data for nicer plotting
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                         optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
 
 # Set up plot parameters for sixth panel
 #######################################################################################################
@@ -312,8 +285,7 @@ y = y[::2, :]
 x = np.arange(60)
 x = x[::2]  # downsample data for nicer plotting
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                         optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
 
 plt.savefig(figfolder + 'SA.png', dpi=300, bbox_inches="tight")
 
@@ -330,10 +302,6 @@ ymax = 0.02
 xticks = np.arange(0, 61, 20)  # define where the major ticks are gonna be
 yticks = np.arange(ymin, ymax + 0.001, 0.02)
 xlabel = 'time [min]'
-xlabeloffset = 1  # adjusts distance of xlabel to the plot
-ylabeloffset = 1  # adjusts distance of ylabel to the plot
-titleoffset = 5  # adjusts distance of title to the plot
-optolinewidth = 0.1  # adjusts the linewidth of the annotations that represent the optogenetic activation
 fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(5, 3))  # create figure and axes
 plt.subplots_adjust(wspace=0.35, hspace=0.35)  # adjust space in between plots
 # ******************************************************************************************************************************************
@@ -349,8 +317,7 @@ y = AR1to1d_fullstim_long["shape_data"]["relcell_width_center_detrend"]
 
 y = y[::2, :]
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                         optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
 
 # Set up plot parameters for second panel
 #######################################################################################################
@@ -364,8 +331,7 @@ y = y[::2, :]
 x = np.arange(50)
 x = x[::2]  # downsample data for nicer plotting
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                         optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
 
 # Set up plot parameters for third panel
 #######################################################################################################
@@ -379,8 +345,7 @@ y = y[::2, :]
 x = np.arange(60)
 x = x[::2]  # downsample data for nicer plotting
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                         optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
 
 # Set up plot parameters for fourth panel
 #######################################################################################################
@@ -392,8 +357,7 @@ y = AR1to1s_fullstim_long["shape_data"]["relcell_width_center_detrend"]
 
 y = y[::2, :]
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                         optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
 
 # Set up plot parameters for fifth panel
 #######################################################################################################
@@ -406,8 +370,7 @@ y = y[::2, :]
 x = np.arange(50)
 x = x[::2]  # downsample data for nicer plotting
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                         optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
 
 # Set up plot parameters for sixth panel
 #######################################################################################################
@@ -420,8 +383,7 @@ y = y[::2, :]
 x = np.arange(60)
 x = x[::2]  # downsample data for nicer plotting
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                         optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
 
 plt.savefig(figfolder + 'SA_detrend.png', dpi=300, bbox_inches="tight")
 

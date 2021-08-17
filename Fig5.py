@@ -116,6 +116,43 @@ RSI_data_2to1d['keys'] = keys2to1d
 df1to2d = pd.DataFrame(RSI_data_1to2d)
 df1to1d = pd.DataFrame(RSI_data_1to1d)
 df2to1d = pd.DataFrame(RSI_data_2to1d)
+
+# %% prepare detrend dataframe for boxplots
+n_1to2d = AR1to2d_halfstim['MSM_data']['RSI_xx_left'].shape[0]
+n_1to1d = AR1to1d_halfstim['MSM_data']['RSI_xx_left'].shape[0]
+n_2to1d = AR2to1d_halfstim['MSM_data']['RSI_xx_left'].shape[0]
+
+RSI_data_1to2d = {}
+RSI_data_1to1d = {}
+RSI_data_2to1d = {}
+
+RSI_data_1to2d['sigma'] = np.concatenate((AR1to2d_halfstim['MSM_data']['RSI_xx_left_detrend'],
+                                          AR1to2d_halfstim['MSM_data']['RSI_xx_right_detrend'],
+                                          AR1to2d_halfstim['MSM_data']['RSI_yy_left_detrend'],
+                                          AR1to2d_halfstim['MSM_data']['RSI_yy_right_detrend']))
+RSI_data_1to1d['sigma'] = np.concatenate((AR1to1d_halfstim['MSM_data']['RSI_xx_left_detrend'],
+                                          AR1to1d_halfstim['MSM_data']['RSI_xx_right_detrend'],
+                                          AR1to1d_halfstim['MSM_data']['RSI_yy_left_detrend'],
+                                          AR1to1d_halfstim['MSM_data']['RSI_yy_right_detrend']))
+RSI_data_2to1d['sigma'] = np.concatenate((AR2to1d_halfstim['MSM_data']['RSI_xx_left_detrend'],
+                                          AR2to1d_halfstim['MSM_data']['RSI_xx_right_detrend'],
+                                          AR2to1d_halfstim['MSM_data']['RSI_yy_left_detrend'],
+                                          AR2to1d_halfstim['MSM_data']['RSI_yy_right_detrend']))
+
+keys1to2d = np.concatenate((['RSI_xx_left_detrend' for i in range(n_1to2d)], ['RSI_xx_right' for i in range(n_1to2d)],
+                            ['RSI_yy_left_detrend' for i in range(n_1to2d)], ['RSI_yy_right' for i in range(n_1to2d)]))
+keys1to1d = np.concatenate((['RSI_xx_left_detrend' for i in range(n_1to1d)], ['RSI_xx_right' for i in range(n_1to1d)],
+                            ['RSI_yy_left_detrend' for i in range(n_1to1d)], ['RSI_yy_right' for i in range(n_1to1d)]))
+keys2to1d = np.concatenate((['RSI_xx_left_detrend' for i in range(n_2to1d)], ['RSI_xx_right' for i in range(n_2to1d)],
+                            ['RSI_yy_left_detrend' for i in range(n_2to1d)], ['RSI_yy_right' for i in range(n_2to1d)]))
+
+RSI_data_1to2d['keys'] = keys1to2d
+RSI_data_1to1d['keys'] = keys1to1d
+RSI_data_2to1d['keys'] = keys2to1d
+
+df1to2d_detrend = pd.DataFrame(RSI_data_1to2d)
+df1to1d_detrend = pd.DataFrame(RSI_data_1to1d)
+df2to1d_detrend = pd.DataFrame(RSI_data_2to1d)
 # %% plot figure 5A, force maps
 
 # prepare data first
@@ -201,8 +238,8 @@ cbar.ax.set_title('kPa')
 plt.suptitle('Traction forces', y=0.91, x=0.52)
 
 plt.show()
-fig.savefig(figfolder + 'A1.png', dpi=300)#, bbox_inches="tight")
-
+fig.savefig(figfolder + 'A1.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'A1.svg', dpi=300, bbox_inches="tight")
 # %% plot figure 5A, stress maps
 
 # prepare data first
@@ -279,7 +316,8 @@ plt.suptitle('Cell stresses', y=0.91, x=0.42)
 plt.text(-60, 255, 'xx-Stress')
 plt.text(15, 255, 'yy-Stress')
 
-fig.savefig(figfolder + 'A2.png', dpi=300)#, bbox_inches="tight")
+fig.savefig(figfolder + 'A2.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'A2.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 # %% plot figure 5B boxplots of strain energy and spreading sizes
@@ -312,8 +350,7 @@ ylabel = None  # which label to put on y-axis
 title = 'Spreading size'  # title of plot
 
 # make plots
-make_four_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset,
-                             x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_four_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for second panel
 #######################################################################################################
@@ -328,8 +365,7 @@ ylabel = None  # which label to put on y-axis
 title = 'Strain energy'  # title of plot
 
 # make plots
-make_four_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset,
-                             x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_four_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for third panel
 #######################################################################################################
@@ -344,8 +380,7 @@ ylabel = None  # which label to put on y-axis
 title = 'xx-Stress'  # title of plot
 
 # make plots
-make_four_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset,
-                             x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_four_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for fourth panel
 #######################################################################################################
@@ -360,8 +395,7 @@ ylabel = None  # which label to put on y-axis
 title = 'yy-Stress'  # title of plot
 
 # make plots
-make_four_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset,
-                             x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_four_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for fifth panel
 #######################################################################################################
@@ -376,8 +410,7 @@ ylabel = None  # which label to put on y-axis
 title = 'AIC'  # title of plot
 
 # make plots
-make_four_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset,
-                             x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_four_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for sixth panel
 #######################################################################################################
@@ -402,8 +435,7 @@ yticks = np.arange(-1, 1.1, 0.5)
 xlabel = "angle"  # "'$\mathrm{\sigma_{x, MSM}}$'
 ylabel = "AIC"  # '$\mathrm{\sigma_{x, CM}}$'
 
-corr, p = make_two_correlationplotsplots(dotsize, linewidth_sw, alpha_sw, ylabeloffset, xlabeloffset, titleoffset,
-                                         x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
+corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
 
 # add line with slope 1 for visualisation
 ax.plot([xmin, xmax], [ymax, ymin], linewidth=0.5, linestyle=':', color='grey')
@@ -412,6 +444,7 @@ plt.text(0.22 * xmax, 1.1 * ymax, 'R = ' + str(corr))
 # plt.text(0.22 * xmax, 1.2 * ymax, 'p = ' + '{:0.2e}'.format(p))
 
 plt.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 # %% plot figure 5D, stress map differences
@@ -512,7 +545,8 @@ plt.text(15, 255, 'yy-Stress')
 
 
 # save figure
-fig.savefig(figfolder + 'D.png', dpi=300)#, bbox_inches="tight")
+fig.savefig(figfolder + 'D.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'D.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 # %% plot figure 5E time and boxplots for stresses
@@ -526,17 +560,6 @@ ymax = 0.2
 xticks = np.arange(0, 61, 20)  # define where the major ticks are gonna be
 yticks = np.arange(ymin, ymax + 0.01, 0.1)
 xlabel = 'time [min]'
-xlabeloffset = 1  # adjusts distance of xlabel to the plot
-ylabeloffset = 1  # adjusts distance of ylabel to the plot
-titleoffset = 5  # adjusts distance of title to the plot
-optolinewidth = 0.1  # adjusts the linewidth of the annotations that represent the optogenetic activation
-linewidth_bp = 0.5  # linewidth of boxplot borders
-width_bp = 0.7  # width of boxplots
-dotsize = 1.5  # size of datapoints in swarmplot
-linewidth_sw = 0.3  # linewidth of boxplot borders
-alpha_sw = 1  # transparency of dots in swarmplot
-alpha_bp = 0.8  # transparency of boxplots
-test = 'Mann-Whitney'  # which statistical test to compare different conditions
 xticklabels = ['left \n         $\mathrm{\sigma _ {xx}}$', 'right', 'left \n         $\mathrm{\sigma _ {yy}}$', 'right']  # which labels to put on x-axis
 fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(4.5, 4.5))  # create figure and axes
 plt.subplots_adjust(wspace=0.35, hspace=0.35)  # adjust space in between plots
@@ -553,8 +576,7 @@ y1 = y1[::2, :]
 y2 = y2[::2, :]
 
 # make plots
-plot_two_values_over_time(x, y1, y2, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                          optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, colors)
+plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors)
 
 # Set up plot parameters for second panel
 #######################################################################################################
@@ -568,8 +590,7 @@ y1 = y1[::2, :]
 y2 = y2[::2, :]
 
 # make plots
-plot_two_values_over_time(x, y1, y2, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                          optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, colors)
+plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors)
 
 # ax.plot(sim_relstress_xx_left_1to1dhs, color=colors[0])
 # ax.plot(sim_relstress_xx_right_1to1dhs, color=colors[0])
@@ -586,8 +607,7 @@ y1 = y1[::2, :]
 y2 = y2[::2, :]
 
 # make plots
-plot_two_values_over_time(x, y1, y2, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                          optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, colors)
+plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors)
 
 # Set up plot parameters for fourth panel
 #######################################################################################################
@@ -601,8 +621,7 @@ y1 = y1[::2, :]
 y2 = y2[::2, :]
 
 # make plots
-plot_two_values_over_time(x, y1, y2, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                          optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, colors)
+plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors)
 
 # Set up plot parameters for fifth panel
 #######################################################################################################
@@ -616,8 +635,7 @@ y1 = y1[::2, :]
 y2 = y2[::2, :]
 
 # make plots
-plot_two_values_over_time(x, y1, y2, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                          optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, colors)
+plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors)
 
 # Set up plot parameters for sixth panel
 #######################################################################################################
@@ -631,8 +649,7 @@ y1 = y1[::2, :]
 y2 = y2[::2, :]
 
 # make plots
-plot_two_values_over_time(x, y1, y2, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                          optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, colors)
+plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors)
 
 
 # Set up plot parameters for seventh panel
@@ -646,12 +663,9 @@ ymax = 0.4  # maximum value on y-axis
 yticks = np.arange(-0.2, 0.41, 0.2)  # define where to put major ticks on y-axis
 ylabel = None  # which label to put on y-axis
 title = None  # title of plot
-ylabeloffset = -1
-
 
 # make plots
-make_four_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset,
-                             x, y, df1to2d, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_four_box_and_swarmplots(x, y, df1to2d, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for eighth panel
 #######################################################################################################
@@ -664,11 +678,9 @@ ymax = 0.4  # maximum value on y-axis
 yticks = np.arange(-0.2, 0.41, 0.2)  # define where to put major ticks on y-axis
 ylabel = None  # which label to put on y-axis
 title = None  # title of plot
-ylabeloffset = -1
 
 # make plots
-make_four_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset,
-                             x, y, df1to1d, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_four_box_and_swarmplots(x, y, df1to1d, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for ninth panel
 #######################################################################################################
@@ -681,10 +693,10 @@ title = None  # title of plot
 
 
 # make plots
-make_four_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset,
-                             x, y, df2to1d, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_four_box_and_swarmplots(x, y, df2to1d, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 plt.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'E.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 # %% plot figure 5E time and boxplots for detrend stresses
@@ -698,17 +710,6 @@ ymax = 0.2
 xticks = np.arange(0, 61, 20)  # define where the major ticks are gonna be
 yticks = np.arange(ymin, ymax + 0.01, 0.1)
 xlabel = 'time [min]'
-xlabeloffset = 1  # adjusts distance of xlabel to the plot
-ylabeloffset = 1  # adjusts distance of ylabel to the plot
-titleoffset = 5  # adjusts distance of title to the plot
-optolinewidth = 0.1  # adjusts the linewidth of the annotations that represent the optogenetic activation
-linewidth_bp = 0.5  # linewidth of boxplot borders
-width_bp = 0.7  # width of boxplots
-dotsize = 1.5  # size of datapoints in swarmplot
-linewidth_sw = 0.3  # linewidth of boxplot borders
-alpha_sw = 1  # transparency of dots in swarmplot
-alpha_bp = 0.8  # transparency of boxplots
-test = 'Mann-Whitney'  # which statistical test to compare different conditions
 xticklabels = ['left \n         $\mathrm{\sigma _ {xx}}$', 'right', 'left \n         $\mathrm{\sigma _ {yy}}$', 'right']  # which labels to put on x-axis
 fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(4.5, 4.5))  # create figure and axes
 plt.subplots_adjust(wspace=0.35, hspace=0.35)  # adjust space in between plots
@@ -725,8 +726,7 @@ y1 = y1[::2, :]
 y2 = y2[::2, :]
 
 # make plots
-plot_two_values_over_time(x, y1, y2, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                          optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, colors)
+plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors)
 
 # Set up plot parameters for second panel
 #######################################################################################################
@@ -740,8 +740,7 @@ y1 = y1[::2, :]
 y2 = y2[::2, :]
 
 # make plots
-plot_two_values_over_time(x, y1, y2, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                          optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, colors)
+plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors)
 
 # ax.plot(sim_relstress_xx_left_1to1dhs, color=colors[0])
 # ax.plot(sim_relstress_xx_right_1to1dhs, color=colors[0])
@@ -758,8 +757,7 @@ y1 = y1[::2, :]
 y2 = y2[::2, :]
 
 # make plots
-plot_two_values_over_time(x, y1, y2, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                          optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, colors)
+plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors)
 
 # Set up plot parameters for fourth panel
 #######################################################################################################
@@ -773,8 +771,7 @@ y1 = y1[::2, :]
 y2 = y2[::2, :]
 
 # make plots
-plot_two_values_over_time(x, y1, y2, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                          optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, colors)
+plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors)
 
 # Set up plot parameters for fifth panel
 #######################################################################################################
@@ -788,8 +785,7 @@ y1 = y1[::2, :]
 y2 = y2[::2, :]
 
 # make plots
-plot_two_values_over_time(x, y1, y2, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                          optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, colors)
+plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors)
 
 # Set up plot parameters for sixth panel
 #######################################################################################################
@@ -803,8 +799,7 @@ y1 = y1[::2, :]
 y2 = y2[::2, :]
 
 # make plots
-plot_two_values_over_time(x, y1, y2, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset,
-                          optolinewidth, ymin, ymax, xlabel, ylabel, title, ax, colors)
+plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors)
 
 
 # Set up plot parameters for seventh panel
@@ -822,8 +817,7 @@ ylabeloffset = -1
 
 
 # make plots
-make_four_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset,
-                             x, y, df1to2d, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_four_box_and_swarmplots(x, y, df1to2d_detrend, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for eighth panel
 #######################################################################################################
@@ -839,8 +833,7 @@ title = None  # title of plot
 ylabeloffset = -1
 
 # make plots
-make_four_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset,
-                             x, y, df1to1d, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_four_box_and_swarmplots(x, y, df1to1d_detrend, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for ninth panel
 #######################################################################################################
@@ -853,8 +846,8 @@ title = None  # title of plot
 
 
 # make plots
-make_four_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset,
-                             x, y, df2to1d, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_four_box_and_swarmplots(x, y, df2to1d_detrend, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 plt.savefig(figfolder + 'E_detrend.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'E_detrend.svg', dpi=300, bbox_inches="tight")
 plt.show()

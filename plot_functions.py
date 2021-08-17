@@ -6,43 +6,9 @@ import statannot
 from scipy.stats import pearsonr
 
 
-def plot_one_value_over_time(x, y, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset, optolinewidth,
-                             ymin, ymax, xlabel, ylabel, title, ax, colors):
-    y_mean = np.nanmean(y, axis=1)
-    y_std = np.nanstd(y, axis=1)
-    y_sem = y_std / np.sqrt(np.shape(y)[1])
-    # create box- and swarmplots
-    ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors, marker='o', ms=2, linewidth=0.5, ls='none',
-                markeredgewidth=0.5)
 
-    # set labels
-    ax.set_xlabel(xlabel=xlabel, labelpad=xlabeloffset)
-    ax.set_ylabel(ylabel=ylabel, labelpad=ylabeloffset)
-    ax.set_title(label=title, pad=titleoffset)
-
-    # set ticks
-    ax.xaxis.set_ticks(xticks)
-    ax.yaxis.set_ticks(yticks)
-
-    # provide info on tick parameters
-    ax.minorticks_on()
-    ax.tick_params(direction='in', which='minor', length=3, bottom=True, top=False, left=True, right=True)
-    ax.tick_params(direction='in', which='major', length=6, bottom=True, top=False, left=True, right=True)
-
-    # set limits
-    ax.set_ylim(ymin=ymin, ymax=ymax)
-    ax.set_xlim(xmin=min(x))
-    ax.set_xlim(xmax=max(x)+1e-1)
-    try:
-        # add anotations for opto pulses
-        for i in np.arange(10):
-            ax.axline((20 + i, ymin), (20 + i, ymax), linewidth=optolinewidth, color="cyan")
-    except:
-        return
-
-
-def make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset, test,
-                                x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors):
+def make_two_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors,
+                                linewidth_bp=0.7, width_bp=0.3, dotsize=1.8, linewidth_sw=0.3, alpha_sw=1, alpha_bp=0.8, ylabeloffset=1, titleoffset=3.5, test='Mann-Whitney'):
     sns.set_palette(sns.color_palette(colors))  # sets colors
     # create box- and swarmplots
     sns.swarmplot(x=x, y=y, data=df, ax=ax, alpha=alpha_sw, linewidth=linewidth_sw, zorder=0, size=dotsize)
@@ -81,45 +47,8 @@ def make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, a
     ax.set_ylim(ymin=ymin)
     ax.set_ylim(ymax=ymax)
 
-def plot_two_values_over_time(x, y1, y2, xticks, yticks, xlabeloffset, ylabeloffset, titleoffset, optolinewidth,
-                              ymin, ymax, xlabel, ylabel, title, ax, colors):
-    y1_mean = np.nanmean(y1, axis=1)
-    y1_std = np.nanstd(y1, axis=1)
-    y1_sem = y1_std / np.sqrt(np.shape(y1)[1])
-
-    y2_mean = np.nanmean(y2, axis=1)
-    y2_std = np.nanstd(y2, axis=1)
-    y2_sem = y2_std / np.sqrt(np.shape(y2)[1])
-
-    ax.errorbar(x, y1_mean, yerr=y1_sem, mfc='w', color=colors[0], marker='o', ms=2, linewidth=0.5, ls='none',
-                markeredgewidth=0.5)
-
-    ax.errorbar(x, y2_mean, yerr=y2_sem, mfc='w', color=colors[1], marker='o', ms=2, linewidth=0.5, ls='none',
-                markeredgewidth=0.5)
-    # set labels
-    ax.set_xlabel(xlabel=xlabel, labelpad=xlabeloffset)
-    ax.set_ylabel(ylabel=ylabel, labelpad=ylabeloffset)
-    ax.set_title(label=title, pad=titleoffset)
-
-    # add anotations for opto pulses
-    for i in np.arange(10):
-        ax.axline((20 + i, ymin), (20 + i, ymax), linewidth=optolinewidth, color="cyan")
-
-    # set ticks
-    ax.xaxis.set_ticks(xticks)
-    ax.yaxis.set_ticks(yticks)
-
-    # provide info on tick parameters
-    ax.minorticks_on()
-    ax.tick_params(direction='in', which='minor', length=3, bottom=True, top=False, left=True, right=True)
-    ax.tick_params(direction='in', which='major', length=6, bottom=True, top=False, left=True, right=True)
-
-    # set limits
-    ax.set_ylim(ymin=ymin, ymax=ymax)
-
-
-def make_four_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset,
-                                 x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors):
+def make_four_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors, linewidth_bp=0.7, width_bp=0.5,
+                                 dotsize=1.3, linewidth_sw=0.3, alpha_sw=1, alpha_bp=0.8, ylabeloffset=1, titleoffset=3.5):
     sns.set_palette(sns.color_palette(colors))  # sets colors
     # create box- and swarmplots
     sns.swarmplot(x=x, y=y, data=df, ax=ax, alpha=alpha_sw, linewidth=linewidth_sw, zorder=0, size=dotsize)
@@ -154,6 +83,77 @@ def make_four_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, 
     # set limits
     ax.set_ylim(ymin=ymin)
     ax.set_ylim(ymax=ymax)
+
+def plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors,
+                             titleoffset=3.5, optolinewidth=0.1, xlabeloffset=1, ylabeloffset=1):
+    y_mean = np.nanmean(y, axis=1)
+    y_std = np.nanstd(y, axis=1)
+    y_sem = y_std / np.sqrt(np.shape(y)[1])
+    # create box- and swarmplots
+    ax.errorbar(x, y_mean, yerr=y_sem, mfc='w', color=colors, marker='o', ms=2, linewidth=0.5, ls='none',
+                markeredgewidth=0.5)
+
+    # set labels
+    ax.set_xlabel(xlabel=xlabel, labelpad=xlabeloffset)
+    ax.set_ylabel(ylabel=ylabel, labelpad=ylabeloffset)
+    ax.set_title(label=title, pad=titleoffset)
+
+    # set ticks
+    ax.xaxis.set_ticks(xticks)
+    ax.yaxis.set_ticks(yticks)
+
+    # provide info on tick parameters
+    ax.minorticks_on()
+    ax.tick_params(direction='in', which='minor', length=3, bottom=True, top=False, left=True, right=True)
+    ax.tick_params(direction='in', which='major', length=6, bottom=True, top=False, left=True, right=True)
+
+    # set limits
+    ax.set_ylim(ymin=ymin, ymax=ymax)
+    ax.set_xlim(xmin=min(x))
+    ax.set_xlim(xmax=max(x)+1e-1)
+    try:
+        # add anotations for opto pulses
+        for i in np.arange(10):
+            ax.axline((20 + i, ymin), (20 + i, ymax), linewidth=optolinewidth, color="cyan")
+    except:
+        return
+
+def plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors,
+                             titleoffset=3.5, optolinewidth=0.1, xlabeloffset=1, ylabeloffset=1):
+    y1_mean = np.nanmean(y1, axis=1)
+    y1_std = np.nanstd(y1, axis=1)
+    y1_sem = y1_std / np.sqrt(np.shape(y1)[1])
+
+    y2_mean = np.nanmean(y2, axis=1)
+    y2_std = np.nanstd(y2, axis=1)
+    y2_sem = y2_std / np.sqrt(np.shape(y2)[1])
+
+    ax.errorbar(x, y1_mean, yerr=y1_sem, mfc='w', color=colors[0], marker='o', ms=2, linewidth=0.5, ls='none',
+                markeredgewidth=0.5)
+
+    ax.errorbar(x, y2_mean, yerr=y2_sem, mfc='w', color=colors[1], marker='o', ms=2, linewidth=0.5, ls='none',
+                markeredgewidth=0.5)
+    # set labels
+    ax.set_xlabel(xlabel=xlabel, labelpad=xlabeloffset)
+    ax.set_ylabel(ylabel=ylabel, labelpad=ylabeloffset)
+    ax.set_title(label=title, pad=titleoffset)
+
+    # add anotations for opto pulses
+    for i in np.arange(10):
+        ax.axline((20 + i, ymin), (20 + i, ymax), linewidth=optolinewidth, color="cyan")
+
+    # set ticks
+    ax.xaxis.set_ticks(xticks)
+    ax.yaxis.set_ticks(yticks)
+
+    # provide info on tick parameters
+    ax.minorticks_on()
+    ax.tick_params(direction='in', which='minor', length=3, bottom=True, top=False, left=True, right=True)
+    ax.tick_params(direction='in', which='major', length=6, bottom=True, top=False, left=True, right=True)
+
+    # set limits
+    ax.set_ylim(ymin=ymin, ymax=ymax)
+
 
 
 def plot_actin_image_forces_ellipses_tracking_tangents(actin_image, x, y, Tx, Ty, T, a_top, b_top, a_bottom, b_bottom,
@@ -204,8 +204,8 @@ def plot_actin_image_forces_ellipses_tracking_tangents(actin_image, x, y, Tx, Ty
 
     return sm
 
-def make_two_correlationplotsplots(dotsize, linewidth_sw, alpha_sw, ylabeloffset, xlabeloffset, titleoffset,
-                                   x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors):
+def make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors,
+                                   dotsize=1.8, linewidth_sw=0.3, alpha_sw=1, ylabeloffset=1, xlabeloffset=0, titleoffset=3.5):
     # set colors
     sns.set_palette(sns.color_palette(colors))
     sns.scatterplot(data=df, x=x, y=y, hue=hue, style=hue, ax=ax, alpha=alpha_sw, linewidth=linewidth_sw, size=dotsize)

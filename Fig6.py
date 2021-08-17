@@ -262,31 +262,6 @@ cbar.ax.set_title('mN/m')
 # add title
 # plt.suptitle('$\mathrm{\Delta}$ Stresses, local activation',y=0.94, x=0.44)
 
-# make some annotations
-# #% start: automatic generated code from pylustrator
-# plt.figure(1).ax_dict = {ax.get_label(): ax for ax in plt.figure(1).axes}
-
-# plt.figure(1).texts[0].set_position([0.440000, 0.98])
-# plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[1].new
-# plt.figure(1).texts[1].set_position([0.239612, 0.840355])
-# plt.figure(1).texts[1].set_text("n=40")
-# plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[2].new
-# plt.figure(1).texts[2].set_position([0.2, 0.889135])
-# plt.figure(1).texts[2].set_text("xx-Stress")
-# plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[3].new
-# plt.figure(1).texts[3].set_position([0.239612, 0.471175])
-# plt.figure(1).texts[3].set_text("n=16")
-# plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[4].new
-# plt.figure(1).texts[4].set_position([0.5, 0.889135])
-# plt.figure(1).texts[4].set_text("yy-Stress")
-# plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[5].new
-# plt.figure(1).texts[5].set_position([0.553555, 0.840355])
-# plt.figure(1).texts[5].set_text("n=28")
-# plt.figure(1).text(0.5, 0.5, 'New Text', transform=plt.figure(1).transFigure)  # id=plt.figure(1).texts[6].new
-# plt.figure(1).texts[6].set_position([0.555402, 0.471175])
-# plt.figure(1).texts[6].set_text("n=36")
-# #% end: automatic generated code from pylustrator
-
 # save figure
 fig.savefig(figfolder + 'A.png', dpi=300, bbox_inches="tight")
 plt.show()

@@ -17,7 +17,7 @@ mpl.rcParams['font.size'] = 8
 
 # chose an example for force maps
 doublet_example = 1
-singlet_example = 5
+singlet_example = 4
 
 # %% load data for plotting
 folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
@@ -188,9 +188,9 @@ plt.text(0.25, 0.455, 'n=1', transform=plt.figure(1).transFigure, color='w')
 plt.text(0.55, 0.455, 'n=' + str(n_singlets), transform=plt.figure(1).transFigure, color='w')
 plt.text(0.55, 0.83, 'n=' + str(n_doublets), transform=plt.figure(1).transFigure, color='w')
 
-plt.show()
 fig.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
-
+fig.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
+plt.show()
 # %% plot figure 1D_1, xx-stress maps
 
 # prepare data first
@@ -274,6 +274,7 @@ plt.text(0.55, 0.83, 'n=' + str(n_doublets), transform=plt.figure(1).transFigure
 
 # save figure
 fig.savefig(figfolder + 'D1.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'D1.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 # %% plot figure 1D_2, yy-stress maps
@@ -360,6 +361,7 @@ plt.text(0.55, 0.83, 'n=' + str(n_doublets), transform=plt.figure(1).transFigure
 
 # save figure
 fig.savefig(figfolder + 'D2.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'D2.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 # %% plot figure 1E boxplots
@@ -367,15 +369,6 @@ plt.show()
 # define plot parameters that are valid for the whole figure
 # ******************************************************************************************************************************************
 colors = [colors_parent[1], colors_parent[2]]               # defines colors
-linewidth_bp = 0.7                                          # linewidth of boxplot borders
-width_bp = 0.3                                              # width of boxplots
-dotsize = 1.8                                               # size of datapoints in swarmplot
-linewidth_sw = 0.3                                          # linewidth of boxplot borders
-alpha_sw = 1                                                # transparency of dots in swarmplot
-alpha_bp = 0.8                                              # transparency of boxplots
-ylabeloffset = 1.0                                          # adjusts distance of ylabel to the plot
-titleoffset = 3.5                                          # adjusts distance of title to the plot
-test = 'Mann-Whitney'                                       # which statistical test to compare different conditions
 box_pairs = [('AR1to1d', 'AR1to1s')]                        # which groups to perform statistical test on
 xticklabels = ['Doublet', 'Singlet']                        # which labels to put on x-axis
 fig, axes = plt.subplots(nrows=1, ncols=5, figsize=(9, 2))  # create figure instance
@@ -396,8 +389,7 @@ ylabel = 'A [$\mathrm{\mu m^2}$]'       # which label to put on y-axis
 title = 'Spreading size'                # title of plot
 
 # make plots
-make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset, test,
-                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_two_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for second panel
 #######################################################################################################
@@ -412,8 +404,7 @@ ylabel = '$\mathrm{E_s}$ [pJ]'          # which label to put on y-axis
 title = 'Strain energy'                 # title of plot
 
 # make plots
-make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset, test,
-                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_two_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 
 # Set up plot parameters for third panel
@@ -429,8 +420,7 @@ ylabel = '$\mathrm{\sigma _{xx}}$ [mN/m]'   # which label to put on y-axis
 title = 'xx-Stress'                         # title of plot
 
 # make plots
-make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset, test,
-                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_two_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 
 # Set up plot parameters for fourth panel
@@ -446,8 +436,7 @@ ylabel = '$\mathrm{\sigma _{yy}}$ [mN/m]'   # which label to put on y-axis
 title = 'yy-Stress'                         # title of plot
 
 # make plots
-make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset, test,
-                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_two_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for fifth panel
 #######################################################################################################
@@ -463,9 +452,9 @@ title = 'Anisotropy coefficient'        # title of plot
 ylabeloffset = -5                      # adjusts distance of ylabel to the plot
 
 # make plots
-make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset, test,
-                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_two_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 # save plot to file
 plt.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'E.svg', dpi=300, bbox_inches="tight")
 plt.show()

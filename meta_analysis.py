@@ -87,6 +87,9 @@ def analyse_tfm_data(folder, stressmappixelsize):
     # calculate relative energy increase
     REI = relEs[32, :] - relEs[20, :]
 
+    # calculate relative energy increase detrend
+    REI_detrend = relEs_detrend[32, :] - relEs_detrend[20, :]
+
     # find peak and sum up all values within radius r
     r = 12  # ~10 µM
     x = np.arange(0, x_half)
@@ -160,7 +163,7 @@ def analyse_tfm_data(folder, stressmappixelsize):
             "Fy_topleft": Fy_topleft, "Fy_topright": Fy_topright, "Fy_bottomright": Fy_bottomright,
             "Fy_bottomleft": Fy_bottomleft,
             "Es": Es, "Es_left": Es_left, "Es_right": Es_right, "Es_baseline": Es_baseline,
-            "relEs": relEs, "REI": REI, "relEs_detrend": relEs_detrend, 
+            "relEs": relEs, "REI": REI, "relEs_detrend": relEs_detrend, "REI_detrend": REI_detrend,
             "Fx": Fx, "Fy": Fy, "force_angle": force_angle, "force_angle_baseline": force_angle_baseline,
             "F_cellcell": F_cellcell}
 
@@ -188,12 +191,12 @@ def analyse_msm_data(folder):
 
     # average over first twenty frames before photoactivation
     sigma_xx_baseline = np.nanmean(sigma_xx_average[0:20, :], axis=0)
-    sigma_xx_left_baseline = np.nanmean(sigma_xx_left_average[0:20, :], axis=0)
-    sigma_xx_right_baseline = np.nanmean(sigma_xx_right_average[0:20, :], axis=0)
+    # sigma_xx_left_baseline = np.nanmean(sigma_xx_left_average[0:20, :], axis=0)
+    # sigma_xx_right_baseline = np.nanmean(sigma_xx_right_average[0:20, :], axis=0)
 
     sigma_yy_baseline = np.nanmean(sigma_yy_average[0:20, :], axis=0)
-    sigma_yy_left_baseline = np.nanmean(sigma_yy_left_average[0:20, :], axis=0)
-    sigma_yy_right_baseline = np.nanmean(sigma_yy_right_average[0:20, :], axis=0)
+    # sigma_yy_left_baseline = np.nanmean(sigma_yy_left_average[0:20, :], axis=0)
+    # sigma_yy_right_baseline = np.nanmean(sigma_yy_right_average[0:20, :], axis=0)
     
     # detrend stresses
     sigma_xx_average_detrend = detrend(sigma_xx_average)
@@ -255,6 +258,15 @@ def analyse_msm_data(folder):
     RSI_yy_left = relsigma_yy_left[32, :] - relsigma_yy_left[20, :]
     RSI_yy_right = relsigma_yy_right[32, :] - relsigma_yy_right[20, :]
 
+    # calculate relative stress increase detrend
+    RSI_xx_detrend = relsigma_xx_detrend[32, :] - relsigma_xx_detrend[20, :]
+    RSI_xx_left_detrend = relsigma_xx_left_detrend[32, :] - relsigma_xx_left_detrend[20, :]
+    RSI_xx_right_detrend = relsigma_xx_right_detrend[32, :] - relsigma_xx_right_detrend[20, :]
+
+    RSI_yy_detrend = relsigma_yy_detrend[32, :] - relsigma_yy_detrend[20, :]
+    RSI_yy_left_detrend = relsigma_yy_left_detrend[32, :] - relsigma_yy_left_detrend[20, :]
+    RSI_yy_right_detrend = relsigma_yy_right_detrend[32, :] - relsigma_yy_right_detrend[20, :]
+
     data = {"sigma_xx": sigma_xx, "sigma_yy": sigma_yy,
             "sigma_xx_average": sigma_xx_average, "sigma_yy_average": sigma_yy_average,
             "sigma_xx_left_average": sigma_xx_left_average,
@@ -275,21 +287,19 @@ def analyse_msm_data(folder):
             "AIC_baseline": AIC_baseline, "AIC": AIC, "AIC_left": AIC_left, "AIC_right": AIC_right,
             "relAIC": relAIC, "relAIC_left": relAIC_left, "relAIC_right": relAIC_right,
             "RSI_xx": RSI_xx, "RSI_xx_left": RSI_xx_left, "RSI_xx_right": RSI_xx_right,
-            "RSI_yy": RSI_yy, "RSI_yy_left": RSI_yy_left, "RSI_yy_right": RSI_yy_right}
+            "RSI_yy": RSI_yy, "RSI_yy_left": RSI_yy_left, "RSI_yy_right": RSI_yy_right,
+            "RSI_xx_detrend": RSI_xx_detrend, "RSI_xx_left_detrend": RSI_xx_left_detrend, "RSI_xx_right_detrend": RSI_xx_right_detrend,
+            "RSI_yy_detrend": RSI_yy_detrend, "RSI_yy_left_detrend": RSI_yy_left_detrend, "RSI_yy_right_detrend": RSI_yy_right_detrend}
 
     return data
 
 
 def analyse_shape_data(folder, stressmappixelsize):
     Xtop = np.load(folder + "/Xtop.npy")
-    # Xright = np.load(folder + "/Xright.npy")
     Xbottom = np.load(folder + "/Xbottom.npy")
-    # Xleft = np.load(folder + "/Xleft.npy")
 
     Ytop = np.load(folder + "/Ytop.npy")
-    # Yright = np.load(folder + "/Yright.npy")
     Ybottom = np.load(folder + "/Ybottom.npy")
-    # Yleft = np.load(folder + "/Yleft.npy")
 
     noFrames = Xtop.shape[1]
     noCells = Xtop.shape[2]

@@ -10,7 +10,6 @@ import pickle
 
 import matplotlib.image as mpimg
 import pandas as pd
-from scipy.stats import pearsonr
 
 from plot_functions import *
 
@@ -43,8 +42,11 @@ figfolder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alld
 if not os.path.exists(figfolder):
     os.mkdir(figfolder)
 
+
 def rgb2gray(rgb):
-    return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140])
+    return np.dot(rgb[..., :3], [0.2989, 0.5870, 0.1140])
+
+
 # %% set up pandas data frame to use with seaborn for box- and swarmplots
 
 # initialize empty dictionaries
@@ -120,7 +122,8 @@ Ty_1to1s = AR1to1s_fullstim_long["TFM_data"]["Ty"][:, :, 0, singlet_example]
 # actin images
 actin_image_path = folder + "AR1to1_doublets_full_stim_long/actin_images/cell" + str(doublet_example) + "frame0.png"
 actin_image_1to1d = rgb2gray(mpimg.imread(actin_image_path))
-actin_image_path = folder + "AR1to1_singlets_full_stim_long/actin_images/cell" + str(singlet_example+1) + "frame0.png" # cell 1 got filtered out so the data is not corresponding to the same index of the actin image
+actin_image_path = folder + "AR1to1_singlets_full_stim_long/actin_images/cell" + str(
+    singlet_example + 1) + "frame0.png"  # cell 1 got filtered out so the data is not corresponding to the same index of the actin image
 actin_image_1to1s = rgb2gray(mpimg.imread(actin_image_path))
 
 # ellipse data
@@ -174,7 +177,6 @@ ty_bottomright_1to1d = AR1to1d_fullstim_long_CM["tangent_data"]["ty bottom right
 xc_bottomright_1to1d = AR1to1d_fullstim_long_CM["tangent_data"]["xTouch bottom right"][0, doublet_example] * initial_pixelsize
 yc_bottomright_1to1d = AR1to1d_fullstim_long_CM["tangent_data"]["yTouch bottom right"][0, doublet_example] * initial_pixelsize
 
-
 tx_topleft_1to1s = AR1to1s_fullstim_long_CM["tangent_data"]["tx top left"][0, singlet_example] * initial_pixelsize
 ty_topleft_1to1s = AR1to1s_fullstim_long_CM["tangent_data"]["ty top left"][0, singlet_example] * initial_pixelsize
 xc_topleft_1to1s = AR1to1s_fullstim_long_CM["tangent_data"]["xTouch top left"][0, singlet_example] * initial_pixelsize
@@ -211,9 +213,9 @@ Tx_1to1s_crop = Tx_1to1s[crop_start:crop_end, crop_start:crop_end] * 1e-3
 Ty_1to1s_crop = Ty_1to1s[crop_start:crop_end, crop_start:crop_end] * 1e-3
 T_1to1s_crop = T_1to1s[crop_start:crop_end, crop_start:crop_end] * 1e-3
 
-actin_image_1to1d_crop = actin_image_1to1d[crop_start*8:crop_end*8, crop_start*8:crop_end*8]
+actin_image_1to1d_crop = actin_image_1to1d[crop_start * 8:crop_end * 8, crop_start * 8:crop_end * 8]
 
-actin_image_1to1s_crop = actin_image_1to1s[crop_start*8:crop_end*8, crop_start*8:crop_end*8]
+actin_image_1to1s_crop = actin_image_1to1s[crop_start * 8:crop_end * 8, crop_start * 8:crop_end * 8]
 
 # remove 0 values from tracking data
 x_tracking_top_1to1d = x_tracking_top_1to1d[x_tracking_top_1to1d != 0]
@@ -240,10 +242,7 @@ colors = [colors_parent[2], colors_parent[0]]
 xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))  # create mesh for vectorplot
 fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(5, 2), gridspec_kw={'width_ratios': [5, 5, 1]})  # create figure and axes
 plt.subplots_adjust(wspace=-0.5, hspace=0)  # adjust space in between plots
-
-# fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2, 2))
 # ******************************************************************************************************************************************
-
 
 
 # Set up plot parameters for first panel
@@ -294,11 +293,6 @@ plot_actin_image_forces_ellipses_tracking_tangents(actin_image, x, y, Tx, Ty, T,
                                                    xc_topleft, yc_topleft, xc_topright, yc_topright, xc_bottomleft, yc_bottomleft,
                                                    xc_bottomright, yc_bottomright, ax, colors, extent)
 
-# ax.axis('off')
-# plt.show()
-# fig.savefig(figfolder + 'C1.svg', dpi=300, bbox_inches="tight")
-
-# fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2, 2))
 # Set up plot parameters for second panel
 #######################################################################################################
 actin_image = actin_image_1to1s_crop
@@ -340,18 +334,20 @@ xc_bottomright = xc_bottomright_1to1s - (125 - x_end) / 2 * pixelsize
 yc_bottomright = -yc_bottomright_1to1s + extent[1] + (125 - y_end) / 2 * pixelsize
 
 sm = plot_actin_image_forces_ellipses_tracking_tangents(actin_image, x, y, Tx, Ty, T, a_top, b_top, a_bottom, b_bottom,
-                                                   tx_topleft, ty_topleft, tx_topright, ty_topright, tx_bottomleft, ty_bottomleft,
-                                                   tx_bottomright, ty_bottomright,
-                                                   xc_top, yc_top, xc_bottom, yc_bottom, x_tracking_top, y_tracking_top, x_tracking_bottom,
-                                                   y_tracking_bottom,
-                                                   xc_topleft, yc_topleft, xc_topright, yc_topright, xc_bottomleft, yc_bottomleft,
-                                                   xc_bottomright, yc_bottomright, ax, colors, extent)
+                                                        tx_topleft, ty_topleft, tx_topright, ty_topright, tx_bottomleft, ty_bottomleft,
+                                                        tx_bottomright, ty_bottomright,
+                                                        xc_top, yc_top, xc_bottom, yc_bottom, x_tracking_top, y_tracking_top,
+                                                        x_tracking_bottom,
+                                                        y_tracking_bottom,
+                                                        xc_topleft, yc_topleft, xc_topright, yc_topright, xc_bottomleft, yc_bottomleft,
+                                                        xc_bottomright, yc_bottomright, ax, colors, extent)
 
 # add colorbar
 cbar = plt.colorbar(sm, ax=axes[2])
 cbar.ax.set_title(axtitle)
 axes[2].axis('off')
 
+fig.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
 fig.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
 plt.show()
 # %% plot figure 2D, line tension and force of adherent fiber
@@ -360,20 +356,10 @@ plt.show()
 # ******************************************************************************************************************************************
 colors = [colors_parent[1], colors_parent[2]]  # defines colors
 sns.set_palette(sns.color_palette(colors))  # sets colors
-linewidth_bp = 0.7  # linewidth of boxplot borders
-width_bp = 0.3  # width of boxplots
-dotsize = 1.8  # size of datapoints in swarmplot
-linewidth_sw = 0.3  # linewidth of boxplot borders
-alpha_sw = 1  # transparency of dots in swarmplot
-alpha_bp = 0.8  # transparency of boxplots
-ylabeloffset = 1.0  # adjusts distance of ylabel to the plot
-titleoffset = 3.5  # adjusts distance of title to the plot
-test = 'Mann-Whitney'  # which statistical test to compare different conditions
 box_pairs = [('AR1to1d', 'AR1to1s')]  # which groups to perform statistical test on
 xticklabels = ['Doublet', 'Singlet']  # which labels to put on x-axis
 fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(4, 2))  # create figure instance
 plt.subplots_adjust(wspace=0.4, hspace=0.25)  # adjust space in between plots
-
 # ******************************************************************************************************************************************
 
 
@@ -390,13 +376,12 @@ ylabel = '$\mathrm{\lambda}$ [nN]'  # which label to put on y-axis
 title = 'Line tension'  # title of plot
 
 # make plots
-make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset, test,
-                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title)
+make_two_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for second panel
 #######################################################################################################
 x = 'keys'  # variable by which to group the data
-y = 'fa adherent baseline [nN]'  # variable that goes on the y-axis
+y = 'f adherent baseline [nN]'  # variable that goes on the y-axis
 ax = axes[1]  # define on which axis the plot goes
 ymin = -100  # minimum value on y-axis
 ymax = 500  # maximum value on y-axis
@@ -406,10 +391,10 @@ ylabel = '$\mathrm{f_a}$ [nN]'  # which label to put on y-axis
 title = 'Force of adherent fiber'  # title of plot
 
 # make plots
-make_two_box_and_swarmplots(linewidth_bp, width_bp, dotsize, linewidth_sw, alpha_sw, alpha_bp, ylabeloffset, titleoffset, test,
-                            x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title)
+make_two_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 # # save plot to file
+plt.savefig(figfolder + 'D.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'D.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
@@ -417,16 +402,9 @@ plt.show()
 
 # define plot parameters that are valid for the whole figure
 # ******************************************************************************************************************************************
-xlabeloffset = 0  # adjusts distance of xlabel to the plot
-ylabeloffset = 1.0  # adjusts distance of ylabel to the plot
-titleoffset = 3.5  # adjusts distance of title to the plot
 colors = [colors_parent[1], colors_parent[2]]  # defines colors for scatterplot
-dotsize = 1.8  # size of datapoints in scatterplot
-linewidth_sw = 0.3  # linewidth of dots in scatterplot
-alpha_sw = 1  # transparency of dots in scatterplot
 fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(4.5, 2))  # create figure instance
 plt.subplots_adjust(wspace=0.3, hspace=0.3)  # adjust space in between plots
-
 
 # Set up plot parameters for first panel
 #######################################################################################################
@@ -443,8 +421,14 @@ yticks = np.arange(0, 20.1, 5)
 xlabel = '$\mathrm{\sigma_{x, MSM}}$'
 ylabel = '$\mathrm{\sigma_{x, CM}}$'
 
-make_two_correlationplotsplots(dotsize, linewidth_sw, alpha_sw, ylabeloffset, xlabeloffset, titleoffset,
-                               x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
+corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
+
+# add line with slope 1 for visualisation
+ax.plot([xmin, xmax], [ymin, ymax], linewidth=0.5, linestyle=':', color='grey')
+
+# annotate pearson R and p-value
+plt.text(0.4 * xmax, 0.15 * ymax, 'R = ' + str(corr))
+plt.text(0.4 * xmax, 0.075 * ymax, 'p = ' + '{:0.2e}'.format(p))
 
 # Set up plot parameters for second panel
 #######################################################################################################
@@ -461,10 +445,17 @@ yticks = np.arange(0, 10.1, 5)
 xlabel = '$\mathrm{\sigma_{y, MSM}}$'
 ylabel = '$\mathrm{\sigma_{y, CM}}$'
 
-make_two_correlationplotsplots(dotsize, linewidth_sw, alpha_sw, ylabeloffset, xlabeloffset, titleoffset,
-                               x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
+corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
+
+# add line with slope 1 for visualisation
+ax.plot([xmin, xmax], [ymin, ymax], linewidth=0.5, linestyle=':', color='grey')
+
+# annotate pearson R and p-value
+plt.text(0.4 * xmax, 0.15 * ymax, 'R = ' + str(corr))
+plt.text(0.4 * xmax, 0.075 * ymax, 'p = ' + '{:0.2e}'.format(p))
 
 plt.suptitle('MSM stresses vs. CM surface tensions')
 
+plt.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'E.svg', dpi=300, bbox_inches="tight")
 plt.show()
