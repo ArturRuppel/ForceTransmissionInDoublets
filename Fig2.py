@@ -11,7 +11,7 @@ import pickle
 import matplotlib.image as mpimg
 import pandas as pd
 
-from plot_functions import *
+from plot_and_filter_functions import *
 
 # mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['font.size'] = 8

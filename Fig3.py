@@ -7,12 +7,9 @@ Created on Wed Jul  7 21:56:01 2021
 """
 import os
 import pickle
-
 import pandas as pd
+from plot_and_filter_functions import *
 
-from plot_functions import *
-
-# mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['font.size'] = 8
 
 # define some colors for the plots
@@ -24,25 +21,67 @@ folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata
 
 AR1to1d_fullstim_long = pickle.load(open(folder + "analysed_data/AR1to1d_fullstim_long.dat", "rb"))
 AR1to1s_fullstim_long = pickle.load(open(folder + "analysed_data/AR1to1s_fullstim_long.dat", "rb"))
-# AR1to1d_fullstim_short =  pickle.load(open(folder + "analysed_data/AR1to1d_fullstim_short.dat", "rb"))
-# AR1to1s_fullstim_short =  pickle.load(open(folder + "analysed_data/AR1to1s_fullstim_short.dat", "rb"))
-# AR1to2d_halfstim =        pickle.load(open(folder + "analysed_data/AR1to2d_halfstim.dat", "rb"))
 AR1to1d_halfstim = pickle.load(open(folder + "analysed_data/AR1to1d_halfstim.dat", "rb"))
 AR1to1s_halfstim = pickle.load(open(folder + "analysed_data/AR1to1s_halfstim.dat", "rb"))
-# AR2to1d_halfstim =        pickle.load(open(folder + "analysed_data/AR2to1d_halfstim.dat", "rb"))
 
-# load simulation data for fullstim experiment
+# %% filter data to make sure that the baselines are stable
+def filter_data_main(data, title):
+    # concatenate data on which it will be determined which cells will be filtered
+    filterdata = np.stack(
+        (data["TFM_data"]["relEs"][0:20, :], data["MSM_data"]["relsigma_xx"][0:20, :], data["MSM_data"]["relsigma_yy"][0:20, :],
+         data["MSM_data"]["relsigma_xx_left"][0:20, :], data["MSM_data"]["relsigma_xx_right"][0:20, :],
+         data["MSM_data"]["relsigma_yy_left"][0:20, :], data["MSM_data"]["relsigma_yy_right"][0:20, :]))
+
+    # move axis of variable to the last position for consistency
+    filterdata = np.moveaxis(filterdata, 0, -1)
+
+    # maximal allowed slope for linear fit of baseline
+    threshold = 0.005
+    baselinefilter = create_filter(filterdata, threshold)
+
+    # remove cells with unstable baselines
+    data["TFM_data"] = apply_filter(data["TFM_data"], baselinefilter)
+    data["MSM_data"] = apply_filter(data["MSM_data"], baselinefilter)
+    data["shape_data"] = apply_filter(data["shape_data"], baselinefilter)
+
+    new_N = np.sum(baselinefilter)
+    print(title + ": " + str(baselinefilter.shape[0] - new_N) + " cells were filtered out")
+
+    return data
+
+
+AR1to1d_fullstim_long = filter_data_main(AR1to1d_fullstim_long, "AR1to1d_fullstim_long")
+AR1to1d_halfstim = filter_data_main(AR1to1d_halfstim, "AR1to1d_halfstim")
+
+AR1to1s_fullstim_long = filter_data_main(AR1to1s_fullstim_long, "AR1to1s_fullstim_long")
+AR1to1s_halfstim = filter_data_main(AR1to1s_halfstim, "AR1to1s_halfstim")
+
+# %% load simulation data
+
+# fullstim experiment
 sim_Es_1to1dfs = np.load(folder + "AR1to1_doublets_full_stim_long/simulation_strain_energy.npz")["energy"]
 sim_stress_xx_1to1dfs = np.load(folder + "AR1to1_doublets_full_stim_long/simulation_stress_xx_yy.npz")["stress_xx"]
 sim_stress_yy_1to1dfs = np.load(folder + "AR1to1_doublets_full_stim_long/simulation_stress_xx_yy.npz")["stress_yy"]
 
+sim_Es_1to1sfs = np.load(folder + "AR1to1_doublets_full_stim_long/simulation_strain_energy.npz")["energy"]
+sim_stress_xx_1to1sfs = np.load(folder + "AR1to1_singlets_full_stim_long/simulation_stress_xx_yy.npz")["stress_xx"]
+sim_stress_yy_1to1sfs = np.load(folder + "AR1to1_singlets_full_stim_long/simulation_stress_xx_yy.npz")["stress_yy"]
+
+# average over y-axis
 sim_stress_xx_1to1dfs = np.nanmean(np.absolute(sim_stress_xx_1to1dfs), axis=1)
 sim_stress_yy_1to1dfs = np.nanmean(np.absolute(sim_stress_yy_1to1dfs), axis=1)
+
+sim_stress_xx_1to1sfs = np.nanmean(np.absolute(sim_stress_xx_1to1sfs), axis=1)
+sim_stress_yy_1to1sfs = np.nanmean(np.absolute(sim_stress_yy_1to1sfs), axis=1)
 
 # normalize curves for plotting
 sim_relEs_1to1dfs = sim_Es_1to1dfs / np.nanmean(sim_Es_1to1dfs[0:20]) - 1
 sim_relstress_xx_1to1dfs = sim_stress_xx_1to1dfs / np.nanmean(sim_stress_xx_1to1dfs[0:20]) - 1
 sim_relstress_yy_1to1dfs = sim_stress_yy_1to1dfs / np.nanmean(sim_stress_yy_1to1dfs[0:20]) - 1
+
+sim_relEs_1to1sfs = sim_Es_1to1sfs / np.nanmean(sim_Es_1to1sfs[0:20]) - 1
+sim_relstress_xx_1to1sfs = sim_stress_xx_1to1sfs / np.nanmean(sim_stress_xx_1to1sfs[0:20]) - 1
+sim_relstress_yy_1to1sfs = sim_stress_yy_1to1sfs / np.nanmean(sim_stress_yy_1to1sfs[0:20]) - 1
 
 # load simulation data for halfstim experiment
 sim_stress_xx_left_1to1dhs = np.load(folder + "AR1to1_doublets_half_stim/simulation_stress_xx_yy.npz")["stress_xx_left"]
@@ -257,7 +296,6 @@ plt.subplots_adjust(wspace=0.35, hspace=0.35)  # adjust space in between plots
 # ******************************************************************************************************************************************
 
 
-
 # Set up plot parameters for first panel
 #######################################################################################################
 ax = axes[0, 0]
@@ -295,6 +333,8 @@ y = y[::2, :]
 
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
+
+ax.plot(sim_relEs_1to1sfs, color=color)
 
 # Set up plot parameters for fourth panel
 #######################################################################################################
@@ -349,116 +389,6 @@ plt.text(-0.61, 2.25, 'Relative energy \n     increase', fontsize=10)
 # save plot to file
 plt.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
 fig.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
-plt.show()
-
-# %% plot figure 3C detrend, Relative detrend strain energy over time
-
-# set up global plot parameters
-# ******************************************************************************************************************************************
-x = np.arange(60)
-x = x[::2]  # downsample data for nicer plotting
-ymin = -0.1
-ymax = 0.3
-xticks = np.arange(0, 61, 20)  # define where the major ticks are gonna be
-yticks = np.arange(ymin, ymax + 0.01, 0.1)
-xlabel = 'time [min]'
-xticklabels = ['global \n act.', 'local \n act.']  # which labels to put on x-axis
-fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(5, 3))  # create figure and axes
-plt.subplots_adjust(wspace=0.35, hspace=0.35)  # adjust space in between plots
-# ******************************************************************************************************************************************
-
-
-# Set up plot parameters for first panel
-#######################################################################################################
-ax = axes[0, 0]
-color = colors_parent[1]
-ylabel = 'doublet'
-title = 'global activation'
-y = AR1to1d_fullstim_long["TFM_data"]["relEs_detrend"]
-y = y[::2, :]
-
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
-
-ax.plot(sim_relEs_1to1dfs, color=color)
-
-# Set up plot parameters for second panel
-#######################################################################################################
-ax = axes[0, 1]
-color = colors_parent[1]
-ylabel = None
-title = 'local activation'
-y = AR1to1d_halfstim["TFM_data"]["relEs_detrend"]
-y = y[::2, :]
-
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
-
-# Set up plot parameters for third panel
-#######################################################################################################
-ax = axes[1, 0]
-color = colors_parent[2]
-ylabel = 'singlet'
-title = None
-y = AR1to1s_fullstim_long["TFM_data"]["relEs_detrend"]
-y = y[::2, :]
-
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
-
-# Set up plot parameters for fourth panel
-#######################################################################################################
-ax = axes[1, 1]
-color = colors_parent[2]
-ylabel = None
-title = None
-y = AR1to1s_halfstim["TFM_data"]["relEs_detrend"]
-y = y[::2, :]
-
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
-
-# Set up plot parameters for fifth panel
-#######################################################################################################
-x = 'keys'  # variable by which to group the data
-y = 'REI_detrend'  # variable that goes on the y-axis
-ax = axes[0, 2]  # define on which axis the plot goes
-colors = [colors_parent[1], colors_parent[1]]  # defines colors
-ymin = -0.2  # minimum value on y-axis
-ymax = 0.8  # maximum value on y-axis
-yticks = np.arange(-0.2, 0.81, 0.2)  # define where to put major ticks on y-axis
-stat_annotation_offset = -0.15  # vertical offset of statistical annotation
-ylabel = None  # which label to put on y-axis
-title = None  # title of plot
-box_pairs = [('AR1to1d_fs', 'AR1to1d_hs')]  # which groups to perform statistical test on
-
-# make plots
-make_two_box_and_swarmplots(x, y, df_doublet, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
-
-# Set up plot parameters for sixth panel
-#######################################################################################################
-x = 'keys'  # variable by which to group the data
-y = 'REI_detrend'  # variable that goes on the y-axis
-ax = axes[1, 2]  # define on which axis the plot goes
-colors = [colors_parent[2], colors_parent[2]]  # defines colors
-ymin = -0.2  # minimum value on y-axis
-ymax = 0.8  # maximum value on y-axis
-yticks = np.arange(-0.2, 0.81, 0.2)  # define where to put major ticks on y-axis
-stat_annotation_offset = -0.22  # vertical offset of statistical annotation
-ylabel = None  # which label to put on y-axis
-title = None  # title of plot
-box_pairs = [('AR1to1s_fs', 'AR1to1s_hs')]  # which groups to perform statistical test on
-
-# make plots
-make_two_box_and_swarmplots(x, y, df_singlet, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
-
-# write title for panels 1 to 4
-plt.text(-5.1, 2.4, 'Relative strain energy', fontsize=10)
-# write title for panels 5 to 6
-plt.text(-0.61, 2.25, 'Relative energy \n     increase', fontsize=10)
-# save plot to file
-plt.savefig(figfolder + 'C_detrend.png', dpi=300, bbox_inches="tight")
-fig.savefig(figfolder + 'C_detrend.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 # %% plot figure 3D, stress map difference halfstim
@@ -536,8 +466,6 @@ cbar.ax.set_title('mN/m')
 # add title
 plt.suptitle('$\mathrm{\Delta}$ Stresses, local activation', y=0.97, x=0.44)
 
-# plt.suptitle('$\mathrm{\Delta}$ Traction forces', y=0.98, x=0.44)
-
 plt.figure(1).text(0.21, 0.88, "xx-Stress")
 plt.figure(1).text(0.52, 0.88, "yy-Stress")
 
@@ -562,7 +490,8 @@ ymax = 0.2
 xticks = np.arange(0, 61, 20)  # define where the major ticks are gonna be
 yticks = np.arange(ymin, ymax + 0.01, 0.1)
 xlabel = 'time [min]'
-xticklabels = ['left \n         $\mathrm{\Delta \sigma _ {xx}}$', 'right', 'left \n         $\mathrm{\Delta \sigma _ {yy}}$', 'right']  # which labels to put on x-axis
+xticklabels = ['left \n         $\mathrm{\Delta \sigma _ {xx}}$', 'right', 'left \n         $\mathrm{\Delta \sigma _ {yy}}$',
+               'right']  # which labels to put on x-axis
 fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(5, 3))  # create figure and axes
 plt.subplots_adjust(wspace=0.35, hspace=0.35)  # adjust space in between plots
 # ******************************************************************************************************************************************
@@ -713,8 +642,6 @@ df_plot['keys'] = keys
 # make plots
 make_four_box_and_swarmplots(x, y, df_plot, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
-
-
 # write title for panels 1 to 4
 plt.text(-11, 1.35, 'Relative stresses, local activation', fontsize=10)
 # write title for panels 5 to 6
@@ -725,190 +652,16 @@ plt.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'E.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
-# %% plot figure 3E detrend, Relative detrend stress over time halfstim
+# %% plot figure 3G, actin intensity over time
 
 # set up global plot parameters
 # ******************************************************************************************************************************************
 x = np.arange(60)
 x = x[::2]  # downsample data for nicer plotting
-ymin = -0.1
-ymax = 0.2
-xticks = np.arange(0, 61, 20)  # define where the major ticks are gonna be
-yticks = np.arange(ymin, ymax + 0.01, 0.1)
-xlabel = 'time [min]'
-xticklabels = ['left \n         $\mathrm{\Delta \sigma _ {xx}}$', 'right', 'left \n         $\mathrm{\Delta \sigma _ {yy}}$', 'right']  # which labels to put on x-axis
-fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(5, 3))  # create figure and axes
-plt.subplots_adjust(wspace=0.35, hspace=0.35)  # adjust space in between plots
-# ******************************************************************************************************************************************
-
-
-# Set up plot parameters for first panel
-#######################################################################################################
-ax = axes[0, 0]
-colors = [colors_parent[1], colors_parent_dark[1]]
-ylabel = 'doublet'
-title = 'xx-Stress'
-y1 = AR1to1d_halfstim["MSM_data"]["relsigma_xx_left_detrend"]
-y2 = AR1to1d_halfstim["MSM_data"]["relsigma_xx_right_detrend"]
-y1 = y1[::2, :]
-y2 = y2[::2, :]
-
-# make plots
-plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors)
-
-ax.plot(sim_relstress_xx_left_1to1dhs, color=colors[0])
-ax.plot(sim_relstress_xx_right_1to1dhs, color=colors[0])
-
-# Set up plot parameters for second panel
-#######################################################################################################
-ax = axes[0, 1]
-colors = [colors_parent[1], colors_parent_dark[1]]
-ylabel = None
-title = 'yy-Stress'
-y1 = AR1to1d_halfstim["MSM_data"]["relsigma_yy_left_detrend"]
-y2 = AR1to1d_halfstim["MSM_data"]["relsigma_yy_right_detrend"]
-y1 = y1[::2, :]
-y2 = y2[::2, :]
-
-# make plots
-plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors)
-
-ax.plot(sim_relstress_yy_left_1to1dhs, color=colors[0])
-ax.plot(sim_relstress_yy_right_1to1dhs, color=colors[0])
-
-# Set up plot parameters for third panel
-#######################################################################################################
-ax = axes[1, 0]
-colors = [colors_parent[2], colors_parent_dark[2]]
-ylabel = 'singlet'
-title = None
-y1 = AR1to1s_halfstim["MSM_data"]["relsigma_xx_left_detrend"]
-y2 = AR1to1s_halfstim["MSM_data"]["relsigma_xx_right_detrend"]
-y1 = y1[::2, :]
-y2 = y2[::2, :]
-
-# make plots
-plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors)
-
-# Set up plot parameters for fourth panel
-#######################################################################################################
-ax = axes[1, 1]
-colors = [colors_parent[2], colors_parent_dark[2]]
-ylabel = None
-title = None
-y1 = AR1to1s_halfstim["MSM_data"]["relsigma_yy_left_detrend"]
-y2 = AR1to1s_halfstim["MSM_data"]["relsigma_yy_right_detrend"]
-y1 = y1[::2, :]
-y2 = y2[::2, :]
-
-# make plots
-plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors)
-
-# Set up plot parameters for fifth panel
-#######################################################################################################
-x = 'keys'  # variable by which to group the data
-y = 'sigma'  # variable that goes on the y-axis
-ax = axes[0, 2]  # define on which axis the plot goes
-colors = [colors_parent[1], colors_parent_dark[1], colors_parent[1], colors_parent_dark[1]]  # defines colors
-ymin = -0.2  # minimum value on y-axis
-ymax = 0.4  # maximum value on y-axis
-yticks = np.arange(-0.2, 0.41, 0.2)  # define where to put major ticks on y-axis
-ylabel = None  # which label to put on y-axis
-title = None  # title of plot
-
-# a little weird way to get the dataframe format I need for seaborn boxplots...
-df1 = pd.DataFrame(df_d_hs['RSI_xx_left_detrend'])
-df2 = pd.DataFrame(df_d_hs['RSI_xx_right_detrend'])
-df3 = pd.DataFrame(df_d_hs['RSI_yy_left_detrend'])
-df4 = pd.DataFrame(df_d_hs['RSI_yy_right_detrend'])
-
-df1 = df1.transpose().reset_index(drop=True).transpose()
-df2 = df2.transpose().reset_index(drop=True).transpose()
-df3 = df3.transpose().reset_index(drop=True).transpose()
-df4 = df4.transpose().reset_index(drop=True).transpose()
-
-df_plot = pd.concat([df1, df2, df3, df4], axis=0)
-
-df_plot.rename(columns={0: 'sigma'}, inplace=True)
-
-keys_sx_l = ['sigma_xx_left' for i in range(n_d_halfstim)]
-keys_sx_r = ['sigma_xx_right' for i in range(n_d_halfstim)]
-keys_sy_l = ['sigma_yy_left' for i in range(n_d_halfstim)]
-keys_sy_r = ['sigma_yy_right' for i in range(n_d_halfstim)]
-keys = np.concatenate((keys_sx_l, keys_sx_r, keys_sy_l, keys_sy_r))
-df_plot['keys'] = keys
-
-# make plots
-make_four_box_and_swarmplots(x, y, df_plot, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
-
-ax.plot(0, sim_relstress_xx_left_1to1dhs[30], zorder=3, marker='^', markersize=3, markerfacecolor="white", markeredgecolor="black",
-        markeredgewidth=0.3, alpha=1)
-ax.plot(1, sim_relstress_xx_right_1to1dhs[30], zorder=3, marker='^', markersize=3, markerfacecolor="white", markeredgecolor="black",
-        markeredgewidth=0.3, alpha=1)
-ax.plot(2, sim_relstress_yy_left_1to1dhs[30], zorder=3, marker='^', markersize=3, markerfacecolor="white", markeredgecolor="black",
-        markeredgewidth=0.3, alpha=1)
-ax.plot(3, sim_relstress_yy_right_1to1dhs[30], zorder=3, marker='^', markersize=3, markerfacecolor="white", markeredgecolor="black",
-        markeredgewidth=0.3, alpha=1)
-
-# Set up plot parameters for sixth panel
-#######################################################################################################
-x = 'keys'  # variable by which to group the data
-y = 'sigma'  # variable that goes on the y-axis
-ax = axes[1, 2]  # define on which axis the plot goes
-colors = [colors_parent[2], colors_parent_dark[2], colors_parent[2], colors_parent_dark[2]]  # defines colors
-ymin = -0.2  # minimum value on y-axis
-ymax = 0.4  # maximum value on y-axis
-yticks = np.arange(-0.2, 0.41, 0.2)  # define where to put major ticks on y-axis
-ylabel = None  # which label to put on y-axis
-title = None  # title of plot
-ylabeloffset = -1
-
-# a little weird way to get the dataframe format I need for seaborn boxplots...
-df1 = pd.DataFrame(df_s_hs['RSI_xx_left_detrend'])
-df2 = pd.DataFrame(df_s_hs['RSI_xx_right_detrend'])
-df3 = pd.DataFrame(df_s_hs['RSI_yy_left_detrend'])
-df4 = pd.DataFrame(df_s_hs['RSI_yy_right_detrend'])
-
-df1 = df1.transpose().reset_index(drop=True).transpose()
-df2 = df2.transpose().reset_index(drop=True).transpose()
-df3 = df3.transpose().reset_index(drop=True).transpose()
-df4 = df4.transpose().reset_index(drop=True).transpose()
-
-df_plot = pd.concat([df1, df2, df3, df4], axis=0)
-
-df_plot.rename(columns={0: 'sigma'}, inplace=True)
-
-keys_sx_l = ['sigma_xx_left' for i in range(n_s_halfstim)]
-keys_sx_r = ['sigma_xx_right' for i in range(n_s_halfstim)]
-keys_sy_l = ['sigma_yy_left' for i in range(n_s_halfstim)]
-keys_sy_r = ['sigma_yy_right' for i in range(n_s_halfstim)]
-keys = np.concatenate((keys_sx_l, keys_sx_r, keys_sy_l, keys_sy_r))
-df_plot['keys'] = keys
-
-# make plots
-make_four_box_and_swarmplots(x, y, df_plot, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
-
-
-# write title for panels 1 to 4
-plt.text(-11, 1.35, 'Relative stresses, local activation', fontsize=10)
-# write title for panels 5 to 6
-plt.text(-0.65, 1.25, 'Relative stress \n     increase', fontsize=10)
-#
-# # save plot to file
-plt.savefig(figfolder + 'E_detrend.png', dpi=300, bbox_inches="tight")
-plt.savefig(figfolder + 'E_detrend.svg', dpi=300, bbox_inches="tight")
-plt.show()
-
-# %% plot figure S3A, actin intensity over time
-
-# set up global plot parameters
-# ******************************************************************************************************************************************
-x = np.arange(60)
-x = x[::2]  # downsample data for nicer plotting
-ymin = 0.95
-ymax = 1.05
+ymin = -0.05
+ymax = 0.05
 xticks = np.arange(0, 61, 20)
-yticks = np.arange(0.95, 1.051, 0.05)
+yticks = np.arange(-0.05, 0.051, 0.05)
 xlabel = 'time [min]'
 xticklabels = ['left', 'right']  # which labels to put on x-axis
 fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3, 3))  # create figure and axes
@@ -948,7 +701,7 @@ plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel,
 x = 'keys'  # variable by which to group the data
 y = 'RAI'  # variable that goes on the y-axis
 ax = axes[0, 1]  # define on which axis the plot goes
-colors = [colors_parent[1], colors_parent_dark[1], colors_parent[1], colors_parent_dark[1]]     # defines colors
+colors = [colors_parent[1], colors_parent_dark[1], colors_parent[1], colors_parent_dark[1]]  # defines colors
 ymin = -0.2  # minimum value on y-axis
 ymax = 0.2  # maximum value on y-axis
 yticks = np.arange(-0.2, 0.21, 0.1)  # define where to put major ticks on y-axis
@@ -982,7 +735,7 @@ make_two_box_and_swarmplots(x, y, df_plot, ax, ymin, ymax, yticks, stat_annotati
 x = 'keys'  # variable by which to group the data
 y = 'RAI'  # variable that goes on the y-axis
 ax = axes[1, 1]  # define on which axis the plot goes
-colors = [colors_parent[2], colors_parent_dark[2], colors_parent[2], colors_parent_dark[2]]     # defines colors
+colors = [colors_parent[2], colors_parent_dark[2], colors_parent[2], colors_parent_dark[2]]  # defines colors
 ymin = -0.2  # minimum value on y-axis
 ymax = 0.2  # maximum value on y-axis
 yticks = np.arange(-0.2, 0.21, 0.1)  # define where to put major ticks on y-axis
@@ -1011,15 +764,13 @@ df_plot['keys'] = keys
 # make plots
 make_two_box_and_swarmplots(x, y, df_plot, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
-
-
 # # write title for panels 1 to 4
 # # plt.text(-5.7, 2.575947, 'Relative strain energy', fontsize=10)
 # write title for panels 3 and 4
 plt.text(-0.6, 0.82, 'Relative actin \n     increase', fontsize=10)
 # # save plot to file
-plt.savefig(figfolder + 'SA.png', dpi=300, bbox_inches="tight")
-plt.savefig(figfolder + 'SA.svg', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'G.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'G.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 # %% plot figure S3B, stress map difference fullstim
@@ -1106,8 +857,8 @@ plt.figure(1).text(0.55, 0.84, "n=" + str(n_d_fullstim))
 plt.figure(1).text(0.55, 0.46, "n=" + str(n_s_fullstim))
 
 # save figure
-fig.savefig(figfolder + 'SB.png', dpi=300, bbox_inches="tight")
-fig.savefig(figfolder + 'SB.svg', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'SA.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'SA.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 # %% plot figure S3C, Relative stress over time fullstim
@@ -1139,7 +890,6 @@ plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title
 
 ax.plot(x, sim_relstress_xx_1to1dfs[::2], color=color)
 
-
 # Set up plot parameters for second panel
 #######################################################################################################
 ax = axes[0, 1]
@@ -1166,7 +916,7 @@ y = y[::2]
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
 
-
+ax.plot(x, sim_relstress_xx_1to1sfs[::2], color=color)
 
 # Set up plot parameters for fourth panel
 #######################################################################################################
@@ -1180,19 +930,21 @@ y = y[::2]
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
 
+ax.plot(x, sim_relstress_yy_1to1sfs[::2], color=color)
+
 # Set up plot parameters for fifth panel
 #######################################################################################################
 x = 'keys'  # variable by which to group the data
 y = 'sigma'  # variable that goes on the y-axis
 ax = axes[0, 2]  # define on which axis the plot goes
-colors = [colors_parent[1], colors_parent[1]]     # defines colors
+colors = [colors_parent[1], colors_parent[1]]  # defines colors
 ymin = -0.2  # minimum value on y-axis
 ymax = 0.6  # maximum value on y-axis
 yticks = np.arange(-0.2, 0.61, 0.2)  # define where to put major ticks on y-axis
 stat_annotation_offset = 0  # vertical offset of statistical annotation
 ylabel = None  # which label to put on y-axis
 title = None  # title of plot
-box_pairs = [('sigma_xx', 'sigma_yy')] # which groups to perform statistical test on
+box_pairs = [('sigma_xx', 'sigma_yy')]  # which groups to perform statistical test on
 
 # a little weird way to get the dataframe format I need for seaborn boxplots...
 df1 = pd.DataFrame(df_d_fs['RSI_xx'])
@@ -1217,7 +969,7 @@ make_two_box_and_swarmplots(x, y, df_plot, ax, ymin, ymax, yticks, stat_annotati
 x = 'keys'  # variable by which to group the data
 y = 'sigma'  # variable that goes on the y-axis
 ax = axes[1, 2]  # define on which axis the plot goes
-colors = [colors_parent[2], colors_parent_dark[2], colors_parent[2], colors_parent_dark[2]]     # defines colors
+colors = [colors_parent[2], colors_parent_dark[2], colors_parent[2], colors_parent_dark[2]]  # defines colors
 stat_annotation_offset = 0  # vertical offset of statistical annotation
 ylabel = None  # which label to put on y-axis
 title = None  # title of plot
@@ -1238,7 +990,6 @@ keys_sy = ['sigma_yy' for i in range(n_s_fullstim)]
 keys = np.concatenate((keys_sx, keys_sy))
 df_plot['keys'] = keys
 
-
 # make plots
 make_two_box_and_swarmplots(x, y, df_plot, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
@@ -1247,147 +998,6 @@ plt.text(-5.85, 1.82, 'Relative stresses, global activation', fontsize=10)
 # write title for panels 5 to 6
 plt.text(-0.5, 1.7, 'Relative stress \n     increase', fontsize=10)
 # # save plot to file
-plt.savefig(figfolder + 'SC.png', dpi=300, bbox_inches="tight")
-plt.savefig(figfolder + 'SC.svg', dpi=300, bbox_inches="tight")
-plt.show()
-
-# %% plot figure S3C, Relative detrend stress over time fullstim
-
-# set up global plot parameters
-# ******************************************************************************************************************************************
-x = np.arange(60)
-x = x[::2]  # downsample data for nicer plotting
-ymin = -0.1
-ymax = 0.2
-xticks = np.arange(0, 61, 20)  # define where the major ticks are gonna be
-yticks = np.arange(ymin, ymax + 0.01, 0.1)
-xlabel = 'time [min]'
-fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(5, 3))  # create figure and axes
-plt.subplots_adjust(wspace=0.35, hspace=0.35)  # adjust space in between plots
-# ******************************************************************************************************************************************
-
-# Set up plot parameters for first panel
-#######################################################################################################
-ax = axes[0, 0]
-color = colors_parent[1]
-ylabel = 'doublet'
-title = 'xx-Stress'
-y = AR1to1d_fullstim_long["MSM_data"]["relsigma_xx_detrend"]
-y = y[::2]
-
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
-
-ax.plot(x, sim_relstress_xx_1to1dfs[::2], color=color)
-
-
-# Set up plot parameters for second panel
-#######################################################################################################
-ax = axes[0, 1]
-color = colors_parent[1]
-ylabel = None
-title = 'yy-Stress'
-y = AR1to1d_fullstim_long["MSM_data"]["relsigma_yy_detrend"]
-y = y[::2]
-
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
-
-ax.plot(x, sim_relstress_yy_1to1dfs[::2], color=color)
-
-# Set up plot parameters for third panel
-#######################################################################################################
-ax = axes[1, 0]
-color = colors_parent[2]
-ylabel = 'singlet'
-title = None
-y = AR1to1s_fullstim_long["MSM_data"]["relsigma_xx_detrend"]
-y = y[::2]
-
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
-
-
-
-# Set up plot parameters for fourth panel
-#######################################################################################################
-ax = axes[1, 1]
-color = colors_parent[2]
-ylabel = None
-title = None
-y = AR1to1s_fullstim_long["MSM_data"]["relsigma_yy_detrend"]
-y = y[::2]
-
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
-
-# Set up plot parameters for fifth panel
-#######################################################################################################
-x = 'keys'  # variable by which to group the data
-y = 'sigma'  # variable that goes on the y-axis
-ax = axes[0, 2]  # define on which axis the plot goes
-colors = [colors_parent[1], colors_parent[1]]     # defines colors
-ymin = -0.2  # minimum value on y-axis
-ymax = 0.6  # maximum value on y-axis
-yticks = np.arange(-0.2, 0.61, 0.2)  # define where to put major ticks on y-axis
-stat_annotation_offset = 0  # vertical offset of statistical annotation
-ylabel = None  # which label to put on y-axis
-title = None  # title of plot
-box_pairs = [('sigma_xx', 'sigma_yy')] # which groups to perform statistical test on
-
-# a little weird way to get the dataframe format I need for seaborn boxplots...
-df1 = pd.DataFrame(df_d_fs['RSI_xx_detrend'])
-df2 = pd.DataFrame(df_d_fs['RSI_yy_detrend'])
-df1 = df1.transpose().reset_index(drop=True).transpose()
-df2 = df2.transpose().reset_index(drop=True).transpose()
-
-df_plot = pd.concat([df1, df2], axis=0)
-
-df_plot.rename(columns={0: 'sigma'}, inplace=True)
-
-keys_sx = ['sigma_xx' for i in range(n_d_fullstim)]
-keys_sy = ['sigma_yy' for i in range(n_d_fullstim)]
-keys = np.concatenate((keys_sx, keys_sy))
-df_plot['keys'] = keys
-
-# make plots
-make_two_box_and_swarmplots(x, y, df_plot, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
-
-# Set up plot parameters for sixth panel
-#######################################################################################################
-x = 'keys'  # variable by which to group the data
-y = 'sigma'  # variable that goes on the y-axis
-ax = axes[1, 2]  # define on which axis the plot goes
-colors = [colors_parent[2], colors_parent_dark[2], colors_parent[2], colors_parent_dark[2]]     # defines colors
-stat_annotation_offset = 0  # vertical offset of statistical annotation
-ylabel = None  # which label to put on y-axis
-title = None  # title of plot
-box_pairs = [('sigma_xx', 'sigma_yy')]  # which groups to perform statistical test on
-
-# a little weird way to get the dataframe format I need for seaborn boxplots...
-df1 = pd.DataFrame(df_s_fs['RSI_xx_detrend'])
-df2 = pd.DataFrame(df_s_fs['RSI_yy_detrend'])
-df1 = df1.transpose().reset_index(drop=True).transpose()
-df2 = df2.transpose().reset_index(drop=True).transpose()
-
-df_plot = pd.concat([df1, df2], axis=0)
-
-df_plot.rename(columns={0: 'sigma'}, inplace=True)
-
-keys_sx = ['sigma_xx' for i in range(n_s_fullstim)]
-keys_sy = ['sigma_yy' for i in range(n_s_fullstim)]
-keys = np.concatenate((keys_sx, keys_sy))
-df_plot['keys'] = keys
-
-
-# make plots
-make_two_box_and_swarmplots(x, y, df_plot, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
-
-# write title for panels 1 to 4
-plt.text(-5.85, 1.82, 'Relative stresses, global activation', fontsize=10)
-# write title for panels 5 to 6
-plt.text(-0.5, 1.7, 'Relative stress \n     increase', fontsize=10)
-# # save plot to file
-plt.savefig(figfolder + 'SC_detrend.png', dpi=300, bbox_inches="tight")
-plt.savefig(figfolder + 'SC_detrend.svg', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'SB.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'SB.svg', dpi=300, bbox_inches="tight")
 plt.show()

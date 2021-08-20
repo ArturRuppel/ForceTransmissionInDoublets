@@ -4,7 +4,7 @@ import numpy as np
 import seaborn as sns
 import statannot
 from scipy.stats import pearsonr
-
+from sklearn.linear_model import LinearRegression
 
 
 def make_two_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors,
@@ -85,7 +85,7 @@ def make_four_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, 
     ax.set_ylim(ymax=ymax)
 
 def plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors,
-                             titleoffset=3.5, optolinewidth=0.1, xlabeloffset=1, ylabeloffset=1):
+                             titleoffset=3.5, optolinewidth=0.1, xlabeloffset=1, ylabeloffset=1, xmax=False):
     y_mean = np.nanmean(y, axis=1)
     y_std = np.nanstd(y, axis=1)
     y_sem = y_std / np.sqrt(np.shape(y)[1])
@@ -110,7 +110,10 @@ def plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, t
     # set limits
     ax.set_ylim(ymin=ymin, ymax=ymax)
     ax.set_xlim(xmin=min(x))
-    ax.set_xlim(xmax=max(x)+1e-1)
+    if xmax==False:
+        ax.set_xlim(xmax=max(x)+1e-1)
+    else:
+        ax.set_xlim(xmax=xmax + 1e-1)
     try:
         # add anotations for opto pulses
         for i in np.arange(10):
@@ -238,3 +241,51 @@ def make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks
     # p = np.round(p,decimals=6)
 
     return corr, p
+
+def create_filter(data, threshold):
+    # initialize variables
+    if np.ndim(data) < 3:
+        data = data[..., np.newaxis]
+    noVariables = np.shape(data)[2]
+    t_end = np.shape(data)[0]
+    baselinefilter_all = []
+    # for each vector in data, find a linear regression and compare the slope to the threshold value. store result of this comparison in an array
+    for i in range(noVariables):
+        t = np.arange(t_end)
+        model = LinearRegression().fit(t.reshape((-1, 1)), data[:, :, i])
+        baselinefilter = np.absolute(model.coef_) < threshold
+        baselinefilter_all.append(baselinefilter)
+
+    # all vectors are combined to one through elementwise logical AND operation
+    return np.all(baselinefilter_all, axis=0).reshape(-1)
+
+
+def apply_filter(data, baselinefilter):
+    for key in data:
+        shape = data[key].shape
+
+        # find the new number of cells to find the new shape of data after filtering
+        new_N = np.sum(baselinefilter)
+
+        # to filter data of different dimensions, we first have to copy the filter vector into an array of the same shape as the data. We also create a variable with the new shape of the data
+        if data[key].ndim == 1:
+            baselinefilter_resized = baselinefilter
+            newshape = [new_N]
+            data[key] = data[key][baselinefilter_resized].reshape(newshape)
+        elif data[key].ndim == 2:
+            baselinefilter_resized = np.expand_dims(baselinefilter, axis=0).repeat(shape[0], 0)
+            newshape = [shape[0], new_N]
+            data[key] = data[key][baselinefilter_resized].reshape(newshape)
+        elif data[key].ndim == 3:
+            baselinefilter_resized = np.expand_dims(baselinefilter, axis=(0, 1)).repeat(shape[0], 0).repeat(shape[1], 1)
+            newshape = [shape[0], shape[1], new_N]
+            data[key] = data[key][baselinefilter_resized].reshape(newshape)
+        elif data[key].ndim == 4:
+            baselinefilter_resized = np.expand_dims(baselinefilter, axis=(0, 1, 2)).repeat(shape[0], 0).repeat(shape[1], 1).repeat(shape[2],
+                                                                                                                                   2)
+            newshape = [shape[0], shape[1], shape[2], new_N]
+            data[key] = data[key][baselinefilter_resized].reshape(newshape)
+        else:
+            print('Nothing filtered, shape of array not supported')
+
+    return data
