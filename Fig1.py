@@ -389,7 +389,7 @@ ylabel = 'A [$\mathrm{\mu m^2}$]'       # which label to put on y-axis
 title = 'Spreading size'                # title of plot
 
 # make plots
-make_two_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for second panel
 #######################################################################################################
@@ -404,7 +404,7 @@ ylabel = '$\mathrm{E_s}$ [pJ]'          # which label to put on y-axis
 title = 'Strain energy'                 # title of plot
 
 # make plots
-make_two_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 
 # Set up plot parameters for third panel
@@ -420,7 +420,7 @@ ylabel = '$\mathrm{\sigma _{xx}}$ [mN/m]'   # which label to put on y-axis
 title = 'xx-Stress'                         # title of plot
 
 # make plots
-make_two_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 
 # Set up plot parameters for fourth panel
@@ -436,7 +436,7 @@ ylabel = '$\mathrm{\sigma _{yy}}$ [mN/m]'   # which label to put on y-axis
 title = 'yy-Stress'                         # title of plot
 
 # make plots
-make_two_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for fifth panel
 #######################################################################################################
@@ -452,7 +452,7 @@ title = 'Anisotropy coefficient'        # title of plot
 ylabeloffset = -5                      # adjusts distance of ylabel to the plot
 
 # make plots
-make_two_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 # save plot to file
 plt.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")

@@ -37,7 +37,7 @@ def filter_data_main(data, title):
 
     # maximal allowed slope for linear fit of baseline
     threshold = 0.005
-    baselinefilter = create_filter(filterdata, threshold)
+    baselinefilter = create_baseline_filter(filterdata, threshold)
 
     # remove cells with unstable baselines
     data["TFM_data"] = apply_filter(data["TFM_data"], baselinefilter)
@@ -174,21 +174,21 @@ T_1to1d_hs = np.sqrt(Tx_1to1d_hs ** 2 + Ty_1to1d_hs ** 2)
 T_1to1s_hs = np.sqrt(Tx_1to1s_hs ** 2 + Ty_1to1s_hs ** 2)
 
 # calculate difference between after and before photoactivation
-Tx_1to1d_fs_diff = np.nanmean(Tx_1to1d_fs[:, :, 33, :] - Tx_1to1d_fs[:, :, 20, :], axis=2)
-Ty_1to1d_fs_diff = np.nanmean(Ty_1to1d_fs[:, :, 33, :] - Ty_1to1d_fs[:, :, 20, :], axis=2)
-T_1to1d_fs_diff = np.nanmean(T_1to1d_fs[:, :, 33, :] - T_1to1d_fs[:, :, 20, :], axis=2)
+Tx_1to1d_fs_diff = np.nanmean(Tx_1to1d_fs[:, :, 32, :] - Tx_1to1d_fs[:, :, 20, :], axis=2)
+Ty_1to1d_fs_diff = np.nanmean(Ty_1to1d_fs[:, :, 32, :] - Ty_1to1d_fs[:, :, 20, :], axis=2)
+T_1to1d_fs_diff = np.nanmean(T_1to1d_fs[:, :, 32, :] - T_1to1d_fs[:, :, 20, :], axis=2)
 
-Tx_1to1s_fs_diff = np.nanmean(Tx_1to1s_fs[:, :, 33, :] - Tx_1to1s_fs[:, :, 20, :], axis=2)
-Ty_1to1s_fs_diff = np.nanmean(Ty_1to1s_fs[:, :, 33, :] - Ty_1to1s_fs[:, :, 20, :], axis=2)
-T_1to1s_fs_diff = np.nanmean(T_1to1s_fs[:, :, 33, :] - T_1to1s_fs[:, :, 20, :], axis=2)
+Tx_1to1s_fs_diff = np.nanmean(Tx_1to1s_fs[:, :, 32, :] - Tx_1to1s_fs[:, :, 20, :], axis=2)
+Ty_1to1s_fs_diff = np.nanmean(Ty_1to1s_fs[:, :, 32, :] - Ty_1to1s_fs[:, :, 20, :], axis=2)
+T_1to1s_fs_diff = np.nanmean(T_1to1s_fs[:, :, 32, :] - T_1to1s_fs[:, :, 20, :], axis=2)
 
-Tx_1to1d_hs_diff = np.nanmean(Tx_1to1d_hs[:, :, 33, :] - Tx_1to1d_hs[:, :, 20, :], axis=2)
-Ty_1to1d_hs_diff = np.nanmean(Ty_1to1d_hs[:, :, 33, :] - Ty_1to1d_hs[:, :, 20, :], axis=2)
-T_1to1d_hs_diff = np.nanmean(T_1to1d_hs[:, :, 33, :] - T_1to1d_hs[:, :, 20, :], axis=2)
+Tx_1to1d_hs_diff = np.nanmean(Tx_1to1d_hs[:, :, 32, :] - Tx_1to1d_hs[:, :, 20, :], axis=2)
+Ty_1to1d_hs_diff = np.nanmean(Ty_1to1d_hs[:, :, 32, :] - Ty_1to1d_hs[:, :, 20, :], axis=2)
+T_1to1d_hs_diff = np.nanmean(T_1to1d_hs[:, :, 32, :] - T_1to1d_hs[:, :, 20, :], axis=2)
 
-Tx_1to1s_hs_diff = np.nanmean(Tx_1to1s_hs[:, :, 33, :] - Tx_1to1s_hs[:, :, 20, :], axis=2)
-Ty_1to1s_hs_diff = np.nanmean(Ty_1to1s_hs[:, :, 33, :] - Ty_1to1s_hs[:, :, 20, :], axis=2)
-T_1to1s_hs_diff = np.nanmean(T_1to1s_hs[:, :, 33, :] - T_1to1s_hs[:, :, 20, :], axis=2)
+Tx_1to1s_hs_diff = np.nanmean(Tx_1to1s_hs[:, :, 32, :] - Tx_1to1s_hs[:, :, 20, :], axis=2)
+Ty_1to1s_hs_diff = np.nanmean(Ty_1to1s_hs[:, :, 32, :] - Ty_1to1s_hs[:, :, 20, :], axis=2)
+T_1to1s_hs_diff = np.nanmean(T_1to1s_hs[:, :, 32, :] - T_1to1s_hs[:, :, 20, :], axis=2)
 
 # crop maps 
 crop_start = 8
@@ -363,7 +363,8 @@ title = None  # title of plot
 box_pairs = [('AR1to1d_fs', 'AR1to1d_hs')]  # which groups to perform statistical test on
 
 # make plots
-make_two_box_and_swarmplots(x, y, df_doublet, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots_with_test(x, y, df_doublet, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title,
+                                  colors)
 
 # Set up plot parameters for sixth panel
 #######################################################################################################
@@ -380,7 +381,8 @@ title = None  # title of plot
 box_pairs = [('AR1to1s_fs', 'AR1to1s_hs')]  # which groups to perform statistical test on
 
 # make plots
-make_two_box_and_swarmplots(x, y, df_singlet, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots_with_test(x, y, df_singlet, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title,
+                                  colors)
 
 # write title for panels 1 to 4
 plt.text(-5.1, 2.4, 'Relative strain energy', fontsize=10)
@@ -390,23 +392,345 @@ plt.text(-0.61, 2.25, 'Relative energy \n     increase', fontsize=10)
 plt.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
 fig.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
 plt.show()
+# %% plot figure 3D, normal-stress maps
 
+# prepare data first
+
+# concatenate MSM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
+sigma_normal_1to1d_average = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_normal"][:, :, 0:20, :], axis=(2, 3))
+sigma_normal_1to1s_average = np.nanmean(AR1to1s_halfstim["MSM_data"]["sigma_normal"][:, :, 0:20, :], axis=(2, 3))
+
+# convert NaN to 0 to have black background
+sigma_normal_1to1d_average[np.isnan(sigma_normal_1to1d_average)] = 0
+sigma_normal_1to1s_average[np.isnan(sigma_normal_1to1s_average)] = 0
+
+# crop maps
+crop_start = 8
+crop_end = 84
+
+sigma_normal_1to1d_average_crop = sigma_normal_1to1d_average[crop_start:crop_end, crop_start:crop_end] * 1e3
+sigma_normal_1to1s_average_crop = sigma_normal_1to1s_average[crop_start:crop_end, crop_start:crop_end] * 1e3
+
+# set up plot parameters
+# ******************************************************************************************************************************************
+pixelsize = 0.864               # in µm
+pmax = 10                       # in mN/m
+axtitle = 'mN/m'                # unit of colorbar
+suptitle = 'Normal stress'          # title of plot
+x_end = np.shape(sigma_normal_1to1d_average_crop)[1]   # create x- and y-axis for plotting maps
+y_end = np.shape(sigma_normal_1to1d_average_crop)[0]
+extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
+xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))  # create mesh for vectorplot
+
+fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(2.5, 3.3))    # create figure and axes
+plt.subplots_adjust(wspace=0.02, hspace=-0.06)      # adjust space in between plots
+# ******************************************************************************************************************************************
+
+
+im = axes[0].imshow(sigma_normal_1to1d_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
+                       vmin=0, vmax=pmax, aspect='auto')
+
+axes[1].imshow(sigma_normal_1to1s_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
+                  vmin=0, vmax=pmax, aspect='auto')
+
+
+# remove axes
+for ax in axes.flat:
+    ax.axis('off')
+    aspectratio = 1.0
+    ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
+    ax.set_aspect(ratio_default * aspectratio)
+
+# add colorbar
+cbar = fig.colorbar(im, ax=axes.ravel().tolist())
+cbar.ax.set_title(axtitle)
+
+# add title
+plt.suptitle(suptitle, y=0.94, x=0.44)
+
+# add annotations
+plt.text(0.43, 0.455, 'n=' + str(n_s_halfstim), transform=plt.figure(1).transFigure, color='w')
+plt.text(0.43, 0.83, 'n=' + str(n_d_halfstim), transform=plt.figure(1).transFigure, color='w')
+
+# save figure
+fig.savefig(figfolder + 'D.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'D.svg', dpi=300, bbox_inches="tight")
+plt.show()
+# %% plot figure 5E
+
+# set up global plot parameters
+# ******************************************************************************************************************************************
+x = np.linspace(-40, 40, 92)
+x = x[::2]  # downsample data for nicer plotting
+xticks = np.arange(-40, 40.1, 20)  # define where the major ticks are gonna be
+xlabel = 'position [µm]'
+ymin = 0
+ymax = 5
+yticks = np.arange(ymin, ymax + 0.001, 1)
+fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(1.5, 3.3))  # create figure and axes
+plt.subplots_adjust(wspace=0.4, hspace=0.35)  # adjust space in between plots
+# ******************************************************************************************************************************************
+
+# Set up plot parameters for first panel
+#######################################################################################################
+ax = axes[0]
+color = colors_parent[1]
+ylabel = None
+title = '$\mathrm{\sigma _{normal}(x)}$  [nN]\n baseline'
+y = AR1to1d_halfstim["MSM_data"]["sigma_normal_x_profile_baseline"] * 1e3  # convert to nN
+y = y[::2, :]
+
+# make plots
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+
+# # Set up plot parameters for second panel
+# #######################################################################################################
+ax = axes[1]
+color = colors_parent[2]
+ylabel = None
+title = None
+y = AR1to1s_halfstim["MSM_data"]["sigma_normal_x_profile_baseline"] * 1e3  # convert to nN
+y = y[::2, :]
+
+# make plots
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+
+
+plt.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'E.svg', dpi=300, bbox_inches="tight")
+plt.show()
+# %% plot figure 3F, normal-stress maps difference
+
+# prepare data first
+
+sigma_normal_1to1d_diff = np.nanmean(
+    AR1to1d_halfstim["MSM_data"]["sigma_normal"][:, :, 32, :] - AR1to1d_halfstim["MSM_data"]["sigma_normal"][:, :, 20, :],
+    axis=2)
+sigma_normal_1to1s_diff = np.nanmean(
+    AR1to1s_halfstim["MSM_data"]["sigma_normal"][:, :, 32, :] - AR1to1s_halfstim["MSM_data"]["sigma_normal"][:, :, 20, :],
+    axis=2)
+
+# crop maps
+crop_start = 8
+crop_end = 84
+
+sigma_normal_1to1d_diff_crop = sigma_normal_1to1d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+sigma_normal_1to1s_diff_crop = sigma_normal_1to1s_diff[crop_start:crop_end, crop_start:crop_end] * 1e3
+
+
+# set up plot parameters
+# ******************************************************************************************************************************************
+pixelsize = 0.864               # in µm
+pmin = -1
+pmax = 1                       # in mN/m
+axtitle = 'mN/m'                # unit of colorbar
+suptitle = '$\mathrm{\Delta}$ Normal stress'          # title of plot
+x_end = np.shape(sigma_normal_1to1d_average_crop)[1]   # create x- and y-axis for plotting maps
+y_end = np.shape(sigma_normal_1to1d_average_crop)[0]
+extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
+xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))  # create mesh for vectorplot
+
+fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(2.5, 3.3))    # create figure and axes
+plt.subplots_adjust(wspace=0.02, hspace=-0.06)      # adjust space in between plots
+# ******************************************************************************************************************************************
+
+
+im = axes[0].imshow(sigma_normal_1to1d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+                       vmin=pmin, vmax=pmax, aspect='auto')
+
+axes[1].imshow(sigma_normal_1to1s_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+                  vmin=pmin, vmax=pmax, aspect='auto')
+
+
+# remove axes
+for ax in axes.flat:
+    ax.axis('off')
+    aspectratio = 1.0
+    ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
+    ax.set_aspect(ratio_default * aspectratio)
+
+# add colorbar
+cbar = fig.colorbar(im, ax=axes.ravel().tolist())
+cbar.ax.set_title(axtitle)
+
+# add title
+plt.suptitle(suptitle, y=0.94, x=0.44)
+
+# add annotations
+plt.text(0.43, 0.455, 'n=' + str(n_s_halfstim), transform=plt.figure(1).transFigure, color='black')
+plt.text(0.43, 0.83, 'n=' + str(n_d_halfstim), transform=plt.figure(1).transFigure, color='black')
+
+# save figure
+fig.savefig(figfolder + 'F.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'F.svg', dpi=300, bbox_inches="tight")
+plt.show()
+# %% plot figure 5G
+
+# set up global plot parameters
+# ******************************************************************************************************************************************
+x = np.linspace(-40, 40, 92)
+x = x[::2]  # downsample data for nicer plotting
+xticks = np.arange(-40, 40.1, 20)  # define where the major ticks are gonna be
+xlabel = 'position [µm]'
+ymin = -0.1
+ymax = 0.5
+yticks = np.arange(ymin, ymax + 0.001, 0.1)
+fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(1.5, 3.3))  # create figure and axes
+plt.subplots_adjust(wspace=0.4, hspace=0.35)  # adjust space in between plots
+# ******************************************************************************************************************************************
+
+# # Set up plot parameters for first panel
+# #######################################################################################################
+ax = axes[0]
+color = colors_parent[1]
+ylabel = None
+title = '$\mathrm{\sigma _{normal}(x)}$ [nN] \n increase'
+y = AR1to1d_halfstim["MSM_data"]["sigma_normal_x_profile_increase"] * 1e3  # convert to nN
+y = y[::2, :]
+
+# make plots
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+
+# # Set up plot parameters for second panel
+# #######################################################################################################
+ax = axes[1]
+color = colors_parent[2]
+ylabel = None
+title = None
+y = AR1to1s_halfstim["MSM_data"]["sigma_normal_x_profile_increase"] * 1e3  # convert to nN
+y = y[::2, :]
+
+# make plots
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+
+
+plt.savefig(figfolder + 'G.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'G.svg', dpi=300, bbox_inches="tight")
+plt.show()
+# %% plot figure 5X
+
+# set up global plot parameters
+# ******************************************************************************************************************************************
+x = np.linspace(-25, 25, 82)
+x = x[::2]  # downsample data for nicer plotting
+xticks = np.arange(-15, 15.1, 15)  # define where the major ticks are gonna be
+xlabel = 'position [µm]'
+ymin = 0
+ymax = 8
+yticks = np.arange(ymin, ymax + 0.001, 1)
+windowlength = 41
+fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(5, 3))  # create figure and axes
+plt.subplots_adjust(wspace=0.4, hspace=0.35)  # adjust space in between plots
+# ******************************************************************************************************************************************
+
+# Set up plot parameters for first panel
+#######################################################################################################
+ax = axes[0, 0]
+color = colors_parent[1]
+ylabel = 'doublet'
+title = '$\mathrm{\sigma _{normal}(x)}$ baseline [nN]'
+y = AR1to1d_halfstim["MSM_data"]["sigma_normal_x_profile_baseline"] * 1e3  #convert to nN
+
+# crop a centered, 82 pixel wide window
+pos_center = np.rint(y.shape[0] / 2).astype(int)
+y = y[pos_center - windowlength:pos_center + windowlength]
+y = y[::2, :]
+
+# make plots
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+
+# # Set up plot parameters for second panel
+# #######################################################################################################
+ax = axes[1, 0]
+color = colors_parent[2]
+ylabel = 'singlet'
+title = None
+y = AR1to1s_halfstim["MSM_data"]["sigma_normal_x_profile_baseline"] * 1e3  #convert to nN
+
+# crop a centered, 82 pixel wide window
+pos_center = np.rint(y.shape[0] / 2).astype(int)
+y = y[pos_center - windowlength:pos_center + windowlength]
+y = y[::2, :]
+
+# make plots
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+
+
+# # Set up plot parameters for third panel
+# #######################################################################################################
+ax = axes[0, 1]
+color = colors_parent[1]
+ymin = -0.1
+ymax = 0.1
+yticks = np.arange(ymin, ymax + 0.001, 0.1)
+ylabel = None
+title = '$\mathrm{\sigma _{rel, normal}(x)}$ increase'
+y = AR1to1d_halfstim["MSM_data"]["relsigma_normal_x_profile_increase"]
+
+# crop a centered, 82 pixel wide window
+pos_center = np.rint(y.shape[0] / 2).astype(int)
+y = y[pos_center - windowlength:pos_center + windowlength]
+y = y[::2, :]
+
+# make plots
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+
+# # Set up plot parameters for fourth panel
+# #######################################################################################################
+ax = axes[1, 1]
+color = colors_parent[2]
+ymin = -0.1
+ymax = 0.1
+yticks = np.arange(ymin, ymax + 0.001, 0.1)
+ylabel = None
+title = None
+y = AR1to1s_halfstim["MSM_data"]["relsigma_normal_x_profile_increase"]
+
+# crop a centered, 82 pixel wide window
+pos_center = np.rint(y.shape[0] / 2).astype(int)
+y = y[pos_center - windowlength:pos_center + windowlength]
+y = y[::2, :]
+
+# make plots
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+
+# # Set up plot parameters for sixth panel
+# # #######################################################################################################
+# ax = axes[2, 1]
+# color = colors_parent[3]
+# ymin = -0.1
+# ymax = 0.1
+# yticks = np.arange(ymin, ymax + 0.001, 0.1)
+# ylabel = None
+# title = None
+# y = AR2to1d_halfstim["MSM_data"]["relsigma_normal_x_profile_increase"]
+#
+# # crop a centered, 82 pixel wide window
+# pos_center = np.rint(y.shape[0] / 2).astype(int)
+# y = y[pos_center - windowlength:pos_center + windowlength]
+# y = y[::4, :]
+#
+# # make plots
+# plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+
+plt.savefig(figfolder + 'X3.png', dpi=300, bbox_inches="tight")
+# plt.savefig(figfolder + 'F.svg', dpi=300, bbox_inches="tight")
+plt.show()
 # %% plot figure 3D, stress map difference halfstim
 
 # prepare data first
 
-# concatenate TFM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
 sigmaxx_1to1d_diff = np.nanmean(
-    AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 33, :] - AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 20, :],
+    AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 32, :] - AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 20, :],
     axis=2)
 sigmayy_1to1d_diff = np.nanmean(
-    AR1to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 33, :] - AR1to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 20, :],
+    AR1to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 32, :] - AR1to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 20, :],
     axis=2)
 sigmaxx_1to1s_diff = np.nanmean(
-    AR1to1s_halfstim["MSM_data"]["sigma_xx"][:, :, 33, :] - AR1to1s_halfstim["MSM_data"]["sigma_xx"][:, :, 20, :],
+    AR1to1s_halfstim["MSM_data"]["sigma_xx"][:, :, 32, :] - AR1to1s_halfstim["MSM_data"]["sigma_xx"][:, :, 20, :],
     axis=2)
 sigmayy_1to1s_diff = np.nanmean(
-    AR1to1s_halfstim["MSM_data"]["sigma_yy"][:, :, 33, :] - AR1to1s_halfstim["MSM_data"]["sigma_yy"][:, :, 20, :],
+    AR1to1s_halfstim["MSM_data"]["sigma_yy"][:, :, 32, :] - AR1to1s_halfstim["MSM_data"]["sigma_yy"][:, :, 20, :],
     axis=2)
 
 # crop maps
@@ -594,7 +918,7 @@ keys = np.concatenate((keys_sx_l, keys_sx_r, keys_sy_l, keys_sy_r))
 df_plot['keys'] = keys
 
 # make plots
-make_four_box_and_swarmplots(x, y, df_plot, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots(x, y, df_plot, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 ax.plot(0, sim_relstress_xx_left_1to1dhs[30], zorder=3, marker='^', markersize=3, markerfacecolor="white", markeredgecolor="black",
         markeredgewidth=0.3, alpha=1)
@@ -640,7 +964,7 @@ keys = np.concatenate((keys_sx_l, keys_sx_r, keys_sy_l, keys_sy_r))
 df_plot['keys'] = keys
 
 # make plots
-make_four_box_and_swarmplots(x, y, df_plot, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots(x, y, df_plot, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 # write title for panels 1 to 4
 plt.text(-11, 1.35, 'Relative stresses, local activation', fontsize=10)
@@ -728,7 +1052,8 @@ keys = np.concatenate((keys_l, keys_r))
 df_plot['keys'] = keys
 
 # make plots
-make_two_box_and_swarmplots(x, y, df_plot, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots_with_test(x, y, df_plot, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title,
+                                  colors)
 
 # Set up plot parameters for fourth panel
 #######################################################################################################
@@ -762,7 +1087,8 @@ keys = np.concatenate((keys_l, keys_r))
 df_plot['keys'] = keys
 
 # make plots
-make_two_box_and_swarmplots(x, y, df_plot, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots_with_test(x, y, df_plot, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title,
+                                  colors)
 
 # # write title for panels 1 to 4
 # # plt.text(-5.7, 2.575947, 'Relative strain energy', fontsize=10)
@@ -779,16 +1105,16 @@ plt.show()
 
 # concatenate TFM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
 sigmaxx_1to1d_diff = np.nanmean(
-    AR1to1d_fullstim_long["MSM_data"]["sigma_xx"][:, :, 33, :] - AR1to1d_fullstim_long["MSM_data"]["sigma_xx"][:, :, 20,
+    AR1to1d_fullstim_long["MSM_data"]["sigma_xx"][:, :, 32, :] - AR1to1d_fullstim_long["MSM_data"]["sigma_xx"][:, :, 20,
                                                                  :], axis=2)
 sigmayy_1to1d_diff = np.nanmean(
-    AR1to1d_fullstim_long["MSM_data"]["sigma_yy"][:, :, 33, :] - AR1to1d_fullstim_long["MSM_data"]["sigma_yy"][:, :, 20,
+    AR1to1d_fullstim_long["MSM_data"]["sigma_yy"][:, :, 32, :] - AR1to1d_fullstim_long["MSM_data"]["sigma_yy"][:, :, 20,
                                                                  :], axis=2)
 sigmaxx_1to1s_diff = np.nanmean(
-    AR1to1s_fullstim_long["MSM_data"]["sigma_xx"][:, :, 33, :] - AR1to1s_fullstim_long["MSM_data"]["sigma_xx"][:, :, 20,
+    AR1to1s_fullstim_long["MSM_data"]["sigma_xx"][:, :, 32, :] - AR1to1s_fullstim_long["MSM_data"]["sigma_xx"][:, :, 20,
                                                                  :], axis=2)
 sigmayy_1to1s_diff = np.nanmean(
-    AR1to1s_fullstim_long["MSM_data"]["sigma_yy"][:, :, 33, :] - AR1to1s_fullstim_long["MSM_data"]["sigma_yy"][:, :, 20,
+    AR1to1s_fullstim_long["MSM_data"]["sigma_yy"][:, :, 32, :] - AR1to1s_fullstim_long["MSM_data"]["sigma_yy"][:, :, 20,
                                                                  :], axis=2)
 
 # crop maps
@@ -962,7 +1288,8 @@ keys = np.concatenate((keys_sx, keys_sy))
 df_plot['keys'] = keys
 
 # make plots
-make_two_box_and_swarmplots(x, y, df_plot, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots_with_test(x, y, df_plot, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title,
+                                  colors)
 
 # Set up plot parameters for sixth panel
 #######################################################################################################
@@ -991,7 +1318,8 @@ keys = np.concatenate((keys_sx, keys_sy))
 df_plot['keys'] = keys
 
 # make plots
-make_two_box_and_swarmplots(x, y, df_plot, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots_with_test(x, y, df_plot, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title,
+                                  colors)
 
 # write title for panels 1 to 4
 plt.text(-5.85, 1.82, 'Relative stresses, global activation', fontsize=10)
@@ -1001,3 +1329,4 @@ plt.text(-0.5, 1.7, 'Relative stress \n     increase', fontsize=10)
 plt.savefig(figfolder + 'SB.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'SB.svg', dpi=300, bbox_inches="tight")
 plt.show()
+

@@ -97,6 +97,7 @@ concatenated_data['keys'] = keys
 # create DataFrame
 df = pd.DataFrame(concatenated_data)
 
+
 # convert to more convenient units for plotting
 df['Es_baseline'] *= 1e12  # convert to fJ
 df['spreadingsize_baseline'] *= 1e12  # convert to µm²
@@ -376,7 +377,7 @@ ylabel = '$\mathrm{\lambda}$ [nN]'  # which label to put on y-axis
 title = 'Line tension'  # title of plot
 
 # make plots
-make_two_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for second panel
 #######################################################################################################
@@ -391,7 +392,7 @@ ylabel = '$\mathrm{f_a}$ [nN]'  # which label to put on y-axis
 title = 'Force of adherent fiber'  # title of plot
 
 # make plots
-make_two_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 # # save plot to file
 plt.savefig(figfolder + 'D.png', dpi=300, bbox_inches="tight")

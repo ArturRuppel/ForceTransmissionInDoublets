@@ -145,7 +145,8 @@ title = None  # title of plot
 box_pairs = [('AR1to1d_fs', 'AR1to1d_hs')]  # which groups to perform statistical test on
 
 # make plots
-make_two_box_and_swarmplots(x, y, df_doublet, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots_with_test(x, y, df_doublet, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title,
+                                  colors)
 
 # Set up plot parameters for sixth panel
 # #######################################################################################################
@@ -160,7 +161,8 @@ ylabeloffset = -1
 box_pairs = [('AR1to1s_fs', 'AR1to1s_hs')]  # which groups to perform statistical test on
 
 # make plots
-make_two_box_and_swarmplots(x, y, df_singlet, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots_with_test(x, y, df_singlet, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title,
+                                  colors)
 
 plt.savefig(figfolder + 'B.png', dpi=300, bbox_inches="tight")
 plt.show()
@@ -330,7 +332,8 @@ title = None  # title of plot
 box_pairs = [('AR1to1d_fsl', 'AR1to1d_fss')]  # which groups to perform statistical test on
 
 # make plots
-make_two_box_and_swarmplots(x, y, df_doublet_afterfilter, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots_with_test(x, y, df_doublet_afterfilter, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels,
+                                  ylabel, title, colors)
 
 # Set up plot parameters for sixth panel
 #######################################################################################################
@@ -348,7 +351,8 @@ title = None  # title of plot
 box_pairs = [('AR1to1s_fsl', 'AR1to1s_fss')]  # which groups to perform statistical test on
 
 # make plots
-make_two_box_and_swarmplots(x, y, df_singlet_afterfilter, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots_with_test(x, y, df_singlet_afterfilter, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels,
+                                  ylabel, title, colors)
 
 # write title for panels 1 to 4
 plt.text(-5.2, 0.415, 'Cell width at x=0 $\mathrm{\mu}$m', fontsize=10)

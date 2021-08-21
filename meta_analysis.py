@@ -6,9 +6,9 @@ Created on Thu Jul  1 09:33:36 2021
 """
 import os
 import pickle
-
 import numpy as np
-
+import matplotlib.pyplot as plt
+from lmfit import Model
 
 def analyse_tfm_data(folder, stressmappixelsize):
     Dx = np.load(folder + "/Dx.npy")
@@ -125,6 +125,7 @@ def analyse_tfm_data(folder, stressmappixelsize):
 def analyse_msm_data(folder):
     sigma_xx = np.load(folder + "/sigma_xx.npy")
     sigma_yy = np.load(folder + "/sigma_yy.npy")
+    masks = np.load(folder + "/mask.npy")
 
     # replace 0 with NaN to not mess up average calculations
     sigma_xx[sigma_xx == 0] = 'nan'
@@ -133,9 +134,10 @@ def analyse_msm_data(folder):
     # calculate normal stress
     sigma_normal = (sigma_xx + sigma_yy) / 2
 
-    # calculate stress profile along x-axis
-    sigma_normal_x_profile = np.nanmean(sigma_normal, axis=0) 
-          
+    # calculate stress profile along x-axis. 
+    # I cut out the borders by multiplying with masks that describes the cell contour exactly to mitigate boundary effects
+    sigma_normal_x_profile = np.nanmean(sigma_normal * masks, axis=0)
+
     x_end = np.shape(sigma_xx)[1]
     x_half = np.rint(x_end / 2).astype(int)
 
@@ -146,6 +148,9 @@ def analyse_msm_data(folder):
     sigma_yy_average = np.nanmean(sigma_yy, axis=(0, 1))
     sigma_yy_left_average = np.nanmean(sigma_yy[:, 0:x_half, :, :], axis=(0, 1))
     sigma_yy_right_average = np.nanmean(sigma_yy[:, x_half:x_end, :, :], axis=(0, 1))
+    sigma_normal_average = np.nanmean(sigma_normal, axis=(0, 1))  # maps are coming from matlab calculations where x and y-axes are inverted
+    sigma_normal_left_average = np.nanmean(sigma_normal[:, 0:x_half, :, :], axis=(0, 1))
+    sigma_normal_right_average = np.nanmean(sigma_normal[:, x_half:x_end, :, :], axis=(0, 1))
 
     # average over first twenty frames before photoactivation
     sigma_xx_baseline = np.nanmean(sigma_xx_average[0:20, :], axis=0)
@@ -165,6 +170,12 @@ def analyse_msm_data(folder):
     relsigma_yy_right = \
         (sigma_yy_right_average - np.nanmean(sigma_yy_right_average[0:20], axis=0)) / np.nanmean(sigma_yy_right_average[0:20], axis=(0, 1))
 
+    relsigma_normal = (sigma_normal_average - np.nanmean(sigma_normal_average[0:20], axis=0)) / np.nanmean(sigma_normal_average[0:20], axis=(0, 1))
+    relsigma_normal_left = \
+        (sigma_normal_left_average - np.nanmean(sigma_normal_left_average[0:20], axis=0)) / np.nanmean(sigma_normal_left_average[0:20], axis=(0, 1))
+    relsigma_normal_right = \
+        (sigma_normal_right_average - np.nanmean(sigma_normal_right_average[0:20], axis=0)) / np.nanmean(sigma_normal_right_average[0:20], axis=(0, 1))
+
     # calculate anisotropy coefficient
     AIC = (sigma_xx_average - sigma_yy_average) / (sigma_xx_average + sigma_yy_average)
     AIC_baseline = np.nanmean(AIC[0:20, :], axis=0)
@@ -177,9 +188,37 @@ def analyse_msm_data(folder):
     RSI_yy = relsigma_yy[32, :] - relsigma_yy[20, :]
     RSI_yy_left = relsigma_yy_left[32, :] - relsigma_yy_left[20, :]
     RSI_yy_right = relsigma_yy_right[32, :] - relsigma_yy_right[20, :]
-    
+
+    RSI_normal = relsigma_normal[32, :] - relsigma_normal[20, :]
+    RSI_normal_left = relsigma_normal_left[32, :] - relsigma_normal_left[20, :]
+    RSI_normal_right = relsigma_normal_right[32, :] - relsigma_normal_right[20, :]
+
     # calculate relative stress profile along x-axis after photoactivation
-    relsigma_normal_x_profile_increase = (sigma_normal_x_profile[:, 32, :] - sigma_normal_x_profile[:, 20, :]) / np.nanmean(sigma_normal[:, :, 0:20, :])
+    sigma_normal_x_profile_increase = (sigma_normal_x_profile[:, 32, :] - sigma_normal_x_profile[:, 20, :])
+
+    # replace 0 with NaN to not mess up smoothing
+    sigma_normal_x_profile_increase[sigma_normal_x_profile_increase == 0] = 'nan'
+
+    # find position at which stress attenuates through sigmoid fit
+    def find_stress_attenuation_position(stresscurve):
+        def sigmoid(x, amp, x0, l0, offset):
+            return amp / (1 + np.exp((x - x0) / l0)) + offset
+        l0_all = np.zeros(stresscurve.shape[1])
+        x0_all = np.zeros(stresscurve.shape[1])
+        for c in range(stresscurve.shape[1]):
+            x = np.linspace(-40, 40, stresscurve.shape[0]) #  in µm
+            y_current = stresscurve[:, c]
+            x1 = np.delete(x, np.argwhere(np.isnan(y_current)))
+            y1 = np.delete(y_current, np.argwhere(np.isnan(y_current)))
+
+            gmodel = Model(sigmoid)
+            result = gmodel.fit(y1, x=x1, amp=1e-3, x0=0, l0=1, offset=0)
+
+            l0_all[c] = result.params.valuesdict()['l0']
+            x0_all[c] = result.params.valuesdict()['x0']
+        return l0_all, x0_all
+
+    attenuation_length, attenuation_position = find_stress_attenuation_position(sigma_normal_x_profile_increase)
 
     data = {"sigma_xx": sigma_xx, "sigma_yy": sigma_yy, "sigma_normal": sigma_normal,
             "sigma_xx_average": sigma_xx_average, "sigma_yy_average": sigma_yy_average,
@@ -187,17 +226,17 @@ def analyse_msm_data(folder):
             "sigma_yy_left_average": sigma_yy_left_average,
             "sigma_xx_right_average": sigma_xx_right_average,
             "sigma_yy_right_average": sigma_yy_right_average,
-            "sigma_xx_baseline": sigma_xx_baseline, "sigma_yy_baseline": sigma_yy_baseline, 
+            "sigma_xx_baseline": sigma_xx_baseline, "sigma_yy_baseline": sigma_yy_baseline,
             "sigma_normal_x_profile_baseline": sigma_normal_x_profile_baseline,
             "relsigma_xx": relsigma_xx, "relsigma_yy": relsigma_yy,
-            "relsigma_xx_left": relsigma_xx_left,
-            "relsigma_yy_left": relsigma_yy_left,
-            "relsigma_xx_right": relsigma_xx_right,
-            "relsigma_yy_right": relsigma_yy_right,
+            "relsigma_xx_left": relsigma_xx_left, "relsigma_yy_left": relsigma_yy_left, "relsigma_normal_left": relsigma_normal_left,
+            "relsigma_xx_right": relsigma_xx_right, "relsigma_yy_right": relsigma_yy_right, "relsigma_normal_right": relsigma_normal_right,
             "AIC_baseline": AIC_baseline, "AIC": AIC,
             "RSI_xx": RSI_xx, "RSI_xx_left": RSI_xx_left, "RSI_xx_right": RSI_xx_right,
             "RSI_yy": RSI_yy, "RSI_yy_left": RSI_yy_left, "RSI_yy_right": RSI_yy_right,
-            "relsigma_normal_x_profile_increase": relsigma_normal_x_profile_increase}
+            "RSI_normal": RSI_normal, "RSI_normal_left": RSI_normal_left, "RSI_normal_right": RSI_normal_right,
+            "sigma_normal_x_profile_increase": sigma_normal_x_profile_increase,
+            "attenuation_length": attenuation_length, "attenuation_position": attenuation_position}
     return data
 
 
@@ -274,8 +313,10 @@ def analyse_shape_data(folder, stressmappixelsize):
     actin_intensity_right = np.load(folder + "/actin_intensity_right.npy")
 
     # normalize actin intensities by first substracting the baseline for each cell and then dividing by the average baseline
-    relactin_intensity_left = (actin_intensity_left - np.nanmean(actin_intensity_left[0:20, :], axis=0)) / np.nanmean(actin_intensity_left[0:20, :], axis=(0, 1))
-    relactin_intensity_right = (actin_intensity_right - np.nanmean(actin_intensity_right[0:20, :], axis=0))  / np.nanmean(actin_intensity_right[0:20, :], axis=(0, 1))
+    relactin_intensity_left = (actin_intensity_left - np.nanmean(actin_intensity_left[0:20, :], axis=0)) / np.nanmean(
+        actin_intensity_left[0:20, :], axis=(0, 1))
+    relactin_intensity_right = (actin_intensity_right - np.nanmean(actin_intensity_right[0:20, :], axis=0)) / np.nanmean(
+        actin_intensity_right[0:20, :], axis=(0, 1))
 
     RAI_left = relactin_intensity_left[32, :] - relactin_intensity_left[20, :]
     RAI_right = relactin_intensity_right[32, :] - relactin_intensity_right[20, :]

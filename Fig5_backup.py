@@ -320,7 +320,7 @@ ylabel = None  # which label to put on y-axis
 title = 'Spreading size'  # title of plot
 
 # make plots
-make_four_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for second panel
 #######################################################################################################
@@ -335,7 +335,7 @@ ylabel = None  # which label to put on y-axis
 title = 'Strain energy'  # title of plot
 
 # make plots
-make_four_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for third panel
 #######################################################################################################
@@ -350,7 +350,7 @@ ylabel = None  # which label to put on y-axis
 title = 'xx-Stress'  # title of plot
 
 # make plots
-make_four_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for fourth panel
 #######################################################################################################
@@ -365,7 +365,7 @@ ylabel = None  # which label to put on y-axis
 title = 'yy-Stress'  # title of plot
 
 # make plots
-make_four_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for fifth panel
 #######################################################################################################
@@ -380,7 +380,7 @@ ylabel = None  # which label to put on y-axis
 title = 'AIC'  # title of plot
 
 # make plots
-make_four_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for sixth panel
 #######################################################################################################
@@ -753,7 +753,7 @@ ylabel = None  # which label to put on y-axis
 title = None  # title of plot
 
 # make plots
-make_four_box_and_swarmplots(x, y, df1to2d, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots(x, y, df1to2d, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for eighth panel
 #######################################################################################################
@@ -768,7 +768,7 @@ ylabel = None  # which label to put on y-axis
 title = None  # title of plot
 
 # make plots
-make_four_box_and_swarmplots(x, y, df1to1d, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots(x, y, df1to1d, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 # Set up plot parameters for ninth panel
 #######################################################################################################
@@ -780,7 +780,7 @@ ylabel = None  # which label to put on y-axis
 title = None  # title of plot
 
 # make plots
-make_four_box_and_swarmplots(x, y, df2to1d, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots(x, y, df2to1d, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
 
 # write title for panels 1 to 4
 plt.text(-11.8, 2.2, 'Relative stresses, local activation', fontsize=10)

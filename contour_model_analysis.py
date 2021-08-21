@@ -13,12 +13,12 @@ import pickle
 import matplotlib.pyplot as plt
 import math
 
-''' Main Analysis Script for TFM-Opto Experiment for Cells on H-shaped Micropattern (Artur Ruppel, Dennis Wörthmüller)
+''' Main contour model analysis script for TFM-Opto experiments for cells on H-shaped Micropattern (Artur Ruppel, Dennis Wörthmüller)
 
     Copyright: Dennis Wörthmüller, Artur Ruppel
     Date: April 29, 2021  
 
-    External python modules which are necessary: numpy, pandas scipy, lmfit
+    External python modules which are necessary: numpy, pandas scipy, lmfit, pickle, math
 
 '''
 

@@ -7,8 +7,9 @@ from scipy.stats import pearsonr
 from sklearn.linear_model import LinearRegression
 
 
-def make_two_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors,
-                                linewidth_bp=0.7, width_bp=0.3, dotsize=1.8, linewidth_sw=0.3, alpha_sw=1, alpha_bp=0.8, ylabeloffset=1, titleoffset=3.5, test='Mann-Whitney'):
+def make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors,
+                                linewidth_bp=0.7, width_bp=0.3, dotsize=1.8, linewidth_sw=0.3, alpha_sw=1, alpha_bp=0.8, ylabeloffset=1,
+                                titleoffset=3.5, test='Mann-Whitney'):
     sns.set_palette(sns.color_palette(colors))  # sets colors
     # create box- and swarmplots
     sns.swarmplot(x=x, y=y, data=df, ax=ax, alpha=alpha_sw, linewidth=linewidth_sw, zorder=0, size=dotsize)
@@ -19,7 +20,7 @@ def make_two_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, stat_annotatio
                                 "markersize": "3", "markeredgewidth": "0.5"})
 
     statannot.add_stat_annotation(bp, data=df, x=x, y=y, box_pairs=box_pairs,
-                                  line_offset_to_box=stat_annotation_offset, test=test, text_format='star', loc='inside', verbose=2)
+                                  line_offset_to_box=stat_annotation_offset, test=test, comparisons_correction=None, text_format='star', loc='inside', verbose=3)
 
     # make boxplots transparent
     for patch in bp.artists:
@@ -47,7 +48,9 @@ def make_two_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, stat_annotatio
     ax.set_ylim(ymin=ymin)
     ax.set_ylim(ymax=ymax)
 
-def make_four_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors, linewidth_bp=0.7, width_bp=0.5,
+
+
+def make_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors, linewidth_bp=0.7, width_bp=0.5,
                                  dotsize=1.3, linewidth_sw=0.3, alpha_sw=1, alpha_bp=0.8, ylabeloffset=1, titleoffset=3.5):
     sns.set_palette(sns.color_palette(colors))  # sets colors
     # create box- and swarmplots
@@ -84,6 +87,8 @@ def make_four_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, 
     ax.set_ylim(ymin=ymin)
     ax.set_ylim(ymax=ymax)
 
+    return bp
+
 def plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors,
                              titleoffset=3.5, optolinewidth=0.1, xlabeloffset=1, ylabeloffset=1, xmax=False):
     y_mean = np.nanmean(y, axis=1)
@@ -110,8 +115,8 @@ def plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, t
     # set limits
     ax.set_ylim(ymin=ymin, ymax=ymax)
     ax.set_xlim(xmin=min(x))
-    if xmax==False:
-        ax.set_xlim(xmax=max(x)+1e-1)
+    if xmax == False:
+        ax.set_xlim(xmax=max(x) + 1e-1)
     else:
         ax.set_xlim(xmax=xmax + 1e-1)
     try:
@@ -121,8 +126,9 @@ def plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, t
     except:
         return
 
+
 def plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors,
-                             titleoffset=3.5, optolinewidth=0.1, xlabeloffset=1, ylabeloffset=1):
+                              titleoffset=3.5, optolinewidth=0.1, xlabeloffset=1, ylabeloffset=1):
     y1_mean = np.nanmean(y1, axis=1)
     y1_std = np.nanstd(y1, axis=1)
     y1_sem = y1_std / np.sqrt(np.shape(y1)[1])
@@ -158,7 +164,6 @@ def plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, yla
     ax.set_ylim(ymin=ymin, ymax=ymax)
 
 
-
 def plot_actin_image_forces_ellipses_tracking_tangents(actin_image, x, y, Tx, Ty, T, a_top, b_top, a_bottom, b_bottom,
                                                        tx_topleft, ty_topleft, tx_topright, ty_topright, tx_bottomleft, ty_bottomleft,
                                                        tx_bottomright, ty_bottomright,
@@ -186,9 +191,9 @@ def plot_actin_image_forces_ellipses_tracking_tangents(actin_image, x, y, Tx, Ty
 
     # plot tracking data
     ax.plot(x_tracking_top[::2], y_tracking_top[::2],
-             color=colors[1], marker='o', markerfacecolor='none', markersize=4, markeredgewidth=1, linestyle='none')
+            color=colors[1], marker='o', markerfacecolor='none', markersize=4, markeredgewidth=1, linestyle='none')
     ax.plot(x_tracking_bottom[::2], y_tracking_bottom[::2],
-             color=colors[1], marker='o', markerfacecolor='none', markersize=4, markeredgewidth=1, linestyle='none')
+            color=colors[1], marker='o', markerfacecolor='none', markersize=4, markeredgewidth=1, linestyle='none')
 
     # plot tangents
     ax.plot([xc_topleft, xc_topleft + 150 * tx_topleft], [yc_topleft, yc_topleft + 150 * ty_topleft],
@@ -207,8 +212,9 @@ def plot_actin_image_forces_ellipses_tracking_tangents(actin_image, x, y, Tx, Ty
 
     return sm
 
+
 def make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors,
-                                   dotsize=1.8, linewidth_sw=0.3, alpha_sw=1, ylabeloffset=1, xlabeloffset=0, titleoffset=3.5):
+                               dotsize=1.8, linewidth_sw=0.3, alpha_sw=1, ylabeloffset=1, xlabeloffset=0, titleoffset=3.5):
     # set colors
     sns.set_palette(sns.color_palette(colors))
     sns.scatterplot(data=df, x=x, y=y, hue=hue, style=hue, ax=ax, alpha=alpha_sw, linewidth=linewidth_sw, size=dotsize)
@@ -242,7 +248,8 @@ def make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks
 
     return corr, p
 
-def create_filter(data, threshold):
+
+def create_baseline_filter(data, threshold):
     # initialize variables
     if np.ndim(data) < 3:
         data = data[..., np.newaxis]
@@ -260,31 +267,41 @@ def create_filter(data, threshold):
     return np.all(baselinefilter_all, axis=0).reshape(-1)
 
 
-def apply_filter(data, baselinefilter):
+def create_opto_increase_filter(data, threshold):
+    opto_increase_filter = data > threshold
+
+    if data.ndim > 1:
+        # all vectors are combined to one through elementwise logical AND operation
+        return np.all(opto_increase_filter, axis=1).reshape(-1)
+    else:
+        return opto_increase_filter
+
+
+def apply_filter(data, filter):
     for key in data:
         shape = data[key].shape
 
         # find the new number of cells to find the new shape of data after filtering
-        new_N = np.sum(baselinefilter)
+        new_N = np.sum(filter)
 
         # to filter data of different dimensions, we first have to copy the filter vector into an array of the same shape as the data. We also create a variable with the new shape of the data
         if data[key].ndim == 1:
-            baselinefilter_resized = baselinefilter
+            filter_resized = filter
             newshape = [new_N]
-            data[key] = data[key][baselinefilter_resized].reshape(newshape)
+            data[key] = data[key][filter_resized].reshape(newshape)
         elif data[key].ndim == 2:
-            baselinefilter_resized = np.expand_dims(baselinefilter, axis=0).repeat(shape[0], 0)
+            filter_resized = np.expand_dims(filter, axis=0).repeat(shape[0], 0)
             newshape = [shape[0], new_N]
-            data[key] = data[key][baselinefilter_resized].reshape(newshape)
+            data[key] = data[key][filter_resized].reshape(newshape)
         elif data[key].ndim == 3:
-            baselinefilter_resized = np.expand_dims(baselinefilter, axis=(0, 1)).repeat(shape[0], 0).repeat(shape[1], 1)
+            filter_resized = np.expand_dims(filter, axis=(0, 1)).repeat(shape[0], 0).repeat(shape[1], 1)
             newshape = [shape[0], shape[1], new_N]
-            data[key] = data[key][baselinefilter_resized].reshape(newshape)
+            data[key] = data[key][filter_resized].reshape(newshape)
         elif data[key].ndim == 4:
-            baselinefilter_resized = np.expand_dims(baselinefilter, axis=(0, 1, 2)).repeat(shape[0], 0).repeat(shape[1], 1).repeat(shape[2],
+            filter_resized = np.expand_dims(filter, axis=(0, 1, 2)).repeat(shape[0], 0).repeat(shape[1], 1).repeat(shape[2],
                                                                                                                                    2)
             newshape = [shape[0], shape[1], shape[2], new_N]
-            data[key] = data[key][baselinefilter_resized].reshape(newshape)
+            data[key] = data[key][filter_resized].reshape(newshape)
         else:
             print('Nothing filtered, shape of array not supported')
 
