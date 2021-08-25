@@ -56,6 +56,8 @@ concatenated_data = {}
 
 # loop over all keys for contour model analysis data
 for key1 in AR1to1d_fullstim_long_CM:
+    if key1 == "ellipse_data_approx":
+        continue
     for key2 in AR1to1d_fullstim_long_CM[key1]:
         if AR1to1d_fullstim_long_CM[key1][key2].ndim == 1:  # only 1D data can be stored in the data frame
 
@@ -101,6 +103,7 @@ df = pd.DataFrame(concatenated_data)
 # convert to more convenient units for plotting
 df['Es_baseline'] *= 1e12  # convert to fJ
 df['spreadingsize_baseline'] *= 1e12  # convert to µm²
+df['sigma_x_baseline'] *= 1e3  # convert to mN/m
 df['sigma_xx_baseline'] *= 1e3  # convert to mN/m
 df['sigma_yy_baseline'] *= 1e3  # convert to mN/m
 # %% load and prepare data for figure 2C, actin images, forces, ellipses and tangents

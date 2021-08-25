@@ -49,14 +49,14 @@ AR1to1d_halfstim =        pickle.load(open(folder + "analysed_data/AR1to1d_halfs
 AR1to1s_halfstim =        pickle.load(open(folder + "analysed_data/AR1to1s_halfstim.dat", "rb"))
 AR2to1d_halfstim =        pickle.load(open(folder + "analysed_data/AR2to1d_halfstim.dat", "rb"))
 
-AR1to1d_fullstim_long_CM =   pickle.load(open(folder + "analysed_data/AR1to1d_fullstim_long_CM_data.dat", "rb"))
-AR1to1s_fullstim_long_CM =   pickle.load(open(folder + "analysed_data/AR1to1s_fullstim_long_CM_data.dat", "rb"))
-AR1to1d_fullstim_short_CM =  pickle.load(open(folder + "analysed_data/AR1to1d_fullstim_short_CM_data.dat", "rb"))
-AR1to1s_fullstim_short_CM =  pickle.load(open(folder + "analysed_data/AR1to1s_fullstim_short_CM_data.dat", "rb"))
-AR1to2d_halfstim_CM =        pickle.load(open(folder + "analysed_data/AR1to2d_halfstim_CM_data.dat", "rb"))
-AR1to1d_halfstim_CM =        pickle.load(open(folder + "analysed_data/AR1to1d_halfstim_CM_data.dat", "rb"))
-AR1to1s_halfstim_CM =        pickle.load(open(folder + "analysed_data/AR1to1s_halfstim_CM_data.dat", "rb"))
-AR2to1d_halfstim_CM =        pickle.load(open(folder + "analysed_data/AR2to1d_halfstim_CM_data.dat", "rb"))
+AR1to1d_fullstim_long_CM =   pickle.load(open(folder + "analysed_data/AR1to1d_fullstim_long_CM.dat", "rb"))
+AR1to1s_fullstim_long_CM =   pickle.load(open(folder + "analysed_data/AR1to1s_fullstim_long_CM.dat", "rb"))
+AR1to1d_fullstim_short_CM =  pickle.load(open(folder + "analysed_data/AR1to1d_fullstim_short_CM.dat", "rb"))
+AR1to1s_fullstim_short_CM =  pickle.load(open(folder + "analysed_data/AR1to1s_fullstim_short_CM.dat", "rb"))
+AR1to2d_halfstim_CM =        pickle.load(open(folder + "analysed_data/AR1to2d_halfstim_CM.dat", "rb"))
+AR1to1d_halfstim_CM =        pickle.load(open(folder + "analysed_data/AR1to1d_halfstim_CM.dat", "rb"))
+AR1to1s_halfstim_CM =        pickle.load(open(folder + "analysed_data/AR1to1s_halfstim_CM.dat", "rb"))
+AR2to1d_halfstim_CM =        pickle.load(open(folder + "analysed_data/AR2to1d_halfstim_CM.dat", "rb"))
 
 
 colors_parent = ['#026473','#E3CC69','#77C8A6','#D96248'];
@@ -241,7 +241,7 @@ fig_ax.set_ylim(ymin=ymin)
 fig_ax.set_ylim(ymax=ymax)
 
 plt.savefig(folder+'fig_std.png', dpi=300, bbox_inches="tight")
-
+plt.show()
 # ##############################################################################
 # #Generate second panel
 # ##############################################################################

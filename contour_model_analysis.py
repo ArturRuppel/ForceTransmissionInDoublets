@@ -335,10 +335,10 @@ def main_TEM_circles(R_upper, R_lower, tx_top_left, ty_top_left, tx_top_right, t
 def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
                         R_upper, R_lower,
                         xc_upper, yc_upper, xc_lower, yc_lower,
-                        tx_top_left, ty_top_left, tx_top_right, ty_top_right,
-                        tx_bottom_right, ty_bottom_right, tx_bottom_left, ty_bottom_left,
+                        ty_top_left, ty_top_right,
+                        ty_bottom_right, ty_bottom_left,
                         landa_top_left, landa_top_right, landa_bottom_left, landa_bottom_right,
-                        sigma_x, pixelsize, folder):
+                        sigma_x_all, pixelsize, folder):
     '''Description'''
 
     def return_results(sigma_y, landa, phi, sigma_x, R, xc, yc, arc='top'):
@@ -366,10 +366,7 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
 
         return a, b, sigma_isotrop, sigma_anisotrop_x, sigma_anisotrop_y, xc_ellipse, yc_ellipse
 
-    def estimate_ellipse_approx_std(x_top, x_bottom, y_top, y_bottom,
-                                    R_upper, R_lower, xc_upper, yc_upper, xc_lower, yc_lower,
-                                    a_top, b_top, xc_top, yc_top, a_bottom, b_bottom, xc_bottom, yc_bottom,
-                                    pixelsize):
+    def estimate_ellipse_approx_std(x_top, x_bottom, y_top, y_bottom, a_top, b_top, xc_top, yc_top, a_bottom, b_bottom, xc_bottom, yc_bottom):
 
         a_u = a_top
         b_u = b_top
@@ -379,7 +376,7 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
 
         std_u_list = []
         std_l_list = []
-        for frame in range(R_upper.shape[0]):
+        for frame in range(a_top.shape[0]):
             # first read in tracks for each frame
             # first index gives position and second index gives frame/time
             x_top_track = x_top[:, frame]
@@ -393,24 +390,15 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
             dist_container_u = []
             dist_container_l = []
 
-            dist_container_circle_u = []
-            dist_container_circle_l = []
-            # print("No of tracking points ", len(x_top_track), frame)
-            # print("No of tracking points ", len(x_bottom_track), frame)
             for j in range(len(x_top_track)):
-                # dist_u = estimate_distance(x_top_track[j], y_top_track[j], a_u[frame], b_u[frame], xc_top[frame], yc_top[frame], angle=0)
-                # dist_circle_u = ((xc_upper[frame]-x_top_track[j])**2 +(yc_upper[frame]-y_top_track[j])**2)**0.5 - R_upper[frame]
 
-                dist_u = estimate_distance_new(a_u[frame], b_u[frame], (x_top_track[j] - xc_top[frame], y_top_track[j] - yc_top[frame]))
+                dist_u = estimate_distance(a_u[frame], b_u[frame], (x_top_track[j] - xc_top[frame], y_top_track[j] - yc_top[frame]))
                 # store squared distance
                 dist_container_u.append(dist_u ** 2)
-                # dist_container_circle_u.append(dist_circle_u**2)
 
             for j in range(len(x_bottom_track)):
-                # dist_l = estimate_distance(x_bottom_track[j], y_bottom_track[j], a_l[frame], b_l[frame], xc_bottom[frame], yc_bottom[frame], angle=0)
-                # dist_circle_l = ((xc_lower[frame]-x_bottom_track[j])**2 + (yc_lower[frame]-y_bottom_track[j])**2)**0.5 - R_lower[frame]
 
-                dist_l = estimate_distance_new(a_l[frame], b_l[frame],
+                dist_l = estimate_distance(a_l[frame], b_l[frame],
                                                (x_bottom_track[j] - xc_bottom[frame], y_bottom_track[j] - yc_bottom[frame]))
                 # store squared distance
                 dist_container_l.append(dist_l ** 2)
@@ -425,40 +413,7 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
 
         return std_u_list, std_l_list
 
-    def ellipe_tan_dot(rx, ry, px, py, theta):
-        '''Dot product of the equation of the line formed by the point
-           with another point on the ellipse's boundary and the tangent of the ellipse
-           at that point on the boundary.
-        '''
-        return ((rx ** 2 - ry ** 2) * np.cos(theta) * np.sin(theta) - px * rx * np.sin(theta) + py * ry * np.cos(theta))
-
-    def ellipe_tan_dot_derivative(rx, ry, px, py, theta):
-        '''derivative of ellipe_tan_dot.
-        '''
-        return ((rx ** 2 - ry ** 2) * (np.cos(theta) ** 2 - np.sin(theta) ** 2) - px * rx * np.cos(theta) - py * ry * np.sin(theta))
-
-    # def estimate_distance(x, y, rx, ry, x0=0, y0=0, angle=0, error=1e-5):
-    #     '''Given a point (x, y), and an ellipse with major - minor axis (rx, ry),
-    #        its center at (x0, y0), and with a counter clockwise rotation of
-    #        `angle` degrees, will return the distance between the ellipse and the
-    #        closest point on the ellipses boundary.
-    #     '''
-    #     x -= x0
-    #     y -= y0
-    #     if angle:
-    #         # rotate the points onto an ellipse whose rx, and ry lay on the x, y
-    #         # axis
-    #         angle = -np.pi / 180. * angle
-    #         x, y = x * np.cos(angle) - y * np.sin(angle), x * np.sin(angle) + y * np.cos(angle)
-
-    #     theta = np.arctan2(rx * y, ry * x)
-    #     while np.absolute(ellipe_tan_dot(rx, ry, x, y, theta)) > error:
-    #         theta -= ellipe_tan_dot(rx, ry, x, y, theta) / ellipe_tan_dot_derivative(rx, ry, x, y, theta)
-
-    #     px, py = rx * np.cos(theta), ry * np.sin(theta)
-    #     return ((x - px) ** 2 + (y - py) ** 2) ** .5
-
-    def estimate_distance_new(semi_major, semi_minor, p):
+    def estimate_distance(semi_major, semi_minor, p):
         '''Given a point p, and an ellipse with major - minor axis (semi_major, semi_minor),
         will return the distance between the ellipse and the
         closest point on the ellipses boundary. code was taken from https://wet-robots.ghost.io/simple-method-for-distance-to-ellipse/
@@ -543,9 +498,6 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
             ty_bl = np.absolute(ty_bottom_left[frame, c])
             ty_br = np.absolute(ty_bottom_right[frame, c])
 
-            ty_top = (ty_tl + ty_tr) / 2
-            ty_bottom = (ty_bl + ty_br) / 2
-
             phi_tl = np.arcsin(ty_tl)
             phi_tr = np.arcsin(ty_tr)
             phi_bl = np.arcsin(ty_bl)
@@ -562,21 +514,18 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
             landa_top = (landa_tl + landa_tr) / 2
             landa_bottom = (landa_bl + landa_br) / 2
 
-            sigma_x_av = sigma_x[frame, c]
+            sigma_x_av = sigma_x_all[frame, c]
 
             def k_top(x, sigma_y):
                 phi = phi_top
                 landa = landa_top  # N
                 sigma_x = sigma_x_av  # N/m
-                # print("phi ", phi)
-                # print("landa ", landa)
-                # print("sigma_x ", sigma_x)
+
                 b_square = (landa / sigma_x) ** 2 * (1 + (sigma_x / sigma_y) * np.tan(phi) ** 2) / (1 + np.tan(phi) ** 2)
                 a_square = (landa) ** 2 / (sigma_x * sigma_y) * (1 + (sigma_x / sigma_y) * np.tan(phi) ** 2) / (1 + np.tan(phi) ** 2)
                 a = np.sqrt(a_square)
                 b = np.sqrt(b_square)
-                # print("a ", a)
-                # print("b ", b)
+
                 # returns the curvature over x range
                 return a * b / (a ** 2 * np.sin(x) ** 2 + b ** 2 * np.cos(x) ** 2) ** (3 / 2)
 
@@ -588,8 +537,7 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
                 a_square = (landa) ** 2 / (sigma_x * sigma_y) * (1 + (sigma_x / sigma_y) * np.tan(phi) ** 2) / (1 + np.tan(phi) ** 2)
                 a = np.sqrt(a_square)
                 b = np.sqrt(b_square)
-                # print("a ", a)
-                # print("b ",b)
+
                 # returns the curvature over x range
                 return a * b / (a ** 2 * np.sin(x) ** 2 + b ** 2 * np.cos(x) ** 2) ** (3 / 2)
 
@@ -602,23 +550,13 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
             params_top = model_top.make_params(sigma_y=landa_top / R_u)
             params_bottom = model_bottom.make_params(sigma_y=landa_bottom / R_l)
 
-            # print(model_top.param_names, model_top.independent_vars)
-
-            # params.add(name="factor", min=0.0, max=1)
-            # model.print_param_hints(colwidth=8)
-
             # perform the fit
             result_top = model_top.fit(curvature_u, params_top, x=x, method='leastsq')
             result_bottom = model_bottom.fit(curvature_l, params_bottom, x=x, method='leastsq')
 
-            # print(result.fit_report())
             sigma_y_top = result_top.params['sigma_y'].value
-            a_top, b_top, sigma_isotrop_top, sigma_anisotrop_x_top, sigma_anisotrop_y_top, xc_top, yc_top = return_results(sigma_y_top,
-                                                                                                                           landa_top,
-                                                                                                                           phi_top,
-                                                                                                                           sigma_x_av, R_u,
-                                                                                                                           xc_u, yc_u,
-                                                                                                                           arc='top')
+            a_top, b_top, sigma_isotrop_top, sigma_anisotrop_x_top, sigma_anisotrop_y_top, xc_top, yc_top = \
+                return_results(sigma_y_top, landa_top, phi_top, sigma_x_av, R_u, xc_u, yc_u, arc='top')
 
             sigma_y_bottom = result_bottom.params['sigma_y'].value
             a_bottom, b_bottom, sigma_isotrop_bottom, sigma_anisotrop_x_bottom, sigma_anisotrop_y_bottom, xc_bottom, yc_bottom = return_results(
@@ -665,11 +603,8 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
 
         # estimate std for each cell
         std_t, std_b = estimate_ellipse_approx_std(x_data_top, x_data_bottom, y_data_top, y_data_bottom,
-                                                   R_upper[:, c], R_lower[:, c], xc_upper[:, c], yc_upper[:, c], xc_lower[:, c],
-                                                   yc_lower[:, c],
                                                    a_top_all[:, c], b_top_all[:, c], xc_top_all[:, c], yc_top_all[:, c],
-                                                   a_bottom_all[:, c], b_bottom_all[:, c], xc_bottom_all[:, c], yc_bottom_all[:, c],
-                                                   pixelsize)
+                                                   a_bottom_all[:, c], b_bottom_all[:, c], xc_bottom_all[:, c], yc_bottom_all[:, c])
         std_top_all[:, c] = std_t
         std_bottom_all[:, c] = std_b
 
@@ -677,7 +612,7 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
     std = (std_bottom_all + std_bottom_all) / 2
     std_baseline = np.nanmean(std[0:20, :], axis=0)
 
-    data_dict = {'sigma x [nN/µm]': sigma_x,
+    data_dict = {'sigma x [nN/µm]': sigma_x_all,
                  'sigma y top [nN/µm]': sigma_y_top_all,
                  'a top [µm]': a_top_all,
                  'b top [µm]': b_top_all,
@@ -702,18 +637,11 @@ def main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
 # Input files needed, tangents (n).csv, sigma_contribution.mat,TEM_circles (n).csv,ellipse_approx (n).csv, Output ellipse_data_fit (n).csv
 
 def main_ellipse_fit(R_upper_all, R_lower_all, XC_upper_all, YC_upper_all, XC_lower_all, YC_lower_all,
-                     tx_top_left_all, ty_top_left_all,
-                     tx_top_right_all, ty_top_right_all,
-                     tx_bottom_right_all, ty_bottom_right_all,
-                     tx_bottom_left_all, ty_bottom_left_all,
-                     sigma_x_all,
-                     landa_top_left_all, landa_top_right_all, landa_bottom_left_all, landa_bottom_right_all,
-                     x_data_bottom_all, y_data_bottom_all, x_data_top_all, y_data_top_all,
-                     a_top_approx_all, b_top_approx_all, xc_top_approx_all, yc_top_approx_all,
-                     a_bottom_approx_all, b_bottom_approx_all, xc_bottom_approx_all, yc_bottom_approx_all,
-                     sigma_y_all, folder):
+                     ty_top_left_all, ty_top_right_all, ty_bottom_right_all, ty_bottom_left_all,
+                     sigma_x_all, landa_top_left_all, landa_top_right_all, landa_bottom_left_all, landa_bottom_right_all,
+                     x_data_bottom_all, y_data_bottom_all, x_data_top_all, y_data_top_all, xc_top_approx_all, yc_top_approx_all,
+                     xc_bottom_approx_all, yc_bottom_approx_all, sigma_y_all, folder):
     def estimate_ellipse_fit_std(x_data_top, y_data_top, x_data_bottom, y_data_bottom,
-                                 R_upper, R_lower, xc_upper, yc_upper, xc_lower, yc_lower,
                                  a_top, b_top, xc_top, yc_top, a_bottom, b_bottom, xc_bottom, yc_bottom,
                                  pixelsize):
 
@@ -725,7 +653,7 @@ def main_ellipse_fit(R_upper_all, R_lower_all, XC_upper_all, YC_upper_all, XC_lo
 
         std_u_list = []
         std_l_list = []
-        for frame in range(R_upper.shape[0]):
+        for frame in range(len(a_top)):
             # first read in tracks for each frame
             # first index gives position and second index gives frame/time
             x_top_track = x_data_top[:, frame] * pixelsize
@@ -739,31 +667,18 @@ def main_ellipse_fit(R_upper_all, R_lower_all, XC_upper_all, YC_upper_all, XC_lo
             dist_container_u = []
             dist_container_l = []
 
-            # dist_container_circle_u = []
-            # dist_container_circle_l = []
-            # print("No of tracking points ", len(x_top_track), frame)
-            # print("No of tracking points ", len(x_bottom_track), frame)
             for j in range(len(x_top_track)):
-                # dist_u = estimate_distance(
-                #     x_top_track[j], y_top_track[j], a_u[frame], b_u[frame], xc_top[frame], yc_top[frame], angle=0)
-                dist_u = estimate_distance_new(a_u[frame], b_u[frame], (x_top_track[j] - xc_top[frame], y_top_track[j] - yc_top[frame]))
-                # dist_circle_u = ((xc_upper[frame]-x_top_track[j])**2 + (
-                #     yc_upper[frame]-y_top_track[j])**2)**0.5 - R_upper[frame]
+                dist_u = estimate_distance(a_u[frame], b_u[frame], (x_top_track[j] - xc_top[frame], y_top_track[j] - yc_top[frame]))
+
                 # store squared distance
                 dist_container_u.append(dist_u ** 2)
-                # dist_container_circle_u.append(dist_circle_u**2)
 
             for j in range(len(x_bottom_track)):
-                # dist_l = estimate_distance(
-                #     x_bottom_track[j], y_bottom_track[j], a_l[frame], b_l[frame], xc_bottom[frame], yc_bottom[frame], angle=0)
-                dist_l = estimate_distance_new(a_l[frame], b_l[frame],
+                dist_l = estimate_distance(a_l[frame], b_l[frame],
                                                (x_bottom_track[j] - xc_bottom[frame], y_bottom_track[j] - yc_bottom[frame]))
-                # dist_circle_l = ((xc_lower[frame]-x_bottom_track[j])**2 + (
-                #     yc_lower[frame]-y_bottom_track[j])**2)**0.5 - R_lower[frame]
 
                 # store squared distance
                 dist_container_l.append(dist_l ** 2)
-                # dist_container_circle_l.append(dist_circle_l**2)
 
                 std_u = np.sqrt(np.sum(dist_container_u) / len(dist_container_u))
                 std_l = np.sqrt(np.sum(dist_container_l) / len(dist_container_l))
@@ -774,78 +689,7 @@ def main_ellipse_fit(R_upper_all, R_lower_all, XC_upper_all, YC_upper_all, XC_lo
 
         return std_u_list, std_l_list
 
-    def ellipe_tan_dot(rx, ry, px, py, theta):
-        # Dot product of the equation of the line formed by the point
-        # with another point on the ellipse's boundary and the tangent of the ellipse
-        # at that point on the boundary.
-
-        return ((rx ** 2 - ry ** 2) * np.cos(theta) * np.sin(theta) - px * rx * np.sin(theta) + py * ry * np.cos(theta))
-
-    def ellipe_tan_dot_derivative(rx, ry, px, py, theta):
-        # derivative of ellipse_tan_dot.
-
-        return ((rx ** 2 - ry ** 2) * (np.cos(theta) ** 2 - np.sin(theta) ** 2) - px * rx * np.cos(theta) - py * ry * np.sin(theta))
-
-    # def estimate_distance(x, y, rx, ry, x0=0, y0=0, angle=0, error=1e-5):
-    #     # '''Given a point (x, y), and an ellipse with major - minor axis (rx, ry),
-    #     #    its center at (x0, y0), and with a counter clockwise rotation of
-    #     #    `angle` degrees, will return the distance between the ellipse and the
-    #     #    closest point on the ellipses boundary.
-    #     # '''
-    #     x -= x0
-    #     y -= y0
-    #     if angle:
-    #         # rotate the points onto an ellipse whose rx, and ry lay on the x, y
-    #         # axis
-    #         angle = -np.pi / 180. * angle
-    #         x, y = x * np.cos(angle) - y * np.sin(angle), x * \
-    #             np.sin(angle) + y * np.cos(angle)
-
-    #     theta = np.arctan2(rx * y, ry * x)
-    #     while np.absolute(ellipe_tan_dot(rx, ry, x, y, theta)) > error:
-    #         theta -= ellipe_tan_dot(rx, ry, x, y, theta) / \
-    #             ellipe_tan_dot_derivative(rx, ry, x, y, theta)
-
-    #     px, py = rx * np.cos(theta), ry * np.sin(theta)
-    #     return ((x - px) ** 2 + (y - py) ** 2) ** .5
-
-    # # this function has a time out included to not get stucked in the while loop
-    # def estimate_distance_with_timeout(x, y, rx, ry, x0=0, y0=0, angle=0, error=1e-5):
-    #     '''Given a point (x, y), and an ellipse with major - minor axis (rx, ry),
-    #     its center at (x0, y0), and with a counter clockwise rotation of
-    #     `angle` degrees, will return the distance between the ellipse and the
-    #     closest point on the ellipses boundary.
-    #     '''
-    #     # timeout = time.time() + 20*1
-    #     timeout = time.time() + 2*1
-    #     x -= x0
-    #     y -= y0
-    #     if angle:
-    #         # rotate the points onto an ellipse whose rx, and ry lay on the x, y
-    #         # axis
-    #         angle = -np.pi / 180. * angle
-    #         x, y = x * np.cos(angle) - y * np.sin(angle), x * \
-    #             np.sin(angle) + y * np.cos(angle)
-
-    #     theta = np.arctan2(rx * y, ry * x)
-    #     while np.absolute(ellipe_tan_dot(rx, ry, x, y, theta)) > error:
-    #         theta -= ellipe_tan_dot(
-    #             rx, ry, x, y, theta) / \
-    #             ellipe_tan_dot_derivative(rx, ry, x, y, theta)
-    #         if time.time() > timeout:
-    #             break
-
-    #     px, py = rx * np.cos(theta), ry * np.sin(theta)
-    #     t_out_reached = False
-    #     if True: #time.time() < timeout:
-    #         dist = ((x - px) ** 2 + (y - py) ** 2) ** .5
-    #     else:
-    #         dist = 0
-    #         print("TIME OUT REACHED")
-
-    #     return dist, t_out_reached
-
-    def estimate_distance_new(semi_major, semi_minor, p):
+    def estimate_distance(semi_major, semi_minor, p):
         '''Given a point p, and an ellipse with major - minor axis (semi_major, semi_minor),
         will return the distance between the ellipse and the
         closest point on the ellipses boundary. code was taken from https://wet-robots.ghost.io/simple-method-for-distance-to-ellipse/
@@ -883,22 +727,18 @@ def main_ellipse_fit(R_upper_all, R_lower_all, XC_upper_all, YC_upper_all, XC_lo
         distance = math.sqrt(((p_ellipse[0] - p[0]) ** 2) + ((p_ellipse[1] - p[1]) ** 2))
         return distance
 
-    def return_results(sigma_y, landa, phi, sigma_x, R, xc, yc, arc='top'):
+    def return_results(sigma_y, landa, phi, sigma_x, arc='top'):
 
         b_square = (landa / sigma_x) ** 2 * (1 + (sigma_x / sigma_y) * np.tan(phi) ** 2) / (1 + np.tan(phi) ** 2)
         a_square = (landa) ** 2 / (sigma_x * sigma_y) * (1 + (sigma_x / sigma_y) * np.tan(phi) ** 2) / (1 + np.tan(phi) ** 2)
         b = np.sqrt(b_square)
         a = np.sqrt(a_square)
-        sigma_isotrop = 0.5 * (sigma_x + sigma_y)
-        sigma_anisotrop_x = 0.5 * (sigma_x - sigma_y)
-        sigma_anisotrop_y = 0.5 * (sigma_y - sigma_x)
 
-        return a, b, sigma_isotrop, sigma_anisotrop_x, sigma_anisotrop_y
+        return a, b
 
-    # sigma_xx = np.load(directory+'sigma_xx.npy')
 
     # initialize arrays to store final result
-    sigma_x_t_final = np.zeros((R_upper_all.shape[0], R_upper_all.shape[1]))
+    sigma_x_final = np.zeros((R_upper_all.shape[0], R_upper_all.shape[1]))
     sigma_y_t_final = np.zeros((R_upper_all.shape[0], R_upper_all.shape[1]))
     a_t_final = np.zeros((R_upper_all.shape[0], R_upper_all.shape[1]))
     b_t_final = np.zeros((R_upper_all.shape[0], R_upper_all.shape[1]))
@@ -906,7 +746,6 @@ def main_ellipse_fit(R_upper_all, R_lower_all, XC_upper_all, YC_upper_all, XC_lo
     yc_t_final = np.zeros((R_upper_all.shape[0], R_upper_all.shape[1]))
     std_t_final = np.zeros((R_upper_all.shape[0], R_upper_all.shape[1]))
 
-    sigma_x_b_final = np.zeros((R_upper_all.shape[0], R_upper_all.shape[1]))
     sigma_y_b_final = np.zeros((R_upper_all.shape[0], R_upper_all.shape[1]))
     a_b_final = np.zeros((R_upper_all.shape[0], R_upper_all.shape[1]))
     b_b_final = np.zeros((R_upper_all.shape[0], R_upper_all.shape[1]))
@@ -915,7 +754,7 @@ def main_ellipse_fit(R_upper_all, R_lower_all, XC_upper_all, YC_upper_all, XC_lo
     std_b_final = np.zeros((R_upper_all.shape[0], R_upper_all.shape[1]))
 
     for c in range(R_upper_all.shape[1]):
-        print("CELL ", c + 1)
+        print("Ellipse fit: cell " + str(c + 1))
         # define save container
         a_list_t = []
         b_list_t = []
@@ -929,11 +768,7 @@ def main_ellipse_fit(R_upper_all, R_lower_all, XC_upper_all, YC_upper_all, XC_lo
         xc_list_b = []
         yc_list_b = []
 
-        sigma_x_list_t = []
-        sigma_x_list_b = []
-
-        # std_t_list = []
-        # std_b_list = []
+        sigma_x_list = []
 
         R_upper = R_upper_all[:, c] * pixelsize  # convert to µm
         R_lower = R_lower_all[:, c] * pixelsize
@@ -941,37 +776,28 @@ def main_ellipse_fit(R_upper_all, R_lower_all, XC_upper_all, YC_upper_all, XC_lo
         YC_upper = YC_upper_all[:, c] * pixelsize
         XC_lower = XC_lower_all[:, c] * pixelsize
         YC_lower = YC_lower_all[:, c] * pixelsize
-        # tx_top_left  = tx_top_left_all[:,c]
+
         ty_top_left = ty_top_left_all[:, c]
-        # tx_top_right  = tx_top_right_all[:,c]
         ty_top_right = ty_top_right_all[:, c]
-        # tx_bottom_left  = tx_bottom_left_all[:,c]
         ty_bottom_left = ty_bottom_left_all[:, c]
-        # tx_bottom_right  = tx_bottom_right_all[:,c]
         ty_bottom_right = ty_bottom_right_all[:, c]
 
-        # sigma_x_left, sigma_x_right = read_sigma_contribution_mat(directory, c)
-        # sigma_x_left = sigma_x_all[:,c]
-        # sigma_x_right = sigma_x_all[:,c]
+        sigma_x = sigma_x_all[:, c]
 
         landa_top_left = landa_top_left_all[:, c]
         landa_top_right = landa_top_right_all[:, c]
         landa_bottom_left = landa_bottom_left_all[:, c]
         landa_bottom_right = landa_bottom_right_all[:, c]
 
-        # a_top_approx = a_top_approx_all[:,c]
-        # b_top_approx = b_top_approx_all[:,c]
         xc_top_approx = xc_top_approx_all[:, c]
         yc_top_approx = yc_top_approx_all[:, c]
 
-        # a_bottom_approx = a_bottom_approx_all[:,c]
-        # b_bottom_approx = b_bottom_approx_all[:,c]
         xc_bottom_approx = xc_bottom_approx_all[:, c]
         yc_bottom_approx = yc_bottom_approx_all[:, c]
 
         sigma_y_top_approx = sigma_y_all[:, c]
         sigma_y_bottom_approx = sigma_y_all[:, c]
-        sigma_x_av = sigma_x_all[:, c]
+        sigma_x_current = sigma_x_all[:, c]
 
         x_data_top = x_data_top_all[:, :, c]
         y_data_top = y_data_top_all[:, :, c]
@@ -986,12 +812,9 @@ def main_ellipse_fit(R_upper_all, R_lower_all, XC_upper_all, YC_upper_all, XC_lo
         y_data_bottom = y_data_bottom[~np.all(y_data_bottom == 0, axis=1)]
 
         for frame in np.arange(R_upper.shape[0]):
-            print("FRAME ", frame)
+            # print("FRAME ", frame)
             R_u = R_upper[frame]
             R_l = R_lower[frame]
-
-            # curvature_u = (1/R_u).item()
-            # curvature_l = (1/R_l).item()
 
             xc_u = XC_upper[frame]
             yc_u = YC_upper[frame]
@@ -1022,15 +845,10 @@ def main_ellipse_fit(R_upper_all, R_lower_all, XC_upper_all, YC_upper_all, XC_lo
             landa_top = (landa_tl + landa_tr) / 2
             landa_bottom = (landa_bl + landa_br) / 2
 
-            # sigma_x_l = sigma_x_left[frame]
-            # sigma_x_r = sigma_x_right[frame]
-
-            # sigma_x_av = (sigma_x_l + sigma_x_r)/2
-
             # data from ellipse approximation necessary to set start values for fit
             sigma_y_top_estimate = sigma_y_top_approx[frame]
             sigma_y_bottom_estimate = sigma_y_bottom_approx[frame]
-            sigma_x_estimate = sigma_x_av[frame]
+            sigma_x_estimate = sigma_x_current[frame]
 
             xc_top_ellipse_estimate = xc_top_approx[frame]
             yc_top_ellipse_estimate = yc_top_approx[frame]
@@ -1047,28 +865,20 @@ def main_ellipse_fit(R_upper_all, R_lower_all, XC_upper_all, YC_upper_all, XC_lo
             y_bottom_track = y_data_bottom[:, frame] * pixelsize
 
             def dist_top(p):
-
-                # x = x_top_track
-                # y = y_top_track
-                # sigma_x = sigma_x_estimate
-                xc = xc_top_ellipse_estimate
+                sigma_x = sigma_x_estimate
 
                 phi = phi_top
                 landa = landa_top  # nN
 
-                sigma_x, sigma_y, yc = p
+                sigma_y, xc, yc = p
 
                 b = np.sqrt((landa / sigma_x) ** 2 * (1 + (sigma_x / sigma_y) * np.tan(phi) ** 2) / (1 + np.tan(phi) ** 2))
                 a = np.sqrt((landa) ** 2 / (sigma_x * sigma_y) * (1 + (sigma_x / sigma_y) * np.tan(phi) ** 2) / (1 + np.tan(phi) ** 2))
 
                 dist_container_u = []
 
-                # print("No of tracking points ", len(x_top_track), frame)
                 for j in range(len(x_top_track)):
-                    # dist_u, t_out_reached = estimate_distance_with_timeout(
-                    # x_top_track[j], y_top_track[j], a, b, xc, yc, angle=0)
-                    dist_u = estimate_distance_new(a, b, (x_top_track[j] - xc, y_top_track[j] - yc))
-                    # print("dist_u ", dist_u, "Data point ", j, frame)
+                    dist_u = estimate_distance(a, b, (x_top_track[j] - xc, y_top_track[j] - yc))
 
                     # store squared distance
                     dist_container_u.append(dist_u ** 2)
@@ -1076,27 +886,19 @@ def main_ellipse_fit(R_upper_all, R_lower_all, XC_upper_all, YC_upper_all, XC_lo
                 return np.sum(dist_container_u)
 
             def dist_bottom(p):
-
-                # x = x_bottom_track
-                # y = y_bottom_track
-                # sigma_x = sigma_x_estimate
-                xc = xc_bottom_ellipse_estimate
+                sigma_x = sigma_x_estimate
 
                 phi = phi_bottom
                 landa = landa_bottom  # nN
 
-                sigma_x, sigma_y, yc = p  # add sigma x here maybe
+                sigma_y, xc, yc = p  # add sigma x here maybe
 
                 b = np.sqrt((landa / sigma_x) ** 2 * (1 + (sigma_x / sigma_y) * np.tan(phi) ** 2) / (1 + np.tan(phi) ** 2))
                 a = np.sqrt((landa) ** 2 / (sigma_x * sigma_y) * (1 + (sigma_x / sigma_y) * np.tan(phi) ** 2) / (1 + np.tan(phi) ** 2))
 
                 dist_container_l = []
-                # print("No of tracking points ", len(x_bottom_track), frame)
                 for j in range(len(x_bottom_track)):
-                    # dist_l, t_out_reached = estimate_distance_with_timeout(
-                    #     x_bottom_track[j], y_bottom_track[j], a, b, xc, yc, angle=0)
-                    dist_l = estimate_distance_new(a, b, (x_bottom_track[j] - xc, y_bottom_track[j] - yc))
-                    # print("dist_l ",dist_l,"Data point ",j,frame)
+                    dist_l = estimate_distance(a, b, (x_bottom_track[j] - xc, y_bottom_track[j] - yc))
 
                     # store squared distance
                     dist_container_l.append(dist_l ** 2)
@@ -1104,34 +906,22 @@ def main_ellipse_fit(R_upper_all, R_lower_all, XC_upper_all, YC_upper_all, XC_lo
                 return np.sum(dist_container_l)
 
             if frame == 0:
-                params0_top = [sigma_x_estimate, sigma_y_top_estimate, yc_top_ellipse_estimate]
-                params0_bottom = [sigma_x_estimate, sigma_y_bottom_estimate, yc_bottom_ellipse_estimate]
+                params0_top = [sigma_y_top_estimate, xc_top_ellipse_estimate, yc_top_ellipse_estimate]
+                params0_bottom = [sigma_y_bottom_estimate, xc_bottom_ellipse_estimate, yc_bottom_ellipse_estimate]
             else:
-                params0_top = [sigma_x_list_t[0], sigma_y_list_t[0], yc_list_t[0]]
-                params0_bottom = [sigma_x_list_b[0], sigma_y_list_b[0], yc_list_b[0]]
+                params0_top = [sigma_y_list_t[0], xc_list_t[0], yc_list_t[0]]
+                params0_bottom = [sigma_y_list_b[0], xc_list_b[0], yc_list_b[0]]
+
             # perform the fit
-            # add sigma x here maybe
-            result_top = optimize.minimize(dist_top, params0_top, method='Nelder-Mead', options={'disp': False,
-                                                                                                 'adaptive': True})  # , 'maxiter':2000})  # options={'maxiter': 10000, 'disp': True}
-            result_bottom = optimize.minimize(dist_bottom, params0_bottom, method='Nelder-Mead',
-                                              options={'disp': False, 'adaptive': True})  # , 'maxiter':2000})
+            result_top = optimize.minimize(dist_top, params0_top, method='Nelder-Mead', options={'disp': False, 'adaptive': True})
+            result_bottom = optimize.minimize(dist_bottom, params0_bottom, method='Nelder-Mead', options={'disp': False, 'adaptive': True})
 
             # print(result.fit_report())
-            sigma_x_top, sigma_y_top, yc_ellipse_top = result_top.x  # add sigma x here maybe
-            a_top, b_top, sigma_isotrop_top, sigma_anisotrop_x_top, sigma_anisotrop_y_top = return_results(sigma_y_top, landa_top, phi_top,
-                                                                                                           sigma_x_top, R_u, xc_u, yc_u,
-                                                                                                           arc='top')
+            sigma_y_top, xc_ellipse_top, yc_ellipse_top = result_top.x
+            a_top, b_top = return_results(sigma_y_top, landa_top, phi_top, sigma_x_estimate, arc='top')
 
-            sigma_x_bottom, sigma_y_bottom, yc_ellipse_bottom = result_bottom.x
-            a_bottom, b_bottom, sigma_isotrop_bottom, sigma_anisotrop_x_bottom, sigma_anisotrop_y_bottom = return_results(sigma_y_bottom,
-                                                                                                                          landa_bottom,
-                                                                                                                          phi_bottom,
-                                                                                                                          sigma_x_bottom,
-                                                                                                                          R_l, xc_l, yc_l,
-                                                                                                                          arc='bottom')
-
-            xc_ellipse_top = xc_top_ellipse_estimate
-            xc_ellipse_bottom = xc_bottom_ellipse_estimate
+            sigma_y_bottom, xc_ellipse_bottom, yc_ellipse_bottom = result_bottom.x
+            a_bottom, b_bottom = return_results(sigma_y_bottom, landa_bottom, phi_bottom, sigma_x_estimate, arc='bottom')
 
             if frame == 1:
                 # plot ellipses and data for quality check
@@ -1172,24 +962,19 @@ def main_ellipse_fit(R_upper_all, R_lower_all, XC_upper_all, YC_upper_all, XC_lo
             xc_list_b.append(xc_ellipse_bottom)
             yc_list_b.append(yc_ellipse_bottom)
 
-            sigma_x_list_t.append(sigma_x_top)
-            sigma_x_list_b.append(sigma_x_bottom)
+            sigma_x_list.append(sigma_x_estimate)
 
         std_t, std_b = estimate_ellipse_fit_std(x_data_top, y_data_top, x_data_bottom, y_data_bottom,
-                                                R_upper, R_lower, XC_upper, YC_upper, XC_lower, YC_lower,
-                                                a_list_t, b_list_t, xc_list_t, yc_list_t, a_list_b, b_list_b, xc_list_b, yc_list_b,
-                                                pixelsize)
-        # print(std_t)
-        # print(std_b)
-        sigma_x_t_final[:, c] = sigma_x_list_t
-        sigma_y_t_final[:, c] = sigma_y_list_t
+                                                a_list_t, b_list_t, xc_list_t, yc_list_t,
+                                                a_list_b, b_list_b, xc_list_b, yc_list_b, pixelsize)
+
+        sigma_x_final[:, c] = sigma_x_list
         a_t_final[:, c] = a_list_t
         b_t_final[:, c] = b_list_t
         xc_t_final[:, c] = xc_list_t
         yc_t_final[:, c] = yc_list_t
         std_t_final[:, c] = std_t
 
-        sigma_x_b_final[:, c] = sigma_x_list_b
         sigma_y_b_final[:, c] = sigma_y_list_b
         a_b_final[:, c] = a_list_b
         b_b_final[:, c] = b_list_b
@@ -1197,7 +982,7 @@ def main_ellipse_fit(R_upper_all, R_lower_all, XC_upper_all, YC_upper_all, XC_lo
         yc_b_final[:, c] = yc_list_b
         std_b_final[:, c] = std_t
     # save data in structure
-    data_dict = {'sigma x top [nN/um]': sigma_x_t_final,
+    data_dict = {'sigma x [nN/um]': sigma_x_final,
                  'sigma y top [nN/um]': sigma_y_t_final,
                  'a top [um]': a_t_final,
                  'b top [um]': b_t_final,
@@ -1206,7 +991,6 @@ def main_ellipse_fit(R_upper_all, R_lower_all, XC_upper_all, YC_upper_all, XC_lo
                  'std top [um]': std_t_final,
                  'a bottom [um]': a_b_final,
                  'b bottom [um]': b_b_final,
-                 'sigma x bottom [nN/um]': sigma_x_b_final,
                  'sigma y bottom [nN/um]': sigma_y_b_final,
                  'xc bottom [um]': xc_b_final,
                  'yc bottom [um]': yc_b_final,
@@ -1218,7 +1002,7 @@ def main_ellipse_fit(R_upper_all, R_lower_all, XC_upper_all, YC_upper_all, XC_lo
 
 
 def calculate_various_stuff(circle_fit_data, tangent_data, TEM_data, ellipse_data_approx, ellipse_data):
-    sigma_x_fit = (ellipse_data['sigma x top [nN/um]'] + ellipse_data['sigma x bottom [nN/um]']) / 2
+    sigma_x_fit = ellipse_data['sigma x [nN/um]']
     sigma_x_fit_baseline = np.nanmean(sigma_x_fit[0:20, :], axis=0)
 
     sigma_y_approx = (ellipse_data_approx["sigma y top [nN/µm]"] + ellipse_data_approx["sigma y bottom [nN/µm]"]) / 2
@@ -1236,7 +1020,6 @@ def calculate_various_stuff(circle_fit_data, tangent_data, TEM_data, ellipse_dat
     ellipse_data_approx['std'] = std_approx
     ellipse_data_approx['std_baseline'] = std_approx_baseline
 
-    ellipse_data['sigma_x'] = sigma_x_fit
     ellipse_data['sigma_x_baseline'] = sigma_x_fit_baseline
     ellipse_data['sigma_y'] = sigma_y_fit
     ellipse_data['sigma_y_baseline'] = sigma_y_fit_baseline
@@ -1289,8 +1072,7 @@ def main(inputpath, outputpath, pixelsize, shortcut=False):
         Fy_bottom_right = data['TFM_data']['Fy_bottomright'] * 1e9
         Fy_bottom_left = data['TFM_data']['Fy_bottomleft'] * 1e9
 
-        sigma_x = data['MSM_data']['sigma_xx_average'] * 1e3  # convert to nN/µm
-        sigma_y = data['MSM_data']['sigma_yy_average'] * 1e3  # convert to nN/µm
+        sigma_x = data['TFM_data']['sigma_x'] * 1e3  # convert to nN/µm
 
         # remove the loaded dataset to save memory    
         del data
@@ -1334,40 +1116,35 @@ def main(inputpath, outputpath, pixelsize, shortcut=False):
         ellipse_data_approx = main_ellipse_approx(x_top, x_bottom, y_top, y_bottom,
                                                   R_upper, R_lower,
                                                   XC_upper, YC_upper, XC_lower, YC_lower,
-                                                  tx_top_left, ty_top_left, tx_top_right, ty_top_right,
-                                                  tx_bottom_right, ty_bottom_right, tx_bottom_left, ty_bottom_left,
+                                                  ty_top_left, ty_top_right,
+                                                  ty_bottom_right, ty_bottom_left,
                                                   landa_top_left, landa_top_right, landa_bottom_left, landa_bottom_right,
                                                   sigma_x, pixelsize, inputpath)
 
-        a_top_approx = ellipse_data_approx['a top [µm]']
-        b_top_approx = ellipse_data_approx['b top [µm]']
         xc_top_approx = ellipse_data_approx['xc top [µm]']
         yc_top_approx = ellipse_data_approx['yc top [µm]']
-
-        a_bottom_approx = ellipse_data_approx['a bottom [µm]']
-        b_bottom_approx = ellipse_data_approx['b bottom [µm]']
         xc_bottom_approx = ellipse_data_approx['xc bottom [µm]']
         yc_bottom_approx = ellipse_data_approx['yc bottom [µm]']
-
         sigma_y_top_approx = ellipse_data_approx['sigma y top [nN/µm]']
         sigma_y_bottom_approx = ellipse_data_approx['sigma y bottom [nN/µm]']
 
+        sigma_y = (sigma_y_top_approx + sigma_y_bottom_approx) / 2
+
         ellipse_data = main_ellipse_fit(R_upper, R_lower,
                                         XC_upper, YC_upper, XC_lower, YC_lower,
-                                        tx_top_left, ty_top_left, tx_top_right, ty_top_right,
-                                        tx_bottom_right, ty_bottom_right, tx_bottom_left, ty_bottom_left,
+                                        ty_top_left, ty_top_right,
+                                        ty_bottom_right, ty_bottom_left,
                                         sigma_x,
                                         landa_top_left, landa_top_right, landa_bottom_left, landa_bottom_right,
                                         x_bottom, y_bottom, x_top, y_top,
-                                        a_top_approx, b_top_approx, xc_top_approx, yc_top_approx,
-                                        a_bottom_approx, b_bottom_approx, xc_bottom_approx, yc_bottom_approx,
+                                        xc_top_approx, yc_top_approx,
+                                        xc_bottom_approx, yc_bottom_approx,
                                         sigma_y, inputpath)
 
         # calculate some stuff
         circle_fit_data, tangent_data, TEM_data, ellipse_data_approx, ellipse_data = calculate_various_stuff(circle_fit_data, tangent_data,
                                                                                                              TEM_data, ellipse_data_approx,
                                                                                                              ellipse_data)
-
 
     # load previously analysed data to make some additional calculations
     elif shortcut:
@@ -1401,7 +1178,7 @@ if __name__ == '__main__':
 
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1s_fullstim_long"
     main(path + ".dat", path + "_CM.dat", pixelsize, shortcut)
-
+    
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1d_fullstim_short"
     main(path + ".dat", path + "_CM.dat", pixelsize, shortcut)
 

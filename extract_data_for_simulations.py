@@ -83,9 +83,9 @@ concatenated_data_2to1d = {}
 concatenated_data = {}
 
 # select keys which should end up in the dataframe
-keys_to_load = {'a_baseline', 'b_baseline', 'line tension baseline [nN]', 'sigma_x_baseline', 'sigma_y_baseline',
-                'RSI_xx_left', 'RSI_xx_right', 'RSI_yy_left', 'RSI_yy_right'}
+keys_to_load = {'a_baseline', 'b_baseline', 'line tension baseline [nN]', 'sigma_x_baseline', 'sigma_y_baseline'}
 # loop over all keys for contour model analysis data
+
 for key1 in AR1to1d_halfstim_CM:
     for key2 in AR1to1d_halfstim_CM[key1]:    # keys are the same for all dictionaries so I'm just taking one example here
         if key2 in keys_to_load:  # only 1D data can be stored in the data frame
@@ -100,6 +100,7 @@ for key1 in AR1to1d_halfstim_CM:
                                                       concatenated_data_1to1s[key2], concatenated_data_2to1d[key2]))
 
 # select keys to be imported
+keys_to_load = {'RSI_xx_left', 'RSI_xx_right', 'RSI_yy_left', 'RSI_yy_right'}
 # loop over all keys
 for key1 in AR1to1d_halfstim:
     for key2 in AR1to1d_halfstim[key1]:
@@ -131,7 +132,7 @@ concatenated_data['keys'] = keys
 
 # create dataframe
 df = pd.DataFrame(concatenated_data)
-
+# df['sigma_x_baseline'] *= 1e3  # convert to mN/m
 # rename columns
 df.rename(columns={'line tension baseline [nN]': 'line tension [nN]', 'sigma_x_baseline': 'sigma_x_CM [mN/m]', 'sigma_y_baseline': 'sigma_y_CM [mN/m]',
                    'a_baseline': 'a [um]', 'b_baseline': 'b [um]'}, inplace=True)
@@ -146,8 +147,9 @@ concatenated_data_1to1s = {}
 concatenated_data = {}
 
 # select keys which should end up in the dataframe
-keys_to_load = {'a_baseline', 'b_baseline', 'line tension baseline [nN]', 'sigma_x_baseline', 'sigma_y_baseline', 'RSI_xx', 'RSI_yy'}
+keys_to_load = {'a_baseline', 'b_baseline', 'line tension baseline [nN]', 'sigma_x_baseline', 'sigma_y_baseline'}
 # loop over all keys for contour model analysis data
+
 for key1 in AR1to1d_fullstim_long_CM:
     for key2 in AR1to1d_fullstim_long_CM[key1]:    # keys are the same for all dictionaries so I'm just taking one example here
         if key2 in keys_to_load:  # only 1D data can be stored in the data frame
@@ -159,6 +161,7 @@ for key1 in AR1to1d_fullstim_long_CM:
             concatenated_data[key2] = np.concatenate((concatenated_data_1to1d[key2], concatenated_data_1to1s[key2]))
 
 # select keys to be imported
+keys_to_load = {'RSI_xx', 'RSI_xx', 'RSI_yy', 'RSI_yy'}
 # loop over all keys
 for key1 in AR1to1d_fullstim_long:
     for key2 in AR1to1d_fullstim_long[key1]:
@@ -185,7 +188,7 @@ concatenated_data['keys'] = keys
 
 # create dataframe
 df = pd.DataFrame(concatenated_data)
-
+# df['sigma_x_baseline'] *= 1e3  # convert to mN/m
 # rename columns
 df.rename(columns={'line tension baseline [nN]': 'line tension [nN]', 'sigma_x_baseline': 'sigma_x_CM [mN/m]', 'sigma_y_baseline': 'sigma_y_CM [mN/m]',
                    'a_baseline': 'a [um]', 'b_baseline': 'b [um]'}, inplace=True)

@@ -13,12 +13,12 @@ from skimage import io
 from skimage.morphology import disk
 
 # %% setting parameters and initialize variables
-folder = "C:/Users/Balland/Desktop/_collaborations/Vladimir Misiak/40micr - full stim"
-noCells = 13
+folder = "C:/Users/Balland/Desktop/_collaborations/Vladimir Misiak/40micron_lefthalf_stim"
+noCells = 8
 ps1 = 0.162  # pixel size of the image of the beads in µm
 ps2 = 1.296  # pixel size of of the deformation field
 print("Outputfolder: " + folder)
-for cell in np.arange(1, noCells + 1):
+for cell in np.arange(5, noCells + 1):
     if cell <= 9:
         foldercellpath = folder + "/tissue0" + str(cell)
     else:

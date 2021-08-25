@@ -54,55 +54,6 @@ def analyse_tfm_data(folder, stressmappixelsize):
     Fx_right = np.nansum(Tx[:, x_half:x_end, :, :], axis=(0, 1)) * (stressmappixelsize ** 2)
     F_cellcell = Fx_left - Fx_right
 
-    # calculate sigma_x for contour model by integrating the x-forces in the center of the TFM map and dividing by the height of the window
-    sigmawindow = 24  # The x componenent of the force is calculated on a window of this width in pixel in the center of the TFM map
-    # The x component of the force is summed up on a window from the edge minus sigmadistance_from_border to the center minus sigmadistance_from_center
-    sigmadistance_from_center = 14
-    sigmadistance_from_border = 14
-
-    # the other aspect ratios require different window parameters
-    if "1to2" in folder:
-        sigmawindow = 12  # The x componenent of the force is calculated on a window of this width in pixel in the center of the TFM map
-        # The x component of the force is summed up on a window from the edge minus sigmadistance_from_border to the center minus sigmadistance_from_center
-        sigmadistance_from_center = 20
-        sigmadistance_from_border = 4
-
-    if "2to1" in folder:
-        sigmawindow = 36  # The x componenent of the force is calculated on a window of this width in pixel in the center of the TFM map
-        # The x component of the force is summed up on a window from the edge minus sigmadistance_from_border to the center minus sigmadistance_from_center
-        sigmadistance_from_center = 8
-        sigmadistance_from_border = 24
-
-    sigma_x_left = \
-        np.nansum(
-            Tx[y_half - int(sigmawindow / 2):y_half + int(sigmawindow / 2), sigmadistance_from_border:x_half - sigmadistance_from_center, :,
-            :], axis=(0, 1)) / sigmawindow * stressmappixelsize
-    sigma_x_right = \
-        np.nansum(Tx[y_half - int(sigmawindow / 2):y_half + int(sigmawindow / 2),
-                  x_half + sigmadistance_from_center:x_end - sigmadistance_from_border, :, :],
-                  axis=(0, 1)) / sigmawindow * stressmappixelsize
-
-    sigma_x = (sigma_x_left - sigma_x_right) / 2
-
-    # in some rare cases the surface tension value is negative due to high noise in the TFM map. This messes up further analysis so I set it to a small, positive value
-    for c in range(sigma_x.shape[0]):
-        for t in range(sigma_x.shape[1]):
-            if sigma_x[c, t] < 0:
-                sigma_x[c, t] = 0.1e-3
-
-    # average over first twenty frames before photoactivation
-    sigma_x_baseline = np.nanmean(sigma_x[0:20, :], axis=0)
-
-    # plot integration rectangle for debugging
-    fig, ax = plt.subplots()
-    Tx_test = Tx
-    Tx_test[y_half - int(sigmawindow / 2):y_half + int(sigmawindow / 2), sigmadistance_from_border: x_half - sigmadistance_from_center, :,
-    :] = 1
-    Tx_test[y_half - int(sigmawindow / 2):y_half + int(sigmawindow / 2),
-    x_half + sigmadistance_from_center:x_end - sigmadistance_from_border, :, :] = 10
-    ax.imshow(Tx_test[:, :, 0, 0])
-    plt.show()
-
     # calculate relative energy increase
     REI = relEs[32, :] - relEs[20, :]
 
@@ -160,7 +111,7 @@ def analyse_tfm_data(folder, stressmappixelsize):
             Fy_bottomright[t, cell] = np.nansum(
                 Ty[y_half:y_end, x_half:x_end, t, cell] * mask_bottomright) * stressmappixelsize ** 2
 
-    data = {"Dx": Dx, "Dy": Dy, "Tx": Tx, "Ty": Ty, "sigma_x": sigma_x, "sigma_x_baseline": sigma_x_baseline,
+    data = {"Dx": Dx, "Dy": Dy, "Tx": Tx, "Ty": Ty,
             "Fx_topleft": Fx_topleft, "Fx_topright": Fx_topright, "Fx_bottomright": Fx_bottomright,
             "Fx_bottomleft": Fx_bottomleft,
             "Fy_topleft": Fy_topleft, "Fy_topright": Fy_topright, "Fy_bottomright": Fy_bottomright,
@@ -176,7 +127,9 @@ def analyse_tfm_data(folder, stressmappixelsize):
 def analyse_msm_data(folder):
     sigma_xx = np.load(folder + "/sigma_xx.npy")
     sigma_yy = np.load(folder + "/sigma_yy.npy")
-    masks = np.load(folder + "/mask.npy")
+    
+    # recover masks from stress maps
+    masks = sigma_xx > 0
 
     # replace 0 with NaN to not mess up average calculations
     sigma_xx[sigma_xx == 0] = 'nan'
@@ -295,101 +248,8 @@ def analyse_msm_data(folder):
     return data
 
 
-def analyse_shape_data(folder, stressmappixelsize):
-    Xtop = np.load(folder + "/Xtop.npy")
-    Xbottom = np.load(folder + "/Xbottom.npy")
-
-    Ytop = np.load(folder + "/Ytop.npy")
-    Ybottom = np.load(folder + "/Ybottom.npy")
-
-    noFrames = Xtop.shape[1]
-    noCells = Xtop.shape[2]
-
-    # I want to calculate the deformation of the contour, but the fibertracks have varying lengths, so to calculate the strain
-    # I first need to interpolate them to a grid so that all tracks have the same shape
-    nb_points_interpl = 50
-    Xtop_interpl = np.zeros((nb_points_interpl, noFrames, noCells))
-    Xbottom_interpl = np.zeros((nb_points_interpl, noFrames, noCells))
-
-    Ytop_interpl = np.zeros((nb_points_interpl, noFrames, noCells))
-    Ybottom_interpl = np.zeros((nb_points_interpl, noFrames, noCells))
-
-    for cell in range(noCells):
-        Xtop_current = Xtop[:, :, cell]
-        Xbottom_current = Xbottom[:, :, cell]
-
-        Ytop_current = Ytop[:, :, cell]
-        Ybottom_current = Ybottom[:, :, cell]
-
-        # remove zero lines
-        Xtop_current = Xtop_current[~np.all(Xtop_current == 0, axis=1)]
-        Xbottom_current = Xbottom_current[~np.all(Xbottom_current == 0, axis=1)]
-
-        Ytop_current = Ytop_current[~np.all(Ytop_current == 0, axis=1)]
-        Ybottom_current = Ybottom_current[~np.all(Ybottom_current == 0, axis=1)]
-
-        # apply interpolation
-        for frame in range(noFrames):
-            Xtop_interpl[:, frame, cell] = np.linspace(Xtop_current[0, frame], Xtop_current[-1, frame], nb_points_interpl)
-            Xbottom_interpl[:, frame, cell] = np.linspace(Xbottom_current[0, frame], Xbottom_current[-1, frame], nb_points_interpl)
-
-            Ytop_interpl[:, frame, cell] = np.interp(Xtop_interpl[:, frame, cell], Xtop_current[:, frame], Ytop_current[:, frame])
-            Ybottom_interpl[:, frame, cell] = np.interp(Xbottom_interpl[:, frame, cell], Xbottom_current[:, frame],
-                                                        Ybottom_current[:, frame])
-
-    # calculate width of the cell as function of x and t
-    W = Ybottom_interpl - Ytop_interpl
-
-    # calculate width of the cell center (where the junction is in the doublets) as function of t
-    windowlength = 2
-    center_left = int(nb_points_interpl / 2 - windowlength)
-    center_right = int(nb_points_interpl / 2 + windowlength)
-    W_center = np.nanmean(W[center_left:center_right, :, :], axis=0)
-    relW_center = (W_center - np.nanmean(W_center[0:20], axis=0)) / np.nanmean(W_center[0:20])
-    relW_center_end = relW_center[-1, :]
-
-    # calculate contour strain at peak contraction
-    epsilon = 1 - np.nanmean(W[:, 1:20, :], axis=1) / np.nanmean(W[:, 30:33, :], axis=1)
-
-    # quantify degree of asymmetry of the strain
-    epsilon_asymmetry_curve = epsilon - np.flipud(epsilon)
-    epsilon_asymmetry_coefficient = np.nansum(epsilon_asymmetry_curve[0:int(epsilon_asymmetry_curve.shape[0] / 2)], axis=0)
-
-    masks = np.load(folder + "/mask.npy")
-
-    # calculate spreadingsizes with masks
-    spreadingsize = (stressmappixelsize ** 2) * np.nansum(masks, axis=(0, 1))
-    spreadingsize_baseline = np.nanmean(spreadingsize[0:20, :], axis=0)
-
-    # load average actin angles
-    actin_angles = np.load(folder + "/actin_angles.npy").squeeze(axis=0)
-
-    actin_intensity_left = np.load(folder + "/actin_intensity_left.npy")
-    actin_intensity_right = np.load(folder + "/actin_intensity_right.npy")
-
-    # normalize actin intensities by first substracting the baseline for each cell and then dividing by the average baseline
-    relactin_intensity_left = (actin_intensity_left - np.nanmean(actin_intensity_left[0:20, :], axis=0)) / np.nanmean(
-        actin_intensity_left[0:20, :], axis=(0, 1))
-    relactin_intensity_right = (actin_intensity_right - np.nanmean(actin_intensity_right[0:20, :], axis=0)) / np.nanmean(
-        actin_intensity_right[0:20, :], axis=(0, 1))
-
-    RAI_left = relactin_intensity_left[32, :] - relactin_intensity_left[20, :]
-    RAI_right = relactin_intensity_right[32, :] - relactin_intensity_right[20, :]
-
-    data = {"Xtop": Xtop, "Xbottom": Xbottom, "Ytop": Ytop, "Ybottom": Ybottom,
-            "masks": masks, "cell_width_center": W_center, "relcell_width_center": relW_center, "relcell_width_center_end": relW_center_end,
-            "contour_strain": epsilon, "ASC": epsilon_asymmetry_coefficient,
-            "spreadingsize": spreadingsize, "spreadingsize_baseline": spreadingsize_baseline,
-            "actin_angles": actin_angles,
-            "actin_intensity_left": actin_intensity_left, "actin_intensity_right": actin_intensity_right,
-            "relactin_intensity_left": relactin_intensity_left, "relactin_intensity_right": relactin_intensity_right,
-            "RAI_left": RAI_left, "RAI_right": RAI_right}
-
-    return data
-
-
 def main_meta_analysis(folder, title, noFrames):
-    stressmappixelsize = 0.864 * 1e-6  # in meter
+    stressmappixelsize = 1.296 * 1e-6  # in meter
 
     folder += title
 
@@ -399,11 +259,8 @@ def main_meta_analysis(folder, title, noFrames):
     # calculate averages over all cells, normalize data to baseline values etc.
     MSM_data = analyse_msm_data(folder)
 
-    # calculate spreading area and such
-    shape_data = analyse_shape_data(folder, stressmappixelsize)
-
     print(title + ": done!")
-    alldata = {"TFM_data": TFM_data, "MSM_data": MSM_data, "shape_data": shape_data}
+    alldata = {"TFM_data": TFM_data, "MSM_data": MSM_data}
 
     return alldata
 
@@ -412,42 +269,28 @@ if __name__ == "__main__":
     # This is the folder where all the input data is stored
     folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
 
-    AR1to1dfsl = "AR1to1_doublets_full_stim_long"
-    AR1to1sfsl = "AR1to1_singlets_full_stim_long"
-    AR1to1dfss = "AR1to1_doublets_full_stim_short"
-    AR1to1sfss = "AR1to1_singlets_full_stim_short"
-    AR1to2dhs = "AR1to2_doublets_half_stim"
-    AR1to1dhs = "AR1to1_doublets_half_stim"
-    AR1to1shs = "AR1to1_singlets_half_stim"
-    AR2to1dhs = "AR2to1_doublets_half_stim"
-
     # These functions perform a series of analyses and assemble a dictionary of dictionaries containing all the data that was used for plotting
-    AR1to1d_fullstim_long = main_meta_analysis(folder, AR1to1dfsl, 60)
-    AR1to1s_fullstim_long = main_meta_analysis(folder, AR1to1sfsl, 60)
-    AR1to1d_fullstim_short = main_meta_analysis(folder, AR1to1dfss, 50)
-    AR1to1s_fullstim_short = main_meta_analysis(folder, AR1to1sfss, 50)
-    AR1to2d_halfstim = main_meta_analysis(folder, AR1to2dhs, 60)
-    AR1to1d_halfstim = main_meta_analysis(folder, AR1to1dhs, 60)
-    AR1to1s_halfstim = main_meta_analysis(folder, AR1to1shs, 60)
-    AR2to1d_halfstim = main_meta_analysis(folder, AR2to1dhs, 60)
+    tissues_20micron_full_stim = main_meta_analysis(folder, "tissues_20micron_full_stim", 60)
+    tissues_20micron_lefthalf_stim = main_meta_analysis(folder, "tissues_20micron_lefthalf_stim", 60)
+    tissues_20micron_tophalf_stim = main_meta_analysis(folder, "tissues_20micron_tophalf_stim", 60)
+    tissues_40micron_full_stim = main_meta_analysis(folder, "tissues_40micron_full_stim", 60)
+    tissues_40micron_lefthalf_stim = main_meta_analysis(folder, "tissues_40micron_lefthalf_stim", 60)
+    tissues_40micron_tophalf_stim = main_meta_analysis(folder, "tissues_40micron_tophalf_stim", 60)
 
     # save dictionaries to a file using pickle
     if not os.path.exists(folder + "analysed_data"):
         os.mkdir(folder + "analysed_data")
 
-    with open(folder + "analysed_data/AR1to1d_fullstim_long.dat", 'wb') as outfile:
-        pickle.dump(AR1to1d_fullstim_long, outfile, protocol=pickle.HIGHEST_PROTOCOL)
-    with open(folder + "analysed_data/AR1to1s_fullstim_long.dat", 'wb') as outfile:
-        pickle.dump(AR1to1s_fullstim_long, outfile, protocol=pickle.HIGHEST_PROTOCOL)
-    with open(folder + "analysed_data/AR1to1d_fullstim_short.dat", 'wb') as outfile:
-        pickle.dump(AR1to1d_fullstim_short, outfile, protocol=pickle.HIGHEST_PROTOCOL)
-    with open(folder + "analysed_data/AR1to1s_fullstim_short.dat", 'wb') as outfile:
-        pickle.dump(AR1to1s_fullstim_short, outfile, protocol=pickle.HIGHEST_PROTOCOL)
-    with open(folder + "analysed_data/AR1to2d_halfstim.dat", 'wb') as outfile:
-        pickle.dump(AR1to2d_halfstim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
-    with open(folder + "analysed_data/AR1to1d_halfstim.dat", 'wb') as outfile:
-        pickle.dump(AR1to1d_halfstim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
-    with open(folder + "analysed_data/AR1to1s_halfstim.dat", 'wb') as outfile:
-        pickle.dump(AR1to1s_halfstim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
-    with open(folder + "analysed_data/AR2to1d_halfstim.dat", 'wb') as outfile:
-        pickle.dump(AR2to1d_halfstim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(folder + "analysed_data/tissues_20micron_full_stim.dat", 'wb') as outfile:
+        pickle.dump(tissues_20micron_full_stim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(folder + "analysed_data/tissues_20micron_lefthalf_stim.dat", 'wb') as outfile:
+        pickle.dump(tissues_20micron_lefthalf_stim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(folder + "analysed_data/tissues_20micron_tophalf_stim.dat", 'wb') as outfile:
+        pickle.dump(tissues_20micron_tophalf_stim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(folder + "analysed_data/tissues_40micron_full_stim.dat", 'wb') as outfile:
+        pickle.dump(tissues_40micron_full_stim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(folder + "analysed_data/tissues_40micron_lefthalf_stim.dat", 'wb') as outfile:
+        pickle.dump(tissues_40micron_lefthalf_stim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(folder + "analysed_data/tissues_40micron_tophalf_stim.dat", 'wb') as outfile:
+        pickle.dump(tissues_40micron_tophalf_stim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+
