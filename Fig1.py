@@ -7,13 +7,12 @@ Created on Wed Jul  7 21:56:01 2021
 """
 import os
 import pickle
-import matplotlib as mpl
 import pandas as pd
 
 from plot_and_filter_functions import *
 
 # mpl.rcParams['pdf.fonttype'] = 42
-mpl.rcParams['font.size'] = 8
+
 
 # chose an example for force maps
 doublet_example = 1
@@ -426,12 +425,12 @@ make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_annotat
 # Set up plot parameters for fourth panel
 #######################################################################################################
 x = 'keys'                                  # variable by which to group the data
-y = 'sigma_xx_baseline'                     # variable that goes on the y-axis
+y = 'sigma_yy_baseline'                     # variable that goes on the y-axis
 ax = axes[3]                                # define on which axis the plot goes
 ymin = 0                                    # minimum value on y-axis
 ymax = 14                                   # maximum value on y-axis
 yticks = np.arange(0, 15, 2)                # define where to put major ticks on y-axis
-stat_annotation_offset = -0.065             # vertical offset of statistical annotation
+stat_annotation_offset = 0.98               # vertical offset of statistical annotation
 ylabel = '$\mathrm{\sigma _{yy}}$ [mN/m]'   # which label to put on y-axis
 title = 'yy-Stress'                         # title of plot
 

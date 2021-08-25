@@ -1009,18 +1009,22 @@ def calculate_various_stuff(circle_fit_data, tangent_data, TEM_data, ellipse_dat
     sigma_y_approx_baseline = np.nanmean(sigma_y_approx[0:20, :], axis=0)
     sigma_y_fit = (ellipse_data['sigma y top [nN/um]'] + ellipse_data['sigma y bottom [nN/um]']) / 2
     sigma_y_fit_baseline = np.nanmean(sigma_y_fit[0:20, :], axis=0)
+    RSI_y = sigma_y_fit[32, :] - sigma_y_fit[20, :]
+    RSI_x = sigma_x_fit[32, :] - sigma_x_fit[20, :]
 
     std_approx = (ellipse_data_approx['std top [µm]'] + ellipse_data_approx['std bottom [µm]']) / 2
     std_approx_baseline = np.nanmean(std_approx[0:20, :], axis=0)
     std_fit = (ellipse_data['std top [um]'] + ellipse_data['std bottom [um]']) / 2
     std_fit_baseline = np.nanmean(std_fit[0:20, :], axis=0)
 
-    ellipse_data_approx['sigma_y'] = sigma_y_approx
-    ellipse_data_approx['sigma_y_baseline'] = sigma_y_approx_baseline
+    ellipse_data_approx['sigma_y_approx'] = sigma_y_approx
+    ellipse_data_approx['sigma_y_baseline_approx'] = sigma_y_approx_baseline
     ellipse_data_approx['std'] = std_approx
     ellipse_data_approx['std_baseline'] = std_approx_baseline
 
     ellipse_data['sigma_x_baseline'] = sigma_x_fit_baseline
+    ellipse_data['RSI_x'] = RSI_x
+    ellipse_data['RSI_y'] = RSI_y
     ellipse_data['sigma_y'] = sigma_y_fit
     ellipse_data['sigma_y_baseline'] = sigma_y_fit_baseline
     ellipse_data['std'] = std_fit
@@ -1171,7 +1175,7 @@ def main(inputpath, outputpath, pixelsize, shortcut=False):
 
 if __name__ == '__main__':
     pixelsize = 0.108  # in µm
-    shortcut = False
+    shortcut = True
 
     path = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/analysed_data/AR1to1d_fullstim_long"
     main(path + ".dat", path + "_CM.dat", pixelsize, shortcut)

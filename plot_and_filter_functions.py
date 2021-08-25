@@ -6,6 +6,8 @@ import statannot
 from scipy.stats import pearsonr
 from sklearn.linear_model import LinearRegression
 
+plt.rcParams['font.size'] = 8
+# plt.rcParams.update({"text.usetex": True})
 
 def make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors,
                                 linewidth_bp=0.7, width_bp=0.3, dotsize=1.8, linewidth_sw=0.3, alpha_sw=1, alpha_bp=0.8, ylabeloffset=1,

@@ -113,7 +113,7 @@ pixelsize = 0.864  # in µm
 initial_pixelsize = 0.108  # in µm
 # concatenate TFM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
 doublet_example = 0
-singlet_example = 0
+singlet_example = 1
 
 # get data for one example
 # forces
@@ -127,7 +127,7 @@ Ty_1to1s = AR1to1s_fullstim_long["TFM_data"]["Ty"][:, :, 0, singlet_example]
 actin_image_path = folder + "AR1to1_doublets_full_stim_long/actin_images/cell" + str(doublet_example) + "frame0.png"
 actin_image_1to1d = rgb2gray(mpimg.imread(actin_image_path))
 actin_image_path = folder + "AR1to1_singlets_full_stim_long/actin_images/cell" + str(
-    singlet_example + 1) + "frame0.png"  # cell 1 got filtered out so the data is not corresponding to the same index of the actin image
+    singlet_example) + "frame0.png"  # cell 1 got filtered out so the data is not corresponding to the same index of the actin image
 actin_image_1to1s = rgb2gray(mpimg.imread(actin_image_path))
 
 # ellipse data
@@ -375,7 +375,7 @@ ax = axes[0]  # define on which axis the plot goes
 ymin = -100  # minimum value on y-axis
 ymax = 500  # maximum value on y-axis
 yticks = np.arange(0, 501, 100)  # define where to put major ticks on y-axis
-stat_annotation_offset = 0.05  # vertical offset of statistical annotation
+stat_annotation_offset = 0.25  # vertical offset of statistical annotation
 ylabel = '$\mathrm{\lambda}$ [nN]'  # which label to put on y-axis
 title = 'Line tension'  # title of plot
 
@@ -390,7 +390,7 @@ ax = axes[1]  # define on which axis the plot goes
 ymin = -100  # minimum value on y-axis
 ymax = 500  # maximum value on y-axis
 yticks = np.arange(0, 501, 100)  # define where to put major ticks on y-axis
-stat_annotation_offset = 0.55  # vertical offset of statistical annotation
+stat_annotation_offset = 0.6  # vertical offset of statistical annotation
 ylabel = '$\mathrm{f_a}$ [nN]'  # which label to put on y-axis
 title = 'Force of adherent fiber'  # title of plot
 
@@ -431,8 +431,7 @@ corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, 
 ax.plot([xmin, xmax], [ymin, ymax], linewidth=0.5, linestyle=':', color='grey')
 
 # annotate pearson R and p-value
-plt.text(0.4 * xmax, 0.15 * ymax, 'R = ' + str(corr))
-plt.text(0.4 * xmax, 0.075 * ymax, 'p = ' + '{:0.2e}'.format(p))
+plt.text(0.6 * xmax, 0.075 * ymax, 'R = ' + str(round(corr, 2)))
 
 # Set up plot parameters for second panel
 #######################################################################################################
@@ -455,8 +454,7 @@ corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, 
 ax.plot([xmin, xmax], [ymin, ymax], linewidth=0.5, linestyle=':', color='grey')
 
 # annotate pearson R and p-value
-plt.text(0.4 * xmax, 0.15 * ymax, 'R = ' + str(corr))
-plt.text(0.4 * xmax, 0.075 * ymax, 'p = ' + '{:0.2e}'.format(p))
+plt.text(0.6 * xmax, 0.075 * ymax, 'R = ' + str(round(corr, 2)))
 
 plt.suptitle('MSM stresses vs. CM surface tensions')
 

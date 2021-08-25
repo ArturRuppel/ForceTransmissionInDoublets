@@ -57,8 +57,9 @@ def analyse_tfm_data(folder, stressmappixelsize):
     # calculate sigma_x for contour model by integrating the x-forces in the center of the TFM map and dividing by the height of the window
     sigmawindow = 24  # The x componenent of the force is calculated on a window of this width in pixel in the center of the TFM map
     # The x component of the force is summed up on a window from the edge minus sigmadistance_from_border to the center minus sigmadistance_from_center
-    sigmadistance_from_center = 14
-    sigmadistance_from_border = 14
+    sigmadistance_from_center = 18
+    sigmadistance_from_border = 18
+    x_window = x_half - sigmadistance_from_center - sigmadistance_from_border
 
     # the other aspect ratios require different window parameters
     if "1to2" in folder:
@@ -66,21 +67,28 @@ def analyse_tfm_data(folder, stressmappixelsize):
         # The x component of the force is summed up on a window from the edge minus sigmadistance_from_border to the center minus sigmadistance_from_center
         sigmadistance_from_center = 20
         sigmadistance_from_border = 4
+        x_window = x_half - sigmadistance_from_center - sigmadistance_from_border
 
     if "2to1" in folder:
         sigmawindow = 36  # The x componenent of the force is calculated on a window of this width in pixel in the center of the TFM map
         # The x component of the force is summed up on a window from the edge minus sigmadistance_from_border to the center minus sigmadistance_from_center
         sigmadistance_from_center = 8
         sigmadistance_from_border = 24
+        x_window = x_half - sigmadistance_from_center - sigmadistance_from_border
+
+    # plop = Tx[:,:,0,0]
+    # plop[y_half - int(sigmawindow / 2):y_half + int(sigmawindow / 2), sigmadistance_from_border:x_half - sigmadistance_from_center] = 10
+    # plt.imshow(plop)
+    # plt.show()
 
     sigma_x_left = \
-        np.nansum(
+        np.nanmean(
             Tx[y_half - int(sigmawindow / 2):y_half + int(sigmawindow / 2), sigmadistance_from_border:x_half - sigmadistance_from_center, :,
-            :], axis=(0, 1)) / sigmawindow * stressmappixelsize
+            :], axis=(0, 1)) / x_window * stressmappixelsize
     sigma_x_right = \
         np.nansum(Tx[y_half - int(sigmawindow / 2):y_half + int(sigmawindow / 2),
                   x_half + sigmadistance_from_center:x_end - sigmadistance_from_border, :, :],
-                  axis=(0, 1)) / sigmawindow * stressmappixelsize
+                  axis=(0, 1)) / x_window * stressmappixelsize
 
     sigma_x = (sigma_x_left - sigma_x_right) / 2
 
@@ -92,16 +100,6 @@ def analyse_tfm_data(folder, stressmappixelsize):
 
     # average over first twenty frames before photoactivation
     sigma_x_baseline = np.nanmean(sigma_x[0:20, :], axis=0)
-
-    # plot integration rectangle for debugging
-    fig, ax = plt.subplots()
-    Tx_test = Tx
-    Tx_test[y_half - int(sigmawindow / 2):y_half + int(sigmawindow / 2), sigmadistance_from_border: x_half - sigmadistance_from_center, :,
-    :] = 1
-    Tx_test[y_half - int(sigmawindow / 2):y_half + int(sigmawindow / 2),
-    x_half + sigmadistance_from_center:x_end - sigmadistance_from_border, :, :] = 10
-    ax.imshow(Tx_test[:, :, 0, 0])
-    plt.show()
 
     # calculate relative energy increase
     REI = relEs[32, :] - relEs[20, :]
@@ -136,27 +134,31 @@ def analyse_tfm_data(folder, stressmappixelsize):
         for t in np.arange(t_end):
             mask_topleft = (x[np.newaxis, :] - T_topleft_max[1]) ** 2 + (
                     y[:, np.newaxis] - T_topleft_max[0]) ** 2 < r ** 2
-            Fx_topleft[t, cell] = np.nansum(Tx[0:y_half, 0:x_half, t, cell] * mask_topleft) * stressmappixelsize ** 2
+            Fx_topleft[t, cell] = np.nansum(Tx[0:y_half, 0:x_half, t, cell] * mask_topleft) * stressmappixelsize ** 2\
+                                  - sigma_x[t, cell] * r * stressmappixelsize   # correcting for the contribution of the surface tension
             Fy_topleft[t, cell] = np.nansum(Ty[0:y_half, 0:x_half, t, cell] * mask_topleft) * stressmappixelsize ** 2
 
             mask_topright = (x[np.newaxis, :] - T_topright_max[1]) ** 2 + (
                     y[:, np.newaxis] - T_topright_max[0]) ** 2 < r ** 2
             Fx_topright[t, cell] = np.nansum(
-                Tx[0:y_half, x_half:x_end, t, cell] * mask_topright) * stressmappixelsize ** 2
+                Tx[0:y_half, x_half:x_end, t, cell] * mask_topright) * stressmappixelsize ** 2\
+                                  - sigma_x[t, cell] * r * stressmappixelsize   # correcting for the contribution of the surface tension
             Fy_topright[t, cell] = np.nansum(
                 Ty[0:y_half, x_half:x_end, t, cell] * mask_topright) * stressmappixelsize ** 2
 
             mask_bottomleft = (x[np.newaxis, :] - T_bottomleft_max[1]) ** 2 + (
                     y[:, np.newaxis] - T_bottomleft_max[0]) ** 2 < r ** 2
             Fx_bottomleft[t, cell] = np.nansum(
-                Tx[y_half:y_end, 0:x_half, t, cell] * mask_bottomleft) * stressmappixelsize ** 2
+                Tx[y_half:y_end, 0:x_half, t, cell] * mask_bottomleft) * stressmappixelsize ** 2\
+                                  - sigma_x[t, cell] * r * stressmappixelsize   # correcting for the contribution of the surface tension
             Fy_bottomleft[t, cell] = np.nansum(
                 Ty[y_half:y_end, 0:x_half, t, cell] * mask_bottomleft) * stressmappixelsize ** 2
 
             mask_bottomright = (x[np.newaxis, :] - T_bottomright_max[1]) ** 2 + (
                     y[:, np.newaxis] - T_bottomright_max[0]) ** 2 < r ** 2
             Fx_bottomright[t, cell] = np.nansum(
-                Tx[y_half:y_end, x_half:x_end, t, cell] * mask_bottomright) * stressmappixelsize ** 2
+                Tx[y_half:y_end, x_half:x_end, t, cell] * mask_bottomright) * stressmappixelsize ** 2\
+                                  - sigma_x[t, cell] * r * stressmappixelsize   # correcting for the contribution of the surface tension
             Fy_bottomright[t, cell] = np.nansum(
                 Ty[y_half:y_end, x_half:x_end, t, cell] * mask_bottomright) * stressmappixelsize ** 2
 

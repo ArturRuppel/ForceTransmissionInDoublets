@@ -165,6 +165,7 @@ make_box_and_swarmplots_with_test(x, y, df_singlet, ax, ymin, ymax, yticks, stat
                                   colors)
 
 plt.savefig(figfolder + 'B.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'B.svg', dpi=300, bbox_inches="tight")
 plt.show()
 # %% filter data to make sure that the baselines are stable
 def filter_data_main(data, title):
