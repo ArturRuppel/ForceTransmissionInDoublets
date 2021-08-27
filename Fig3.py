@@ -25,7 +25,7 @@ AR1to1d_halfstim = pickle.load(open(folder + "analysed_data/AR1to1d_halfstim.dat
 AR1to1s_halfstim = pickle.load(open(folder + "analysed_data/AR1to1s_halfstim.dat", "rb"))
 
 # %% filter data to make sure that the baselines are stable
-def filter_data_main(data, title):
+def filter_data_main(data, threshold, title):
     # concatenate data on which it will be determined which cells will be filtered
     filterdata = np.stack(
         (data["TFM_data"]["relEs"][0:20, :], data["MSM_data"]["relsigma_xx"][0:20, :], data["MSM_data"]["relsigma_yy"][0:20, :],
@@ -36,7 +36,7 @@ def filter_data_main(data, title):
     filterdata = np.moveaxis(filterdata, 0, -1)
 
     # maximal allowed slope for linear fit of baseline
-    threshold = 0.005
+
     baselinefilter = create_baseline_filter(filterdata, threshold)
 
     # remove cells with unstable baselines
@@ -49,12 +49,12 @@ def filter_data_main(data, title):
 
     return data
 
+threshold = 0.005
+AR1to1d_fullstim_long = filter_data_main(AR1to1d_fullstim_long, threshold, "AR1to1d_fullstim_long")
+AR1to1d_halfstim = filter_data_main(AR1to1d_halfstim, threshold, "AR1to1d_halfstim")
 
-AR1to1d_fullstim_long = filter_data_main(AR1to1d_fullstim_long, "AR1to1d_fullstim_long")
-AR1to1d_halfstim = filter_data_main(AR1to1d_halfstim, "AR1to1d_halfstim")
-
-AR1to1s_fullstim_long = filter_data_main(AR1to1s_fullstim_long, "AR1to1s_fullstim_long")
-AR1to1s_halfstim = filter_data_main(AR1to1s_halfstim, "AR1to1s_halfstim")
+AR1to1s_fullstim_long = filter_data_main(AR1to1s_fullstim_long, threshold, "AR1to1s_fullstim_long")
+AR1to1s_halfstim = filter_data_main(AR1to1s_halfstim, threshold, "AR1to1s_halfstim")
 
 # %% load simulation data
 
@@ -306,7 +306,7 @@ y = AR1to1d_fullstim_long["TFM_data"]["relEs"]
 y = y[::2, :]
 
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, xmax=60)
 
 ax.plot(sim_relEs_1to1dfs, color=color)
 
@@ -320,7 +320,7 @@ y = AR1to1d_halfstim["TFM_data"]["relEs"]
 y = y[::2, :]
 
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, xmax=60)
 
 # Set up plot parameters for third panel
 #######################################################################################################
@@ -332,7 +332,7 @@ y = AR1to1s_fullstim_long["TFM_data"]["relEs"]
 y = y[::2, :]
 
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, xmax=60)
 
 ax.plot(sim_relEs_1to1sfs, color=color)
 
@@ -346,7 +346,7 @@ y = AR1to1s_halfstim["TFM_data"]["relEs"]
 y = y[::2, :]
 
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, xmax=60)
 
 # Set up plot parameters for fifth panel
 #######################################################################################################
@@ -355,9 +355,9 @@ y = 'REI'  # variable that goes on the y-axis
 ax = axes[0, 2]  # define on which axis the plot goes
 colors = [colors_parent[1], colors_parent[1]]  # defines colors
 ymin = -0.2  # minimum value on y-axis
-ymax = 0.8  # maximum value on y-axis
+ymax = 0.6  # maximum value on y-axis
 yticks = np.arange(-0.2, 0.81, 0.2)  # define where to put major ticks on y-axis
-stat_annotation_offset = -0.15  # vertical offset of statistical annotation
+stat_annotation_offset = -0.32  # vertical offset of statistical annotation
 ylabel = None  # which label to put on y-axis
 title = None  # title of plot
 box_pairs = [('AR1to1d_fs', 'AR1to1d_hs')]  # which groups to perform statistical test on
@@ -373,9 +373,9 @@ y = 'REI'  # variable that goes on the y-axis
 ax = axes[1, 2]  # define on which axis the plot goes
 colors = [colors_parent[2], colors_parent[2]]  # defines colors
 ymin = -0.2  # minimum value on y-axis
-ymax = 0.8  # maximum value on y-axis
+ymax = 0.6  # maximum value on y-axis
 yticks = np.arange(-0.2, 0.81, 0.2)  # define where to put major ticks on y-axis
-stat_annotation_offset = -0.15  # vertical offset of statistical annotation
+stat_annotation_offset = 0.38  # vertical offset of statistical annotation
 ylabel = None  # which label to put on y-axis
 title = None  # title of plot
 box_pairs = [('AR1to1s_fs', 'AR1to1s_hs')]  # which groups to perform statistical test on
@@ -385,9 +385,9 @@ make_box_and_swarmplots_with_test(x, y, df_singlet, ax, ymin, ymax, yticks, stat
                                   colors)
 
 # write title for panels 1 to 4
-plt.text(-5.1, 2.4, 'Relative strain energy', fontsize=10)
+plt.text(-5.1, 1.85, 'Relative strain energy', fontsize=10)
 # write title for panels 5 to 6
-plt.text(-0.61, 2.25, 'Relative energy \n     increase', fontsize=10)
+plt.text(-0.61, 1.7, 'Relative energy \n     increase', fontsize=10)
 # save plot to file
 plt.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
 fig.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
@@ -481,7 +481,7 @@ y = AR1to1d_halfstim["MSM_data"]["sigma_normal_x_profile_baseline"] * 1e3  # con
 y = y[::2, :]
 
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False, xmax=40)
 
 # # Set up plot parameters for second panel
 # #######################################################################################################
@@ -493,7 +493,7 @@ y = AR1to1s_halfstim["MSM_data"]["sigma_normal_x_profile_baseline"] * 1e3  # con
 y = y[::2, :]
 
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False, xmax=40)
 
 
 plt.savefig(figfolder + 'D2.png', dpi=300, bbox_inches="tight")
@@ -589,7 +589,7 @@ y = AR1to1d_halfstim["MSM_data"]["sigma_normal_x_profile_increase"] * 1e3  # con
 y = y[::2, :]
 
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False, xmax=40)
 
 # add line at y=0 for visualisation
 ax.plot([x[0], x[-1]], [0, 0], linewidth=0.5, linestyle=':', color='grey')
@@ -604,7 +604,7 @@ y = AR1to1s_halfstim["MSM_data"]["sigma_normal_x_profile_increase"] * 1e3  # con
 y = y[::2, :]
 
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False, xmax=40)
 
 # add line at y=0 for visualisation
 ax.plot([x[0], x[-1]], [0, 0], linewidth=0.5, linestyle=':', color='grey')

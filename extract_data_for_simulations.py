@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 import pandas as pd
 import scipy.stats as st
-
+from plot_and_filter_functions import *
 #%% load data
 folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
 
@@ -140,6 +140,33 @@ with open(folder + 'analysed_data/mean_stress_and_Es.dat', 'wb') as outfile:
 #
 # df.to_csv(folder + 'analysed_data/halfstim_data.csv', index=False)
 # df_halfstim = df
+# %% filter data to make sure that the baselines are stable
+def filter_data_main(data1, data2, title):
+    # concatenate data on which it will be determined which cells will be filtered
+    filterdata = data1["shape_data"]["relcell_width_center"][0:20, :]
+
+    # maximal allowed slope for linear fit of baseline
+    threshold = 0.002
+    baselinefilter = create_baseline_filter(filterdata, threshold)
+
+    # remove cells with unstable baselines
+    data2["ellipse_data"] = apply_filter(data2["ellipse_data"], baselinefilter)
+    data2["ellipse_data_approx"] = apply_filter(data2["ellipse_data_approx"], baselinefilter)
+    data2["circle_fit_data"] = apply_filter(data2["circle_fit_data"], baselinefilter)
+    data2["tangent_data"] = apply_filter(data2["tangent_data"], baselinefilter)
+    data2["TEM_data"] = apply_filter(data2["TEM_data"], baselinefilter)
+
+    new_N = np.sum(baselinefilter)
+    print(title + ": " + str(baselinefilter.shape[0] - new_N) + " cells were filtered out")
+
+    return data2
+
+
+AR1to1d_fullstim_long_CM = filter_data_main(AR1to1d_fullstim_long, AR1to1d_fullstim_long_CM, "AR1to1d_fullstim_long")
+
+AR1to1s_fullstim_long_CM = filter_data_main(AR1to1s_fullstim_long, AR1to1s_fullstim_long_CM, "AR1to1s_fullstim_long")
+
+
 #%% create dataframe for fullstim data
 # initialize empty dictionaries
 concatenated_data_1to1d = {}

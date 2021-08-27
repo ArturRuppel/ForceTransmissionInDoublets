@@ -375,7 +375,7 @@ ax = axes[0]  # define on which axis the plot goes
 ymin = -100  # minimum value on y-axis
 ymax = 500  # maximum value on y-axis
 yticks = np.arange(0, 501, 100)  # define where to put major ticks on y-axis
-stat_annotation_offset = 0.25  # vertical offset of statistical annotation
+stat_annotation_offset = 0.02  # vertical offset of statistical annotation
 ylabel = '$\mathrm{\lambda}$ [nN]'  # which label to put on y-axis
 title = 'Line tension'  # title of plot
 
@@ -390,7 +390,7 @@ ax = axes[1]  # define on which axis the plot goes
 ymin = -100  # minimum value on y-axis
 ymax = 500  # maximum value on y-axis
 yticks = np.arange(0, 501, 100)  # define where to put major ticks on y-axis
-stat_annotation_offset = 0.6  # vertical offset of statistical annotation
+stat_annotation_offset = 0.5  # vertical offset of statistical annotation
 ylabel = '$\mathrm{f_a}$ [nN]'  # which label to put on y-axis
 title = 'Force of adherent fiber'  # title of plot
 

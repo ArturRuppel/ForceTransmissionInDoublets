@@ -5,13 +5,42 @@ import seaborn as sns
 import statannot
 from scipy.stats import pearsonr
 from sklearn.linear_model import LinearRegression
+import matplotlib.colors as mc
+import colorsys
+import scipy.stats as st
 
 plt.rcParams['font.size'] = 8
 # plt.rcParams.update({"text.usetex": True})
 
-def make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors,
-                                linewidth_bp=0.7, width_bp=0.3, dotsize=1.8, linewidth_sw=0.3, alpha_sw=1, alpha_bp=0.8, ylabeloffset=1,
-                                titleoffset=3.5, test='Mann-Whitney'):
+def calculate_median_and_CI(df, quantity):
+    stats = df.groupby(['keys'])[quantity].agg(['median', 'count', 'std'])
+    confidence = 0.95
+    CI = []
+    quantities = []
+
+    for i in stats.index:
+        mean, count, std = stats.loc[i]
+        CI.append(st.t.ppf((1 + confidence) / 2., count-1) * std / np.sqrt(count))      # the whole confidence interval is mean +- CI_error
+        quantities.append(quantity)
+    stats['CI'] = CI
+    stats['quantity'] = quantities
+
+    return stats
+
+def adjust_lightness(color, amount=0.5):
+    try:
+        c = mc.cnames[color]
+    except:
+        c = color
+    c = colorsys.rgb_to_hls(*mc.to_rgb(c))
+    return colorsys.hls_to_rgb(c[0], max(0, min(1, amount * c[1])), c[2])
+
+
+def make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title,
+                                      colors,
+                                      linewidth_bp=0.7, width_bp=0.3, dotsize=1.8, linewidth_sw=0.3, alpha_sw=1, alpha_bp=0.8,
+                                      ylabeloffset=1,
+                                      titleoffset=3.5, test='Mann-Whitney'):
     sns.set_palette(sns.color_palette(colors))  # sets colors
     # create box- and swarmplots
     sns.swarmplot(x=x, y=y, data=df, ax=ax, alpha=alpha_sw, linewidth=linewidth_sw, zorder=0, size=dotsize)
@@ -22,7 +51,8 @@ def make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_ann
                                 "markersize": "3", "markeredgewidth": "0.5"})
 
     statannot.add_stat_annotation(bp, data=df, x=x, y=y, box_pairs=box_pairs,
-                                  line_offset_to_box=stat_annotation_offset, test=test, comparisons_correction=None, text_format='star', loc='inside', verbose=3)
+                                  line_offset_to_box=stat_annotation_offset, test=test, comparisons_correction=None, text_format='star',
+                                  loc='inside', verbose=3)
 
     # make boxplots transparent
     for patch in bp.artists:
@@ -51,9 +81,8 @@ def make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_ann
     ax.set_ylim(ymax=ymax)
 
 
-
 def make_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors, linewidth_bp=0.7, width_bp=0.5,
-                                 dotsize=1.3, linewidth_sw=0.3, alpha_sw=1, alpha_bp=0.8, ylabeloffset=1, titleoffset=3.5):
+                            dotsize=1.3, linewidth_sw=0.3, alpha_sw=1, alpha_bp=0.8, ylabeloffset=1, titleoffset=3.5):
     sns.set_palette(sns.color_palette(colors))  # sets colors
     # create box- and swarmplots
     sns.swarmplot(x=x, y=y, data=df, ax=ax, alpha=alpha_sw, linewidth=linewidth_sw, zorder=0, size=dotsize)
@@ -90,6 +119,7 @@ def make_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabe
     ax.set_ylim(ymax=ymax)
 
     return bp
+
 
 def plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors,
                              titleoffset=3.5, optolinewidth=0.1, xlabeloffset=1, ylabeloffset=1, xmax=False):
@@ -301,7 +331,7 @@ def apply_filter(data, filter):
             data[key] = data[key][filter_resized].reshape(newshape)
         elif data[key].ndim == 4:
             filter_resized = np.expand_dims(filter, axis=(0, 1, 2)).repeat(shape[0], 0).repeat(shape[1], 1).repeat(shape[2],
-                                                                                                                                   2)
+                                                                                                                   2)
             newshape = [shape[0], shape[1], shape[2], new_N]
             data[key] = data[key][filter_resized].reshape(newshape)
         else:

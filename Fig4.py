@@ -22,6 +22,8 @@ AR1to1s_fullstim_long = pickle.load(open(folder + "analysed_data/AR1to1s_fullsti
 AR1to1s_fullstim_short = pickle.load(open(folder + "analysed_data/AR1to1s_fullstim_short.dat", "rb"))
 AR1to1s_halfstim = pickle.load(open(folder + "analysed_data/AR1to1s_halfstim.dat", "rb"))
 
+doublet_simulation = pickle.load(open(folder + "contour_simulations/CM_doublet_simulation.dat", "rb"))
+singlet_simulation = pickle.load(open(folder + "contour_simulations/CM_singlet_simulation.dat", "rb"))
 # define some colors for the plots
 colors_parent = ['#026473', '#E3CC69', '#77C8A6', '#D96248']
 
@@ -29,6 +31,49 @@ figfolder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alld
 if not os.path.exists(figfolder):
     os.mkdir(figfolder)
 
+# %% filter data to make sure that the baselines are stable
+def filter_data_main(data, title):
+    # concatenate data on which it will be determined which cells will be filtered
+    filterdata = data["shape_data"]["relcell_width_center"][0:20, :]
+
+    # maximal allowed slope for linear fit of baseline
+    threshold = 0.002
+    baselinefilter = create_baseline_filter(filterdata, threshold)
+
+    # remove cells with unstable baselines
+    data["TFM_data"] = apply_filter(data["TFM_data"], baselinefilter)
+    data["MSM_data"] = apply_filter(data["MSM_data"], baselinefilter)
+    data["shape_data"] = apply_filter(data["shape_data"], baselinefilter)
+
+    new_N = np.sum(baselinefilter)
+    print(title + ": " + str(baselinefilter.shape[0] - new_N) + " cells were filtered out")
+
+    return data
+
+
+AR1to1d_fullstim_long = filter_data_main(AR1to1d_fullstim_long, "AR1to1d_fullstim_long")
+AR1to1d_fullstim_short = filter_data_main(AR1to1d_fullstim_short, "AR1to1d_fullstim_short")
+AR1to1d_halfstim = filter_data_main(AR1to1d_halfstim, "AR1to1d_halfstim")
+
+AR1to1s_fullstim_long = filter_data_main(AR1to1s_fullstim_long, "AR1to1s_fullstim_long")
+AR1to1s_fullstim_short = filter_data_main(AR1to1s_fullstim_short, "AR1to1s_fullstim_short")
+AR1to1s_halfstim = filter_data_main(AR1to1s_halfstim, "AR1to1s_halfstim")
+
+# %% make some calculations on the simulated data
+feedbacks = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+doublet_epsilon_asymmetry_coefficient = []
+singlet_epsilon_asymmetry_coefficient = []
+for fb in feedbacks:
+    epsilon = doublet_simulation["EA300"]["FB" + str(fb)]["epsilon_yy"]
+    epsilon_asymmetry_curve = epsilon - np.flipud(epsilon)
+    epsilon_asymmetry_coefficient = np.nansum(epsilon_asymmetry_curve[0:int(epsilon_asymmetry_curve.shape[0] / 2)], axis=0)
+    doublet_epsilon_asymmetry_coefficient.append(epsilon_asymmetry_coefficient)
+
+for fb in feedbacks:
+    epsilon = singlet_simulation["EA300"]["FB" + str(fb)]["epsilon_yy"]
+    epsilon_asymmetry_curve = epsilon - np.flipud(epsilon)
+    epsilon_asymmetry_coefficient = np.nansum(epsilon_asymmetry_curve[0:int(epsilon_asymmetry_curve.shape[0] / 2)], axis=0)
+    singlet_epsilon_asymmetry_coefficient.append(epsilon_asymmetry_coefficient)
 # %% prepare dataframe for boxplots
 # initialize empty dictionaries
 concatenated_data_fs = {}
@@ -167,34 +212,151 @@ make_box_and_swarmplots_with_test(x, y, df_singlet, ax, ymin, ymax, yticks, stat
 plt.savefig(figfolder + 'B.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'B.svg', dpi=300, bbox_inches="tight")
 plt.show()
-# %% filter data to make sure that the baselines are stable
-def filter_data_main(data, title):
-    # concatenate data on which it will be determined which cells will be filtered
-    filterdata = data["shape_data"]["relcell_width_center"][0:20, :]
 
-    # maximal allowed slope for linear fit of baseline
-    threshold = 0.001
-    baselinefilter = create_filter(filterdata, threshold)
+# %% plot figure D, contour strain after photoactivation
 
-    # remove cells with unstable baselines
-    data["TFM_data"] = apply_filter(data["TFM_data"], baselinefilter)
-    data["MSM_data"] = apply_filter(data["MSM_data"], baselinefilter)
-    data["shape_data"] = apply_filter(data["shape_data"], baselinefilter)
+# set up global plot parameters
+# ******************************************************************************************************************************************
+x = np.linspace(-17.5, 17.5, 50)
+x = x[::2]  # downsample data for nicer plotting
+ymin = -0.06
+ymax = 0
+xticks = np.arange(-15, 15.1, 15)  # define where the major ticks are gonna be
+yticks = np.arange(ymin, ymax + 0.001, 0.02)
+xlabel = 'position [µm]'
+xticklabels = ['global \n act.', 'local \n act.']  # which labels to put on x-axis
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3.2, 3))  # create figure and axes
+plt.subplots_adjust(wspace=0.4, hspace=0.35)  # adjust space in between plots
+# ******************************************************************************************************************************************
 
-    new_N = np.sum(baselinefilter)
-    print(title + ": " + str(baselinefilter.shape[0] - new_N) + " cells were filtered out")
+# Set up plot parameters for first panel
+#######################################################################################################
+ax = axes[0, 0]
+color = colors_parent[1]
+ylabel = 'doublet'
+title = 'global activation'
+y = AR1to1d_fullstim_long["shape_data"]["contour_strain"]
+y = y[::2, :]
 
-    return data
+for fb in feedbacks:
+    y_sim = doublet_simulation["EA300"]["FB" + str(fb)]["epsilon_yy"]
+    x_sim = np.linspace(-17.5, 17.5, y_sim.shape[0])
+    ax.plot(x_sim, y_sim, color=adjust_lightness(color, fb), alpha=0.5, linewidth=0.7)
+
+# make plots
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+
+# Set up plot parameters for second panel
+#######################################################################################################
+ax = axes[0, 1]
+color = colors_parent[1]
+ylabel = None
+title = 'local activation'
+y = AR1to1d_halfstim["shape_data"]["contour_strain"]
+y = y[::2, :]
+
+for fb in feedbacks:
+    y_sim = doublet_simulation["EA300"]["FB" + str(fb)]["epsilon_yy"]
+    x_sim = np.linspace(-17.5, 17.5, y_sim.shape[0])
+    ax.plot(x_sim, y_sim, color=adjust_lightness(color, fb), alpha=0.5, linewidth=0.7)
+
+# make plots
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+
+# Set up plot parameters for third panel
+#######################################################################################################
+ax = axes[1, 0]
+color = colors_parent[2]
+ylabel = 'singlet'
+title = None
+ymin = -0.03
+y = AR1to1s_fullstim_long["shape_data"]["contour_strain"]
+y = y[::2, :]
+
+for fb in feedbacks:
+    y_sim = singlet_simulation["EA300"]["FB" + str(fb)]["epsilon_yy"]
+    x_sim = np.linspace(-17.5, 17.5, y_sim.shape[0])
+    ax.plot(x_sim, y_sim, color=adjust_lightness(color, fb), alpha=0.5, linewidth=0.7)
+
+# make plots
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+
+# Set up plot parameters for fourth panel
+#######################################################################################################
+ax = axes[1, 1]
+color = colors_parent[2]
+ylabel = None
+title = None
+y = AR1to1s_halfstim["shape_data"]["contour_strain"]
+y = y[::2, :]
+
+for fb in feedbacks:
+    y_sim = singlet_simulation["EA300"]["FB" + str(fb)]["epsilon_yy"]
+    x_sim = np.linspace(-17.5, 17.5, y_sim.shape[0])
+    ax.plot(x_sim, y_sim, color=adjust_lightness(color, fb), alpha=0.5, linewidth=0.7)
+
+# make plots
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+
+plt.savefig(figfolder + 'D.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'D.svg', dpi=300, bbox_inches="tight")
+plt.show()
+
+# %% plot figure E, contour strain after photoactivation
+def find_x_position_of_point_on_line(x_line, y_line, y_point):
+    # find equation describing the line
+    m = (y_line[-1] - y_line[0])/(x_line[-1] - x_line[0])
+    b = y_line[0] - x_line[0] * m
+    return (y_point - b) / m
+
+stats_doublet = calculate_median_and_CI(df_doublet, 'ASC')
+stats_singlet = calculate_median_and_CI(df_singlet, 'ASC')
+
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
+
+ax.plot(feedbacks, doublet_epsilon_asymmetry_coefficient, color=colors_parent[1])
+ax.plot(feedbacks, singlet_epsilon_asymmetry_coefficient, color=colors_parent[2])
 
 
-AR1to1d_fullstim_long = filter_data_main(AR1to1d_fullstim_long, "AR1to1d_fullstim_long")
-AR1to1d_fullstim_short = filter_data_main(AR1to1d_fullstim_short, "AR1to1d_fullstim_short")
-AR1to1d_halfstim = filter_data_main(AR1to1d_halfstim, "AR1to1d_halfstim")
+# add data points
+color = colors_parent[1]
+y_median = stats_doublet["median"]["AR1to1d_fs"]
+y_CI = stats_doublet["CI"]["AR1to1d_fs"]
+x = find_x_position_of_point_on_line(feedbacks, doublet_epsilon_asymmetry_coefficient, y_median)
+x_CI = find_x_position_of_point_on_line(feedbacks, doublet_epsilon_asymmetry_coefficient, y_median-y_CI)-x
+ax.errorbar(x, y_median, yerr=y_CI, xerr=x_CI, mfc='w', color=color, marker='o', ms=4, linewidth=0.5, ls='none',
+            markeredgewidth=0.5)
+y_median = stats_doublet["median"]["AR1to1d_hs"]
+y_CI = stats_doublet["CI"]["AR1to1d_hs"]
+x = find_x_position_of_point_on_line(feedbacks, doublet_epsilon_asymmetry_coefficient, y_median)
+x_CI = find_x_position_of_point_on_line(feedbacks, doublet_epsilon_asymmetry_coefficient, y_median-y_CI)-x
+ax.errorbar(x, y_median, yerr=y_CI, xerr=x_CI, mfc='w', color=color, marker='s', ms=4, linewidth=0.5, ls='none',
+            markeredgewidth=0.5)
 
-AR1to1s_fullstim_long = filter_data_main(AR1to1s_fullstim_long, "AR1to1s_fullstim_long")
-AR1to1s_fullstim_short = filter_data_main(AR1to1s_fullstim_short, "AR1to1s_fullstim_short")
-AR1to1s_halfstim = filter_data_main(AR1to1s_halfstim, "AR1to1s_halfstim")
+color = colors_parent[2]
+y_median = stats_singlet["median"]["AR1to1s_fs"]
+y_CI = stats_singlet["CI"]["AR1to1s_fs"]
+x = find_x_position_of_point_on_line(feedbacks, singlet_epsilon_asymmetry_coefficient, y_median)
+x_CI = find_x_position_of_point_on_line(feedbacks, singlet_epsilon_asymmetry_coefficient, y_median-y_CI)-x
+ax.errorbar(x, y_median, yerr=y_CI, xerr=x_CI, mfc='w', color=color, marker='o', ms=4, linewidth=0.5, ls='none',
+            markeredgewidth=0.5)
+y_median = stats_singlet["median"]["AR1to1s_hs"]
+y_CI = stats_singlet["CI"]["AR1to1s_fs"]
+x = find_x_position_of_point_on_line(feedbacks, singlet_epsilon_asymmetry_coefficient, y_median)
+x_CI = find_x_position_of_point_on_line(feedbacks, singlet_epsilon_asymmetry_coefficient, y_median-y_CI)-x
+ax.errorbar(x, y_median, yerr=y_CI, xerr=x_CI, mfc='w', color=color, marker='s', ms=4, linewidth=0.5, ls='none',
+            markeredgewidth=0.5)
+# provide info on tick parameters
+ax.minorticks_on()
+ax.tick_params(direction='in', which='minor', length=3, bottom=True, top=False, left=True, right=True)
+ax.tick_params(direction='in', which='major', length=6, bottom=True, top=False, left=True, right=True)
 
+plt.xlabel('feedback')
+plt.ylabel('ASC')
+plt.title('Asymmetry coefficient')
+plt.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'E.svg', dpi=300, bbox_inches="tight")
+plt.show()
 # %% prepare dataframe for boxplots
 # initialize empty dictionaries
 concatenated_data_fsl = {}
@@ -269,7 +431,6 @@ x = x[::2]  # downsample data for nicer plotting
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
 
-
 # Set up plot parameters for second panel
 #######################################################################################################
 ax = axes[0, 1]
@@ -285,7 +446,6 @@ plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title
 for i in np.arange(3):
     ax.axline((20 + i, ymin), (20 + i, ymax), linewidth=0.1, color="cyan")
 
-
 # Set up plot parameters for third panel
 #######################################################################################################
 ax = axes[1, 0]
@@ -298,7 +458,6 @@ x = np.arange(60)
 x = x[::2]  # downsample data for nicer plotting
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color)
-
 
 # Set up plot parameters for fourth panel
 #######################################################################################################
@@ -315,7 +474,6 @@ x = x[::2]  # downsample data for nicer plotting
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False, xmax=60)
 for i in np.arange(3):
     ax.axline((20 + i, ymin), (20 + i, ymax), linewidth=0.1, color="cyan")
-
 
 # Set up plot parameters for fifth panel
 #######################################################################################################

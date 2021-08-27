@@ -460,7 +460,7 @@ df['sigma_yy_baseline'] *= 1e3  # convert to mN/m
 df["attenuation_position"] *= stressmappixelsize   # convert to µm
 df["attenuation_length"] *= stressmappixelsize   # convert to µm
 
-# %% plot figure 5D, normal stress maps
+# %% plot figure 5D1, normal stress maps
 
 # prepare data first
 
@@ -529,11 +529,11 @@ plt.text(0.43, 0.853, 'n=' + str(n_1to2d), transform=plt.figure(1).transFigure, 
 plt.text(0.43, 0.598, 'n=' + str(n_1to1d), transform=plt.figure(1).transFigure, color='w')
 plt.text(0.43, 0.343, 'n=' + str(n_2to1d), transform=plt.figure(1).transFigure, color='w')
 
-fig.savefig(figfolder + 'D.png', dpi=300, bbox_inches="tight")
-fig.savefig(figfolder + 'D.svg', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'D1.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'D1.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
-# %% plot figure 5E
+# %% plot figure 5D2
 
 # set up global plot parameters
 # ******************************************************************************************************************************************
@@ -584,11 +584,11 @@ y = y[::2, :]
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
 
-plt.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")
-plt.savefig(figfolder + 'E.svg', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'D2.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'D2.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
-# %% plot figure 5F, stress map differences
+# %% plot figure 5E1, stress map differences
 
 # prepare data first
 
@@ -667,11 +667,11 @@ plt.text(0.43, 0.598, 'n=' + str(n_1to1d), transform=plt.figure(1).transFigure, 
 plt.text(0.43, 0.343, 'n=' + str(n_2to1d), transform=plt.figure(1).transFigure, color='black')
 
 # save figure
-fig.savefig(figfolder + 'F.png', dpi=300, bbox_inches="tight")
-fig.savefig(figfolder + 'F.svg', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'E1.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'E1.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
-# %% plot figure 5G
+# %% plot figure 5E2
 
 # set up global plot parameters
 # ******************************************************************************************************************************************
@@ -724,12 +724,12 @@ y = y[::2, :]
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
 
-plt.savefig(figfolder + 'G.png', dpi=300, bbox_inches="tight")
-plt.savefig(figfolder + 'G.svg', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'E2.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'E2.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 
-# %% plot figure 5H boxplots of attenuation length and position
+# %% plot figure 5F boxplots of attenuation length and position
 
 # set up global plot parameters
 # ******************************************************************************************************************************************
@@ -794,8 +794,8 @@ corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, 
 plt.text(xmin + 0.1 * xmax, 1.1*ymax, 'R = ' + str(corr))
 # plt.text(xmin + 0.1 * xmax, ymin + 0.1 * ymax, 'p = ' + '{:0.2e}'.format(p))
 
-plt.savefig(figfolder + 'H.png', dpi=300, bbox_inches="tight")
-plt.savefig(figfolder + 'H.svg', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'F.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'F.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 
