@@ -1,24 +1,21 @@
-import csv
 import numpy as np
-import pandas as pd
-from copy import deepcopy
-import os
-import sys
-import scipy.io as sio
-import circle_fit as cf
-from lmfit import Minimizer, Parameter, Model, report_fit
-from scipy import optimize
-import time
-import pickle
-import matplotlib.pyplot as plt
 import math
+import os
+import pickle
+
+import matplotlib.pyplot as plt
+import numpy as np
+from lmfit import Model
+from scipy import optimize
+
+import circle_fit as cf
 
 ''' Main contour model analysis script for TFM-Opto experiments for cells on H-shaped Micropattern (Artur Ruppel, Dennis Wörthmüller)
 
     Copyright: Dennis Wörthmüller, Artur Ruppel
     Date: April 29, 2021  
 
-    External python modules which are necessary: numpy, pandas scipy, lmfit, pickle, math
+    External python modules which are necessary: numpy, scipy, lmfit, pickle, math
 
 '''
 

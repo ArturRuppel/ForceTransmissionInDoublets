@@ -115,6 +115,8 @@ def load_MSM_and_TFM_data_and_actin_images(folder, noCells, stressmapshape, stre
     Dy_all = np.zeros([x_end, y_end, t_end, cell_end])
     sigma_xx_all = np.zeros([x_end, y_end, t_end, cell_end])
     sigma_yy_all = np.zeros([x_end, y_end, t_end, cell_end])
+    sigma_xy_all = np.zeros([x_end, y_end, t_end, cell_end])
+    sigma_yx_all = np.zeros([x_end, y_end, t_end, cell_end])
     images_all = np.zeros([x_end, y_end, t_end, cell_end])
 
     # loop over all folders (one folder per cell/tissue)
@@ -166,10 +168,11 @@ def load_MSM_and_TFM_data_and_actin_images(folder, noCells, stressmapshape, stre
         Ty_all[:, :, :, cell] = Ty_new[x_crop_start:x_crop_end, y_crop_start:y_crop_end, :]
         Dx_all[:, :, :, cell] = Dx_new[x_crop_start:x_crop_end, y_crop_start:y_crop_end, :]
         Dy_all[:, :, :, cell] = Dy_new[x_crop_start:x_crop_end, y_crop_start:y_crop_end, :]
-        sigma_xx_all[:, :, :, cell], sigma_yy_all[:, :, :, cell] = stresstensor[(0, 1), x_crop_start:x_crop_end, y_crop_start:y_crop_end, :]
+        sigma_xx_all[:, :, :, cell], sigma_yy_all[:, :, :, cell], sigma_xy_all[:, :, :, cell], sigma_yx_all[:, :, :, cell] = \
+            stresstensor[:, x_crop_start:x_crop_end, y_crop_start:y_crop_end, :]
         images_all[:, :, :, cell] = image
 
-    return sigma_xx_all, sigma_yy_all, Tx_all, Ty_all, Dx_all, Dy_all, images_all
+    return sigma_xx_all, sigma_yy_all, sigma_xy_all, sigma_yx_all, Tx_all, Ty_all, Dx_all, Dy_all, images_all
 
 
 def load_actin_angle_data(folder):
@@ -222,11 +225,13 @@ def main(folder_old, folder_new, title, noCells, noFrames):
     print('Data loading of ' + title + ' started!')
     # Xtop, Xright, Xbottom, Xleft, Ytop, Yright, Ybottom, Yleft, mask = \
     #     load_fibertracking_data(folder_old, fibertrackingshape, stressmapshape, noCells)
-    # sigma_xx, sigma_yy, Tx, Ty, Dx, Dy, actin_images = load_MSM_and_TFM_data_and_actin_images(folder_old, noCells, stressmapshape, stressmappixelsize)
+    sigma_xx, sigma_yy, sigma_xy, sigma_yx, Tx, Ty, Dx, Dy, actin_images = load_MSM_and_TFM_data_and_actin_images(folder_old, noCells,
+                                                                                                                  stressmapshape,
+                                                                                                                  stressmappixelsize)
     # actin_angles = load_actin_angle_data(folder_old)
     # actin_intensity_left, actin_intensity_right = load_actin_intensity_data(folder_old)
     # actin_images = load_actin_images(folder_old, stressmapshape, noCells)
-    save_actin_images_as_png(folder_old, folder_new, title, noCells, stressmapshape, stressmappixelsize)
+    # save_actin_images_as_png(folder_old, folder_new, title, noCells, stressmapshape, stressmappixelsize)
     # np.save(folder_new + title + "/Xtop.npy", Xtop)
     # np.save(folder_new + title + "/Xright.npy", Xright)
     # np.save(folder_new + title + "/Xbottom.npy", Xbottom)
@@ -243,8 +248,10 @@ def main(folder_old, folder_new, title, noCells, noFrames):
     # np.save(folder_new + title + "/Dy.npy", Dy)
     # np.save(folder_new + title + "/Tx.npy", Tx)
     # np.save(folder_new + title + "/Ty.npy", Ty)
-    # np.save(folder_new + title + "/sigma_xx.npy", sigma_xx)
-    # np.save(folder_new + title + "/sigma_yy.npy", sigma_yy)
+    np.save(folder_new + title + "/sigma_xx.npy", sigma_xx)
+    np.save(folder_new + title + "/sigma_yy.npy", sigma_yy)
+    np.save(folder_new + title + "/sigma_xy.npy", sigma_xy)
+    np.save(folder_new + title + "/sigma_yx.npy", sigma_yx)
     #
     # np.save(folder_new + title + "/actin_angles.npy", actin_angles)
     #

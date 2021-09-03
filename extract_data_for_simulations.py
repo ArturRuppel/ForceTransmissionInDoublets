@@ -26,6 +26,37 @@ AR1to1d_halfstim_CM = pickle.load(open(folder + "analysed_data/AR1to1d_halfstim_
 AR1to1s_halfstim_CM = pickle.load(open(folder + "analysed_data/AR1to1s_halfstim_CM.dat", "rb"))
 AR2to1d_halfstim_CM = pickle.load(open(folder + "analysed_data/AR2to1d_halfstim_CM.dat", "rb"))
 
+# %% filter data to make sure that the baselines are stable
+def filter_data_main(data, threshold, title):
+    # concatenate data on which it will be determined which cells will be filtered
+    filterdata = np.stack(
+        (data["TFM_data"]["relEs"][0:20, :], data["MSM_data"]["relsigma_xx"][0:20, :], data["MSM_data"]["relsigma_yy"][0:20, :],
+         data["MSM_data"]["relsigma_xx_left"][0:20, :], data["MSM_data"]["relsigma_xx_right"][0:20, :],
+         data["MSM_data"]["relsigma_yy_left"][0:20, :], data["MSM_data"]["relsigma_yy_right"][0:20, :]))
+
+    # move axis of variable to the last position for consistency
+    filterdata = np.moveaxis(filterdata, 0, -1)
+
+    # maximal allowed slope for linear fit of baseline
+
+    baselinefilter = create_baseline_filter(filterdata, threshold)
+
+    # remove cells with unstable baselines
+    data["TFM_data"] = apply_filter(data["TFM_data"], baselinefilter)
+    data["MSM_data"] = apply_filter(data["MSM_data"], baselinefilter)
+    data["shape_data"] = apply_filter(data["shape_data"], baselinefilter)
+
+    new_N = np.sum(baselinefilter)
+    print(title + ": " + str(baselinefilter.shape[0] - new_N) + " cells were filtered out")
+
+    return data
+
+threshold = 0.005
+AR1to1d_fullstim_long = filter_data_main(AR1to1d_fullstim_long, threshold, "AR1to1d_fullstim_long")
+AR1to1d_halfstim = filter_data_main(AR1to1d_halfstim, threshold, "AR1to1d_halfstim")
+
+AR1to1s_fullstim_long = filter_data_main(AR1to1s_fullstim_long, threshold, "AR1to1s_fullstim_long")
+AR1to1s_halfstim = filter_data_main(AR1to1s_halfstim, threshold, "AR1to1s_halfstim")
 #%%
 mean_stress_and_Es = {'1to1d_fullstim': {'Es': np.nanmean(AR1to1d_fullstim_long["TFM_data"]["Es"], axis=1),
                                          'sigma_xx': np.nanmean(AR1to1d_fullstim_long["MSM_data"]["sigma_xx_average"], axis=1),

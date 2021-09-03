@@ -22,8 +22,8 @@ AR1to1s_fullstim_long = pickle.load(open(folder + "analysed_data/AR1to1s_fullsti
 AR1to1s_fullstim_short = pickle.load(open(folder + "analysed_data/AR1to1s_fullstim_short.dat", "rb"))
 AR1to1s_halfstim = pickle.load(open(folder + "analysed_data/AR1to1s_halfstim.dat", "rb"))
 
-doublet_simulation = pickle.load(open(folder + "contour_simulations/CM_doublet_simulation.dat", "rb"))
-singlet_simulation = pickle.load(open(folder + "contour_simulations/CM_singlet_simulation.dat", "rb"))
+doublet_simulation = pickle.load(open(folder + "_contour_simulations/CM_doublet_simulation.dat", "rb"))
+singlet_simulation = pickle.load(open(folder + "_contour_simulations/CM_singlet_simulation.dat", "rb"))
 # define some colors for the plots
 colors_parent = ['#026473', '#E3CC69', '#77C8A6', '#D96248']
 
@@ -64,15 +64,17 @@ feedbacks = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 doublet_epsilon_asymmetry_coefficient = []
 singlet_epsilon_asymmetry_coefficient = []
 for fb in feedbacks:
-    epsilon = doublet_simulation["EA300"]["FB" + str(fb)]["epsilon_yy"]
-    epsilon_asymmetry_curve = epsilon - np.flipud(epsilon)
-    epsilon_asymmetry_coefficient = np.nansum(epsilon_asymmetry_curve[0:int(epsilon_asymmetry_curve.shape[0] / 2)], axis=0)
+    epsilon = doublet_simulation["EA50"]["FB" + str(fb)]["epsilon_yy"]
+    rel_epsilon = epsilon / np.min(epsilon)
+    epsilon_asymmetry_curve = rel_epsilon - np.flipud(rel_epsilon)
+    epsilon_asymmetry_coefficient = np.nanmean(epsilon_asymmetry_curve[0:int(epsilon_asymmetry_curve.shape[0] / 2)], axis=0)
     doublet_epsilon_asymmetry_coefficient.append(epsilon_asymmetry_coefficient)
 
 for fb in feedbacks:
-    epsilon = singlet_simulation["EA300"]["FB" + str(fb)]["epsilon_yy"]
-    epsilon_asymmetry_curve = epsilon - np.flipud(epsilon)
-    epsilon_asymmetry_coefficient = np.nansum(epsilon_asymmetry_curve[0:int(epsilon_asymmetry_curve.shape[0] / 2)], axis=0)
+    epsilon = singlet_simulation["EA50"]["FB" + str(fb)]["epsilon_yy"]
+    rel_epsilon = epsilon / np.min(epsilon)
+    epsilon_asymmetry_curve = rel_epsilon - np.flipud(rel_epsilon)
+    epsilon_asymmetry_coefficient = np.nanmean(epsilon_asymmetry_curve[0:int(epsilon_asymmetry_curve.shape[0] / 2)], axis=0)
     singlet_epsilon_asymmetry_coefficient.append(epsilon_asymmetry_coefficient)
 # %% prepare dataframe for boxplots
 # initialize empty dictionaries
@@ -320,32 +322,36 @@ ax.plot(feedbacks, singlet_epsilon_asymmetry_coefficient, color=colors_parent[2]
 
 # add data points
 color = colors_parent[1]
-y_median = stats_doublet["median"]["AR1to1d_fs"]
-y_CI = stats_doublet["CI"]["AR1to1d_fs"]
-x = find_x_position_of_point_on_line(feedbacks, doublet_epsilon_asymmetry_coefficient, y_median)
-x_CI = find_x_position_of_point_on_line(feedbacks, doublet_epsilon_asymmetry_coefficient, y_median-y_CI)-x
-ax.errorbar(x, y_median, yerr=y_CI, xerr=x_CI, mfc='w', color=color, marker='o', ms=4, linewidth=0.5, ls='none',
-            markeredgewidth=0.5)
+# y_median = stats_doublet["median"]["AR1to1d_fs"]
+# y_CI = stats_doublet["CI"]["AR1to1d_fs"]
+# x = find_x_position_of_point_on_line(feedbacks, doublet_epsilon_asymmetry_coefficient, y_median)
+# x_CI = find_x_position_of_point_on_line(feedbacks, doublet_epsilon_asymmetry_coefficient, y_median-y_CI)-x
+# ax.errorbar(x, y_median, yerr=y_CI, xerr=x_CI, mfc='w', color=color, marker='o', ms=4, linewidth=0.5, ls='none',
+#             markeredgewidth=0.5)
 y_median = stats_doublet["median"]["AR1to1d_hs"]
 y_CI = stats_doublet["CI"]["AR1to1d_hs"]
-x = find_x_position_of_point_on_line(feedbacks, doublet_epsilon_asymmetry_coefficient, y_median)
+# x = find_x_position_of_point_on_line(feedbacks, doublet_epsilon_asymmetry_coefficient, y_median)
+x=0.45
 x_CI = find_x_position_of_point_on_line(feedbacks, doublet_epsilon_asymmetry_coefficient, y_median-y_CI)-x
-ax.errorbar(x, y_median, yerr=y_CI, xerr=x_CI, mfc='w', color=color, marker='s', ms=4, linewidth=0.5, ls='none',
+ax.errorbar(x, y_median, yerr=y_CI, mfc='w', color=color, marker='s', ms=4, linewidth=0.5, ls='none',
             markeredgewidth=0.5)
 
 color = colors_parent[2]
-y_median = stats_singlet["median"]["AR1to1s_fs"]
-y_CI = stats_singlet["CI"]["AR1to1s_fs"]
-x = find_x_position_of_point_on_line(feedbacks, singlet_epsilon_asymmetry_coefficient, y_median)
-x_CI = find_x_position_of_point_on_line(feedbacks, singlet_epsilon_asymmetry_coefficient, y_median-y_CI)-x
-ax.errorbar(x, y_median, yerr=y_CI, xerr=x_CI, mfc='w', color=color, marker='o', ms=4, linewidth=0.5, ls='none',
-            markeredgewidth=0.5)
+# y_median = stats_singlet["median"]["AR1to1s_fs"]
+# y_CI = stats_singlet["CI"]["AR1to1s_fs"]
+# x = find_x_position_of_point_on_line(feedbacks, singlet_epsilon_asymmetry_coefficient, y_median)
+# x_CI = find_x_position_of_point_on_line(feedbacks, singlet_epsilon_asymmetry_coefficient, y_median-y_CI)-x
+# ax.errorbar(x, y_median, yerr=y_CI, xerr=x_CI, mfc='w', color=color, marker='o', ms=4, linewidth=0.5, ls='none',
+#             markeredgewidth=0.5)
 y_median = stats_singlet["median"]["AR1to1s_hs"]
 y_CI = stats_singlet["CI"]["AR1to1s_fs"]
-x = find_x_position_of_point_on_line(feedbacks, singlet_epsilon_asymmetry_coefficient, y_median)
+# x = find_x_position_of_point_on_line(feedbacks, singlet_epsilon_asymmetry_coefficient, y_median)
+x=0.35
 x_CI = find_x_position_of_point_on_line(feedbacks, singlet_epsilon_asymmetry_coefficient, y_median-y_CI)-x
-ax.errorbar(x, y_median, yerr=y_CI, xerr=x_CI, mfc='w', color=color, marker='s', ms=4, linewidth=0.5, ls='none',
+ax.errorbar(x, y_median, yerr=y_CI, mfc='w', color=color, marker='s', ms=4, linewidth=0.5, ls='none',
             markeredgewidth=0.5)
+
+
 # provide info on tick parameters
 ax.minorticks_on()
 ax.tick_params(direction='in', which='minor', length=3, bottom=True, top=False, left=True, right=True)

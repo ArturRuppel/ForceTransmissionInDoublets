@@ -178,14 +178,18 @@ def analyse_tfm_data(folder, stressmappixelsize):
 def analyse_msm_data(folder):
     sigma_xx = np.load(folder + "/sigma_xx.npy")
     sigma_yy = np.load(folder + "/sigma_yy.npy")
+    sigma_xy = np.load(folder + "/sigma_xy.npy")
+    sigma_yx = np.load(folder + "/sigma_yx.npy")
     masks = np.load(folder + "/mask.npy")
 
     # replace 0 with NaN to not mess up average calculations
     sigma_xx[sigma_xx == 0] = 'nan'
     sigma_yy[sigma_yy == 0] = 'nan'
+    sigma_xy[sigma_xy == 0] = 'nan'
+    sigma_yx[sigma_yx == 0] = 'nan'
 
     # calculate normal stress
-    sigma_normal = (sigma_xx + sigma_yy) / 2
+    sigma_normal = np.sqrt(sigma_xx ** 2 + sigma_yy ** 2 - sigma_xx * sigma_yy + 3 * sigma_xy ** 2)
 
     # calculate stress profile along x-axis. 
     # I cut out the borders by multiplying with masks that describes the cell contour exactly to mitigate boundary effects
@@ -352,10 +356,11 @@ def analyse_shape_data(folder, stressmappixelsize):
 
     # calculate contour strain at peak contraction
     epsilon = 1 - np.nanmean(W[:, 1:20, :], axis=1) / np.nanmean(W[:, 30:33, :], axis=1)
+    rel_epsilon = epsilon / np.min(epsilon)
 
     # quantify degree of asymmetry of the strain
-    epsilon_asymmetry_curve = epsilon - np.flipud(epsilon)
-    epsilon_asymmetry_coefficient = np.nansum(epsilon_asymmetry_curve[0:int(epsilon_asymmetry_curve.shape[0] / 2)], axis=0)
+    epsilon_asymmetry_curve = (rel_epsilon - np.flipud(rel_epsilon))
+    epsilon_asymmetry_coefficient = np.nanmean(epsilon_asymmetry_curve[0:int(epsilon_asymmetry_curve.shape[0] / 2)], axis=0)
 
     masks = np.load(folder + "/mask.npy")
 
