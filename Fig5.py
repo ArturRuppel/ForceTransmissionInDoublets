@@ -278,25 +278,25 @@ xlabeloffset = 0
 colors = [colors_parent[0], colors_parent[1], colors_parent[3]]  # defines colors for scatterplot
 
 
-x = 'actin_angles'
-y = 'AIC_baseline'
+y = 'actin_angles'
+x = 'AIC_baseline'
 hue = 'keys'
-xmin = 15
-xmax = 75
-ymin = -1
-ymax = 1
-xticks = np.arange(15, 75.1, 15)
-yticks = np.arange(-1, 1.1, 0.5)
-xlabel = "Actin angle"  # "'$\mathrm{\sigma_{x, MSM}}$'
-ylabel = "Anisotropy coefficient"  # '$\mathrm{\sigma_{x, CM}}$'
+ymin = 15
+ymax = 75
+xmin = -1
+xmax = 1
+yticks = np.arange(15, 75.1, 15)
+xticks = np.arange(-1, 1.1, 0.5)
+ylabel = "Actin angle"  # "'$\mathrm{\sigma_{x, MSM}}$'
+xlabel = "Stress anisotropy coefficient"  # '$\mathrm{\sigma_{x, CM}}$'
 
 corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
 
 # add line with slope 1 for visualisation
-ax.plot([xmin, xmax], [0, 0], linewidth=0.5, linestyle=':', color='grey')
-ax.plot([45, 45], [ymin, ymax], linewidth=0.5, linestyle=':', color='grey')
+ax.plot([ymin, ymax], [0, 0], linewidth=0.5, linestyle=':', color='grey')
+ax.plot([45, 45], [xmin, xmax], linewidth=0.5, linestyle=':', color='grey')
 
-plt.text(0.21 * xmax, 1.1 * ymax, 'R = ' + str(corr))
+plt.text(0.21 * xmax + xmin, 1.05 * ymax, 'R = ' + str(corr))
 # plt.text(0.52 * xmax, 1.1 * ymax, 'p = ' + '{:0.2e}'.format(p))
 
 plt.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
@@ -378,152 +378,26 @@ df['Es_baseline'] *= 1e12  # convert to fJ
 df['spreadingsize_baseline'] *= 1e12  # convert to µm²
 df['sigma_xx_baseline'] *= 1e3  # convert to mN/m
 df['sigma_yy_baseline'] *= 1e3  # convert to mN/m
+df["left_asymptote"] *= 1e3  # convert to mN/m
+df["right_asymptote"] *= 1e3  # convert to mN/m
 df["attenuation_position"] *= stressmappixelsize   # convert to µm
 df["attenuation_length"] *= stressmappixelsize   # convert to µm
 
-# %% plot figure 5D1, mean stress maps
-
-# prepare data first
-
-# Calculate average maps over first 20 frames and all cells to get average maps
-sigma_mean_1to2d_average = np.nanmean(AR1to2d_halfstim["MSM_data"]["sigma_mean"][:, :, 0:20, :], axis=(2, 3))
-sigma_mean_1to1d_average = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_mean"][:, :, 0:20, :], axis=(2, 3))
-sigma_mean_2to1d_average = np.nanmean(AR2to1d_halfstim["MSM_data"]["sigma_mean"][:, :, 0:20, :], axis=(2, 3))
-
-# convert NaN to 0 to have black background
-sigma_mean_1to2d_average[np.isnan(sigma_mean_1to2d_average)] = 0
-sigma_mean_1to1d_average[np.isnan(sigma_mean_1to1d_average)] = 0
-sigma_mean_2to1d_average[np.isnan(sigma_mean_2to1d_average)] = 0
-
-# crop maps
-crop_start = 2
-crop_end = 90
-
-sigma_mean_1to2d_average_crop = sigma_mean_1to2d_average[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
-sigma_mean_1to1d_average_crop = sigma_mean_1to1d_average[crop_start:crop_end, crop_start:crop_end] * 1e3
-sigma_mean_2to1d_average_crop = sigma_mean_2to1d_average[crop_start:crop_end, crop_start:crop_end] * 1e3
-
-# set up plot parameters
-# *****************************************************************************
-n = 4  # every nth arrow will be plotted
-pixelsize = 0.864  # in µm
-pmax = 10  # mN/m
-
-# create x- and y-axis for plotting maps
-x_end = np.shape(sigma_mean_1to1d_average_crop)[1]
-y_end = np.shape(sigma_mean_1to1d_average_crop)[0]
-extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
-
-# create mesh for vectorplot
-xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))
-
-fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(2, 4))
-
-im = axes[0].imshow(sigma_mean_1to2d_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
-                       vmin=0, vmax=pmax, aspect='auto')
-axes[1].imshow(sigma_mean_1to1d_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
-                  vmin=0, vmax=pmax, aspect='auto')
-axes[2].imshow(sigma_mean_2to1d_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
-                  vmin=0, vmax=pmax, aspect='auto')
-
-
-# adjust space in between plots
-plt.subplots_adjust(wspace=0, hspace=0)
-
-# remove axes
-for ax in axes.flat:
-    ax.axis('off')
-    aspectratio = 1.0
-    ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
-    ax.set_aspect(ratio_default * aspectratio)
-
-# add colorbar
-cbar = fig.colorbar(im, ax=axes.ravel().tolist())
-cbar.ax.set_title('mN/m')
-
-# add title
-plt.suptitle('mean stresses', y=0.98, x=0.5)
-# plt.text(-20, 230, '$\mathrm{\Delta}$ mean stresses')
-
-# add annotations
-plt.text(0.43, 0.853, 'n=' + str(n_1to2d), transform=plt.figure(1).transFigure, color='w')
-plt.text(0.43, 0.598, 'n=' + str(n_1to1d), transform=plt.figure(1).transFigure, color='w')
-plt.text(0.43, 0.343, 'n=' + str(n_2to1d), transform=plt.figure(1).transFigure, color='w')
-
-fig.savefig(figfolder + 'D1.png', dpi=300, bbox_inches="tight")
-fig.savefig(figfolder + 'D1.svg', dpi=300, bbox_inches="tight")
-plt.show()
-
-# %% plot figure 5D2
-
-# set up global plot parameters
-# ******************************************************************************************************************************************
-x = np.linspace(-40, 40, 92)
-x = x[::2]  # downsample data for nicer plotting
-xticks = np.arange(-40, 40.1, 20)  # define where the major ticks are gonna be
-xlabel = 'position [µm]'
-ymin = 0
-ymax = 5
-yticks = np.arange(ymin, ymax + 0.001, 1)
-fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(1.2, 4))  # create figure and axes
-plt.subplots_adjust(wspace=0.4, hspace=0.35)  # adjust space in between plots
-# ******************************************************************************************************************************************
-
-# Set up plot parameters for first panel
-#######################################################################################################
-ax = axes[0]
-color = colors_parent[0]
-ylabel = None
-title = '$\mathrm{\sigma _{mean}(x)}$  [nN]\n baseline'
-y = AR1to2d_halfstim["MSM_data"]["sigma_mean_x_profile_baseline"] * 1e3  # convert to nN
-y = y[::2, :]
-
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
-
-# # Set up plot parameters for second panel
-# #######################################################################################################
-ax = axes[1]
-color = colors_parent[1]
-ylabel = None
-title = None
-y = AR1to1d_halfstim["MSM_data"]["sigma_mean_x_profile_baseline"] * 1e3  # convert to nN
-y = y[::2, :]
-
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
-
-# # Set up plot parameters for third panel
-# #######################################################################################################
-ax = axes[2]
-color = colors_parent[3]
-ylabel = None
-title = None
-y = AR2to1d_halfstim["MSM_data"]["sigma_mean_x_profile_baseline"] * 1e3  # convert to nN
-y = y[::2, :]
-
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
-
-plt.savefig(figfolder + 'D2.png', dpi=300, bbox_inches="tight")
-plt.savefig(figfolder + 'D2.svg', dpi=300, bbox_inches="tight")
-plt.show()
-
-# %% plot figure 5E1, stress map differences
+# %% plot figure 5D1, stress map differences
 
 # prepare data first
 
 # concatenate TFM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
 sigmamean_1to2d_diff = np.nanmean(
-    AR1to2d_halfstim["MSM_data"]["sigma_mean"][:, :, 32, :] - AR1to2d_halfstim["MSM_data"]["sigma_mean"][:, :, 20, :],
+    AR1to2d_halfstim["MSM_data"]["sigma_avg_normal"][:, :, 32, :] - AR1to2d_halfstim["MSM_data"]["sigma_avg_normal"][:, :, 20, :],
     axis=2)
 
 sigmamean_1to1d_diff = np.nanmean(
-    AR1to1d_halfstim["MSM_data"]["sigma_mean"][:, :, 32, :] - AR1to1d_halfstim["MSM_data"]["sigma_mean"][:, :, 20, :],
+    AR1to1d_halfstim["MSM_data"]["sigma_avg_normal"][:, :, 32, :] - AR1to1d_halfstim["MSM_data"]["sigma_avg_normal"][:, :, 20, :],
     axis=2)
 
 sigmamean_2to1d_diff = np.nanmean(
-    AR2to1d_halfstim["MSM_data"]["sigma_mean"][:, :, 32, :] - AR2to1d_halfstim["MSM_data"]["sigma_mean"][:, :, 20, :],
+    AR2to1d_halfstim["MSM_data"]["sigma_avg_normal"][:, :, 32, :] - AR2to1d_halfstim["MSM_data"]["sigma_avg_normal"][:, :, 20, :],
     axis=2)
 
 
@@ -579,7 +453,7 @@ cbar = fig.colorbar(im, ax=axes.ravel().tolist())
 cbar.ax.set_title('mN/m')
 
 # add title
-plt.suptitle('$\mathrm{\Delta}$ mean stresses', y=0.98, x=0.5)
+plt.suptitle('$\mathrm{\Delta \sigma _{avg. normal}(x,y)}$', y=0.98, x=0.5)
 # plt.text(-20, 230, '$\mathrm{\Delta}$ mean stresses')
 
 # add annotations
@@ -588,11 +462,63 @@ plt.text(0.43, 0.598, 'n=' + str(n_1to1d), transform=plt.figure(1).transFigure, 
 plt.text(0.43, 0.343, 'n=' + str(n_2to1d), transform=plt.figure(1).transFigure, color='black')
 
 # save figure
-fig.savefig(figfolder + 'E1.png', dpi=300, bbox_inches="tight")
-fig.savefig(figfolder + 'E1.svg', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'D1.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'D1.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
-# %% plot figure 5E2
+# %% prepare data for figure 5D2
+def sigmoid(x, left_asymptote, right_asymptote, x0, l0):
+    return (left_asymptote - right_asymptote) / (1 + np.exp((x - x0) / l0)) + right_asymptote
+
+x = np.linspace(-40, 40, 92)
+x = x[::2]  # downsample data for nicer plotting
+
+fig = plt.figure(figsize=(3, 1))
+ax = fig.gca()
+# plot example sigmoid
+ax.plot(x, sigmoid(x, 1, -1, 0, 5), color='black')
+ax.plot([-40, 40], [-1, -1], linestyle=':', color='grey')
+ax.plot([-40, 40], [1, 1], linestyle=':', color='grey')
+
+# ax.plot([-10, 10], [0, 0], linestyle=':', color='grey')
+ax.plot([0, 0], [-0.5, 0.5], linestyle=':', color='grey')
+
+plt.plot([-8, 8], [8*0.1, -8*0.1], linestyle=':', color='grey')
+plt.savefig(figfolder + 'EX.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'EX.svg', dpi=300, bbox_inches="tight")
+plt.show()
+
+a = AR1to2d_halfstim["MSM_data"]["left_asymptote"]
+b = AR1to2d_halfstim["MSM_data"]["right_asymptote"]
+c = AR1to2d_halfstim["MSM_data"]["attenuation_position"]
+d = AR1to2d_halfstim["MSM_data"]["attenuation_length"]
+y = np.zeros((x.shape[0], a.shape[0]))
+for cell in range(a.shape[0]):
+    y[:, cell] = sigmoid(x, a[cell], b[cell], c[cell], d[cell])
+
+sigmoid1to2d = np.nanmean(y, axis=1) * 1e3 # convert to mN/m
+
+a = AR1to1d_halfstim["MSM_data"]["left_asymptote"]
+b = AR1to1d_halfstim["MSM_data"]["right_asymptote"]
+c = AR1to1d_halfstim["MSM_data"]["attenuation_position"]
+d = AR1to1d_halfstim["MSM_data"]["attenuation_length"]
+y = np.zeros((x.shape[0], a.shape[0]))
+for cell in range(a.shape[0]):
+    y[:, cell] = sigmoid(x, a[cell], b[cell], c[cell], d[cell])
+
+sigmoid1to1d = np.nanmean(y, axis=1) * 1e3 # convert to mN/m
+
+a = AR2to1d_halfstim["MSM_data"]["left_asymptote"]
+b = AR2to1d_halfstim["MSM_data"]["right_asymptote"]
+c = AR2to1d_halfstim["MSM_data"]["attenuation_position"]
+d = AR2to1d_halfstim["MSM_data"]["attenuation_length"]
+y = np.zeros((x.shape[0], a.shape[0]))
+for cell in range(a.shape[0]):
+    y[:, cell] = sigmoid(x, a[cell], b[cell], c[cell], d[cell])
+
+sigmoid2to1d = np.nanmean(y, axis=1) * 1e3 # convert to mN/m
+
+# %% plot figure 5D2
 
 # set up global plot parameters
 # ******************************************************************************************************************************************
@@ -603,7 +529,7 @@ xlabel = 'position [µm]'
 ymin = -0.1
 ymax = 0.5
 yticks = np.arange(ymin, ymax + 0.001, 0.1)
-fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(1.2, 4))  # create figure and axes
+fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(1.8, 4))  # create figure and axes
 plt.subplots_adjust(wspace=0.4, hspace=0.35)  # adjust space in between plots
 # ******************************************************************************************************************************************
 
@@ -612,12 +538,13 @@ plt.subplots_adjust(wspace=0.4, hspace=0.35)  # adjust space in between plots
 ax = axes[0]
 color = colors_parent[0]
 ylabel = None
-title = '$\mathrm{\sigma _{mean}(x)}$ [nN] \n increase'
-y = AR1to2d_halfstim["MSM_data"]["sigma_mean_x_profile_increase"] * 1e3  # convert to nN
+title = '$\mathrm{\Delta \sigma _{avg. normal}(x)}$ [mN/m]'
+y = AR1to2d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"] * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False, titleoffset=20)
+ax.plot(x, sigmoid1to2d, color=color)
 
 # # Set up plot parameters for fifth panel
 # #######################################################################################################
@@ -626,11 +553,12 @@ color = colors_parent[1]
 yticks = np.arange(ymin, ymax + 0.001, 0.1)
 ylabel = None
 title = None
-y = AR1to1d_halfstim["MSM_data"]["sigma_mean_x_profile_increase"] * 1e3  # convert to nN
+y = AR1to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"] * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+ax.plot(x, sigmoid1to1d, color=color)
 
 # # Set up plot parameters for sixth panel
 # # #######################################################################################################
@@ -639,40 +567,77 @@ color = colors_parent[3]
 yticks = np.arange(ymin, ymax + 0.001, 0.1)
 ylabel = None
 title = None
-y = AR2to1d_halfstim["MSM_data"]["sigma_mean_x_profile_increase"] * 1e3  # convert to nN
+y = AR2to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"] * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+ax.plot(x, sigmoid2to1d, color=color)
 
-plt.savefig(figfolder + 'E2.png', dpi=300, bbox_inches="tight")
-plt.savefig(figfolder + 'E2.svg', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'D2.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'D2.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 
-# %% plot figure 5F boxplots of attenuation length and position
+# %% plot figure 5E boxplots of attenuation length and position
 
 # set up global plot parameters
 # ******************************************************************************************************************************************
 xticklabels = ['1to2', '1to1', '2to1']  # which labels to put on x-axis
-fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(1.3, 4))  # create figure and axes
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3, 3))  # create figure and axes
 plt.subplots_adjust(wspace=0.45, hspace=0.4)  # adjust space in between plots
+
+# Set up plot parameters for third panel
+#######################################################################################################
+x = 'keys'  # variable by which to group the data
+y = 'left_asymptote'  # variable that goes on the y-axis
+ax = axes[0, 0]  # define on which axis the plot goes
+colors = [colors_parent[0], colors_parent[1], colors_parent[3]]  # defines colors
+ymin = -0.5  # minimum value on y-axis
+ymax = 1.5  # maximum value on y-axis
+yticks = np.arange(-0.5, 1.51, 0.5)  # define where to put major ticks on y-axis
+ylabel = 'a [mN/m]'   # which label to put on y-axis
+title = 'Left asymptote'  # title of plot
+ylabeloffset = -5
+box_pairs = [('AR1to2d', 'AR1to1d'), ('AR1to1d', 'AR2to1d'), ('AR1to2d', 'AR2to1d')]
+
+# make plots
+make_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors, ylabeloffset=ylabeloffset)
+
+# Set up plot parameters for third panel
+#######################################################################################################
+x = 'keys'  # variable by which to group the data
+y = 'right_asymptote'  # variable that goes on the y-axis
+ax = axes[0, 1]  # define on which axis the plot goes
+colors = [colors_parent[0], colors_parent[1], colors_parent[3]]  # defines colors
+ymin = -0.5  # minimum value on y-axis
+ymax = 1.5  # maximum value on y-axis
+yticks = np.arange(-0.5, 1.51, 0.5)  # define where to put major ticks on y-axis
+ylabel = 'b [mN/m]'   # which label to put on y-axis
+title = 'Right asymptote'  # title of plot
+stat_annotation_offset = 0.15
+box_pairs = [('AR1to2d', 'AR1to1d'), ('AR1to1d', 'AR2to1d'), ('AR1to2d', 'AR2to1d')]
+
+# make plots
+make_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors, ylabeloffset=ylabeloffset)
+
+
 
 # Set up plot parameters for first panel
 #######################################################################################################
 x = 'keys'  # variable by which to group the data
 y = 'attenuation_position'  # variable that goes on the y-axis
-ax = axes[0]  # define on which axis the plot goes
+ax = axes[1, 0]  # define on which axis the plot goes
 colors = [colors_parent[0], colors_parent[1], colors_parent[3]]  # defines colors
 ymin = -20  # minimum value on y-axis
 ymax = 30  # maximum value on y-axis
 yticks = np.arange(-20, 50, 10)  # define where to put major ticks on y-axis
-ylabel = '$\mathrm{a_p}$ [µm]'  # which label to put on y-axis
+ylabel = '$\mathrm{x_0}$ [µm]'  # which label to put on y-axis
 title = 'Attenuation position'  # title of plot
 stat_annotation_offset = 0.2
 box_pairs = [('AR1to2d', 'AR1to1d'), ('AR1to1d', 'AR2to1d'), ('AR1to2d', 'AR2to1d')]
 # make plots
-make_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+make_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors, ylabeloffset=ylabeloffset)
 # make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors,
 #                                   width_bp=0.5, ylabeloffset=-6)
 
@@ -680,46 +645,185 @@ make_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, t
 #######################################################################################################
 x = 'keys'  # variable by which to group the data
 y = 'attenuation_length'  # variable that goes on the y-axis
-ax = axes[1]  # define on which axis the plot goes
+ax = axes[1, 1]  # define on which axis the plot goes
 colors = [colors_parent[0], colors_parent[1], colors_parent[3]]  # defines colors
 ymin = -5  # minimum value on y-axis
 ymax = 10  # maximum value on y-axis
 yticks = np.arange(-5, 10.1, 5)  # define where to put major ticks on y-axis
-ylabel = '$\mathrm{a_l}$ [µm]'   # which label to put on y-axis
+ylabel = '$\mathrm{l_0}$ [µm]'   # which label to put on y-axis
 title = 'Attenuation length'  # title of plot
 stat_annotation_offset = 0.15
 box_pairs = [('AR1to2d', 'AR1to1d'), ('AR1to1d', 'AR2to1d'), ('AR1to2d', 'AR2to1d')]
+
 # make plots
-make_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
-# make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors,
-#                                   width_bp=0.5, ylabeloffset=-6)
+make_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors, ylabeloffset=ylabeloffset)
+
+
+
+plt.savefig(figfolder + 'Fsup.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'Fsup.svg', dpi=300, bbox_inches="tight")
+plt.show()
+
+# %% plot figure 5E boxplots of attenuation length and position
+# set up global plot parameters
+# ******************************************************************************************************************************************
+xticklabels = ['1to2', '1to1', '2to1']  # which labels to put on x-axis
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2.5, 2.5))  # create figure and axes
+plt.subplots_adjust(wspace=0.45, hspace=0.45)  # adjust space in between plots
 
 # Set up plot parameters for third panel
 #######################################################################################################
 x = 'AIC_baseline'
 y = 'attenuation_position'
 hue = 'keys'
-ax = axes[2]
 xmin = -1
 xmax = 1
 ymin = -20
 ymax = 20
 xticks = np.arange(-1, 1.1, 0.5)
 yticks = np.arange(-20, 20.1, 10)
-xlabel = 'Anisotropy coefficient'
-ylabel = '$\mathrm{a_p}$ [µm]'
+xlabel = 'Stress anisotropy coefficient'
+ylabel = '$\mathrm{x_0}$ [µm]'
 
 corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
-
 # annotate pearson R and p-value
 plt.text(xmin + 0.1 * xmax, 1.1*ymax, 'R = ' + str(corr))
 # plt.text(xmin + 0.1 * xmax, ymin + 0.1 * ymax, 'p = ' + '{:0.2e}'.format(p))
+
 
 plt.savefig(figfolder + 'F.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'F.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 
+
+# # %% plot figure 5D1, mean stress maps
+# 
+# # prepare data first
+# 
+# # Calculate average maps over first 20 frames and all cells to get average maps
+# sigma_avg_normal_1to2d_average = np.nanmean(AR1to2d_halfstim["MSM_data"]["sigma_avg_normal"][:, :, 0:20, :], axis=(2, 3))
+# sigma_avg_normal_1to1d_average = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_avg_normal"][:, :, 0:20, :], axis=(2, 3))
+# sigma_avg_normal_2to1d_average = np.nanmean(AR2to1d_halfstim["MSM_data"]["sigma_avg_normal"][:, :, 0:20, :], axis=(2, 3))
+# 
+# # convert NaN to 0 to have black background
+# sigma_avg_normal_1to2d_average[np.isnan(sigma_avg_normal_1to2d_average)] = 0
+# sigma_avg_normal_1to1d_average[np.isnan(sigma_avg_normal_1to1d_average)] = 0
+# sigma_avg_normal_2to1d_average[np.isnan(sigma_avg_normal_2to1d_average)] = 0
+# 
+# # crop maps
+# crop_start = 2
+# crop_end = 90
+# 
+# sigma_avg_normal_1to2d_average_crop = sigma_avg_normal_1to2d_average[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+# sigma_avg_normal_1to1d_average_crop = sigma_avg_normal_1to1d_average[crop_start:crop_end, crop_start:crop_end] * 1e3
+# sigma_avg_normal_2to1d_average_crop = sigma_avg_normal_2to1d_average[crop_start:crop_end, crop_start:crop_end] * 1e3
+# 
+# # set up plot parameters
+# # *****************************************************************************
+# n = 4  # every nth arrow will be plotted
+# pixelsize = 0.864  # in µm
+# pmax = 10  # mN/m
+# 
+# # create x- and y-axis for plotting maps
+# x_end = np.shape(sigma_avg_normal_1to1d_average_crop)[1]
+# y_end = np.shape(sigma_avg_normal_1to1d_average_crop)[0]
+# extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
+# 
+# # create mesh for vectorplot
+# xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))
+# 
+# fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(2, 4))
+# 
+# im = axes[0].imshow(sigma_avg_normal_1to2d_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
+#                        vmin=0, vmax=pmax, aspect='auto')
+# axes[1].imshow(sigma_avg_normal_1to1d_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
+#                   vmin=0, vmax=pmax, aspect='auto')
+# axes[2].imshow(sigma_avg_normal_2to1d_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
+#                   vmin=0, vmax=pmax, aspect='auto')
+# 
+# 
+# # adjust space in between plots
+# plt.subplots_adjust(wspace=0, hspace=0)
+# 
+# # remove axes
+# for ax in axes.flat:
+#     ax.axis('off')
+#     aspectratio = 1.0
+#     ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
+#     ax.set_aspect(ratio_default * aspectratio)
+# 
+# # add colorbar
+# cbar = fig.colorbar(im, ax=axes.ravel().tolist())
+# cbar.ax.set_title('mN/m')
+# 
+# # add title
+# plt.suptitle('mean stresses', y=0.98, x=0.5)
+# # plt.text(-20, 230, '$\mathrm{\Delta}$ mean stresses')
+# 
+# # add annotations
+# plt.text(0.43, 0.853, 'n=' + str(n_1to2d), transform=plt.figure(1).transFigure, color='w')
+# plt.text(0.43, 0.598, 'n=' + str(n_1to1d), transform=plt.figure(1).transFigure, color='w')
+# plt.text(0.43, 0.343, 'n=' + str(n_2to1d), transform=plt.figure(1).transFigure, color='w')
+# 
+# fig.savefig(figfolder + 'D1.png', dpi=300, bbox_inches="tight")
+# fig.savefig(figfolder + 'D1.svg', dpi=300, bbox_inches="tight")
+# plt.show()
+# 
+# # %% plot figure 5D2
+# 
+# # set up global plot parameters
+# # ******************************************************************************************************************************************
+# x = np.linspace(-40, 40, 92)
+# x = x[::2]  # downsample data for nicer plotting
+# xticks = np.arange(-40, 40.1, 20)  # define where the major ticks are gonna be
+# xlabel = 'position [µm]'
+# ymin = 0
+# ymax = 5
+# yticks = np.arange(ymin, ymax + 0.001, 1)
+# fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(1.2, 4))  # create figure and axes
+# plt.subplots_adjust(wspace=0.4, hspace=0.35)  # adjust space in between plots
+# # ******************************************************************************************************************************************
+# 
+# # Set up plot parameters for first panel
+# #######################################################################################################
+# ax = axes[0]
+# color = colors_parent[0]
+# ylabel = None
+# title = '$\mathrm{\sigma _{mean}(x)}$  [nN]\n baseline'
+# y = AR1to2d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_baseline"] * 1e3  # convert to nN
+# y = y[::2, :]
+# 
+# # make plots
+# plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+# 
+# # # Set up plot parameters for second panel
+# # #######################################################################################################
+# ax = axes[1]
+# color = colors_parent[1]
+# ylabel = None
+# title = None
+# y = AR1to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_baseline"] * 1e3  # convert to nN
+# y = y[::2, :]
+# 
+# # make plots
+# plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+# 
+# # # Set up plot parameters for third panel
+# # #######################################################################################################
+# ax = axes[2]
+# color = colors_parent[3]
+# ylabel = None
+# title = None
+# y = AR2to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_baseline"] * 1e3  # convert to nN
+# y = y[::2, :]
+# 
+# # make plots
+# plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+# 
+# plt.savefig(figfolder + 'D2.png', dpi=300, bbox_inches="tight")
+# plt.savefig(figfolder + 'D2.svg', dpi=300, bbox_inches="tight")
+# plt.show()
 
 # #%% prepare dataframe for boxplots
 # n_1to2d = AR1to2d_halfstim['MSM_data']['RSI_xx_left'].shape[0]

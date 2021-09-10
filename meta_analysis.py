@@ -266,7 +266,7 @@ def analyse_msm_data(folder):
     # find position at which stress attenuates through sigmoid fit
     def find_stress_attenuation_position(stresscurve):
         def sigmoid(x, left_asymptote, right_asymptote, x0, l0):
-            return (right_asymptote - left_asymptote) / (1 + np.exp((x - x0) / l0)) + left_asymptote
+            return (left_asymptote - right_asymptote) / (1 + np.exp((x - x0) / l0)) + right_asymptote
 
         left_asymptote_all = np.zeros(stresscurve.shape[1])
         right_asymptote_all = np.zeros(stresscurve.shape[1])
