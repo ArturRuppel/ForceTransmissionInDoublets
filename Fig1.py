@@ -457,3 +457,230 @@ make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_annotat
 plt.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'E.svg', dpi=300, bbox_inches="tight")
 plt.show()
+
+# # %% plot figure 1X, stress maps
+#
+# # prepare data first
+#
+# # concatenate TFM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
+# sigma_max_1to1d_average = np.nanmean(np.concatenate((AR1to1d_halfstim["MSM_data"]["sigma_max"][:, :, 0:20, :],
+#                                               AR1to1d_fullstim_short["MSM_data"]["sigma_max"][:, :, 0:20, :],
+#                                               AR1to1d_fullstim_long["MSM_data"]["sigma_max"][:, :, 0:20, :]), axis=3), axis=(2, 3))
+#
+# sigma_max_1to1s_average = np.nanmean(np.concatenate((AR1to1s_halfstim["MSM_data"]["sigma_max"][:, :, 0:20, :],
+#                                               AR1to1s_fullstim_short["MSM_data"]["sigma_max"][:, :, 0:20, :],
+#                                               AR1to1s_fullstim_long["MSM_data"]["sigma_max"][:, :, 0:20, :]), axis=3), axis=(2, 3))
+#
+# phi_sigma_max_1to1d_average = np.nanmean(np.concatenate((AR1to1d_halfstim["MSM_data"]["phi_n"][:, :, 0:20, :],
+#                                               AR1to1d_fullstim_short["MSM_data"]["phi_n"][:, :, 0:20, :],
+#                                               AR1to1d_fullstim_long["MSM_data"]["phi_n"][:, :, 0:20, :]), axis=3), axis=(2, 3))
+#
+# phi_sigma_max_1to1s_average = np.nanmean(np.concatenate((AR1to1s_halfstim["MSM_data"]["phi_n"][:, :, 0:20, :],
+#                                               AR1to1s_fullstim_short["MSM_data"]["phi_n"][:, :, 0:20, :],
+#                                               AR1to1s_fullstim_long["MSM_data"]["phi_n"][:, :, 0:20, :]), axis=3), axis=(2, 3))
+# # get one example
+# sigma_max_1to1d_example = AR1to1d_halfstim["MSM_data"]["sigma_max"][:, :, 0, doublet_example]
+# sigma_max_1to1s_example = AR1to1s_halfstim["MSM_data"]["sigma_max"][:, :, 0, singlet_example]
+#
+# phi_sigma_max_1to1d_example = AR1to1d_halfstim["MSM_data"]["phi_n"][:, :, 0, doublet_example]
+# phi_sigma_max_1to1s_example = AR1to1s_halfstim["MSM_data"]["phi_n"][:, :, 0, singlet_example]
+#
+# # # calculate amplitudes
+# # T_1to1d_average = np.sqrt(Tx_1to1d_average ** 2 + Ty_1to1d_average ** 2)
+# # T_1to1s_average = np.sqrt(Tx_1to1s_average ** 2 + Ty_1to1s_average ** 2)
+# # T_1to1d_example = np.sqrt(Tx_1to1d_example ** 2 + Ty_1to1d_example ** 2)
+# # T_1to1s_example = np.sqrt(Tx_1to1s_example ** 2 + Ty_1to1s_example ** 2)
+#
+# # crop maps
+# crop_start = 8
+# crop_end = 84
+#
+# sigma_max_1to1d_average_crop = sigma_max_1to1d_average[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+# sigma_max_1to1d_example_crop = sigma_max_1to1d_example[crop_start:crop_end, crop_start:crop_end] * 1e3
+# sigma_max_1to1s_average_crop = sigma_max_1to1s_average[crop_start:crop_end, crop_start:crop_end] * 1e3
+# sigma_max_1to1s_example_crop = sigma_max_1to1s_example[crop_start:crop_end, crop_start:crop_end] * 1e3
+#
+# phi_sigma_max_1to1d_average_crop = phi_sigma_max_1to1d_average[crop_start:crop_end, crop_start:crop_end]
+# phi_sigma_max_1to1d_example_crop = phi_sigma_max_1to1d_example[crop_start:crop_end, crop_start:crop_end]
+# phi_sigma_max_1to1s_average_crop = phi_sigma_max_1to1s_average[crop_start:crop_end, crop_start:crop_end]
+# phi_sigma_max_1to1s_example_crop = phi_sigma_max_1to1s_example[crop_start:crop_end, crop_start:crop_end]
+#
+# # set up plot parameters
+# # ******************************************************************************************************************************************
+# n = 4                           # every nth arrow will be plotted
+# pixelsize = 0.864               # in µm
+# pmax = 10                        # in kPa
+# axtitle = 'mN/m'                 # unit of colorbar
+# suptitle = 'Max. principal stress'    # title of plot
+# x_end = np.shape(sigma_max_1to1d_average_crop)[1]   # create x- and y-axis for plotting maps
+# y_end = np.shape(sigma_max_1to1d_average_crop)[0]
+# extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
+# xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))  # create mesh for vectorplot
+# fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3, 2.5))    # create figure and axes
+# plt.subplots_adjust(wspace=0.02, hspace=-0.06)      # adjust space in between plots
+# # ******************************************************************************************************************************************
+#
+# im = axes[0, 0].imshow(sigma_max_1to1d_example_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
+#                        vmin=0, vmax=pmax, aspect='auto')
+# vx = np.cos(phi_sigma_max_1to1d_example_crop)
+# vy = np.sin(phi_sigma_max_1to1d_example_crop)
+# axes[0, 0].quiver(xq[::n, ::n], yq[::n, ::n], vx[::n, ::n], vy[::n, ::n],
+#                   angles='xy', scale=20, units='width', color="r", headaxislength=0)
+# axes[0, 0].quiver(xq[::n, ::n], yq[::n, ::n], -vx[::n, ::n], -vy[::n, ::n],
+#                   angles='xy', scale=20, units='width', color="r", headaxislength=0)
+#
+#
+# axes[0, 1].imshow(sigma_max_1to1d_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent, vmin=0,
+#                   vmax=pmax, aspect='auto')
+# vx = np.cos(phi_sigma_max_1to1d_average_crop)
+# vy = np.sin(phi_sigma_max_1to1d_average_crop)
+# axes[0, 1].quiver(xq[::n, ::n], yq[::n, ::n], vx[::n, ::n], vy[::n, ::n],
+#                   angles='xy', scale=20, units='width', color="r", headaxislength=0)
+# axes[0, 1].quiver(xq[::n, ::n], yq[::n, ::n], -vx[::n, ::n], -vy[::n, ::n],
+#                   angles='xy', scale=20, units='width', color="r", headaxislength=0)
+#
+#
+# axes[1, 0].imshow(sigma_max_1to1s_example_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent, vmin=0,
+#                   vmax=pmax, aspect='auto')
+# vx = np.cos(phi_sigma_max_1to1s_example_crop)
+# vy = np.sin(phi_sigma_max_1to1s_example_crop)
+# axes[1, 0].quiver(xq[::n, ::n], yq[::n, ::n], vx[::n, ::n], vy[::n, ::n],
+#                   angles='xy', scale=20, units='width', color="r", headaxislength=0)
+# axes[1, 0].quiver(xq[::n, ::n], yq[::n, ::n], -vx[::n, ::n], -vy[::n, ::n],
+#                   angles='xy', scale=20, units='width', color="r", headaxislength=0)
+#
+#
+#
+# axes[1, 1].imshow(sigma_max_1to1s_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent, vmin=0,
+#                   vmax=pmax, aspect='auto')
+# vx = np.cos(phi_sigma_max_1to1s_average_crop)
+# vy = np.sin(phi_sigma_max_1to1s_average_crop)
+# axes[1, 1].quiver(xq[::n, ::n], yq[::n, ::n], vx[::n, ::n], vy[::n, ::n],
+#                   angles='xy', scale=20, units='width', color="r", headaxislength=0)
+# axes[1, 1].quiver(xq[::n, ::n], yq[::n, ::n], -vx[::n, ::n], -vy[::n, ::n],
+#                   angles='xy', scale=20, units='width', color="r", headaxislength=0)
+#
+# # remove axes
+# for ax in axes.flat:
+#     ax.axis('off')
+#     aspectratio = 1.0
+#     ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
+#     ax.set_aspect(ratio_default * aspectratio)
+#
+# # add colorbar
+# cbar = fig.colorbar(im, ax=axes.ravel().tolist())
+# cbar.ax.set_title(axtitle)
+#
+# # add title
+# plt.suptitle(suptitle, y=0.94, x=0.44)
+#
+# # add annotations
+# plt.text(0.25, 0.83, 'n=1', transform=plt.figure(1).transFigure, color='w')
+# plt.text(0.25, 0.455, 'n=1', transform=plt.figure(1).transFigure, color='w')
+# plt.text(0.55, 0.455, 'n=' + str(n_singlets), transform=plt.figure(1).transFigure, color='w')
+# plt.text(0.55, 0.83, 'n=' + str(n_doublets), transform=plt.figure(1).transFigure, color='w')
+#
+# fig.savefig(figfolder + 'X1.png', dpi=300, bbox_inches="tight")
+# fig.savefig(figfolder + 'X1.svg', dpi=300, bbox_inches="tight")
+# plt.show()
+#
+# # %% plot figure 1X, stress maps
+#
+# # prepare data first
+#
+# # concatenate TFM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
+# sigma_min_1to1d_average = np.nanmean(np.concatenate((AR1to1d_halfstim["MSM_data"]["sigma_min"][:, :, 0:20, :],
+#                                               AR1to1d_fullstim_short["MSM_data"]["sigma_min"][:, :, 0:20, :],
+#                                               AR1to1d_fullstim_long["MSM_data"]["sigma_min"][:, :, 0:20, :]), axis=3), axis=(2, 3))
+#
+# sigma_min_1to1s_average = np.nanmean(np.concatenate((AR1to1s_halfstim["MSM_data"]["sigma_min"][:, :, 0:20, :],
+#                                               AR1to1s_fullstim_short["MSM_data"]["sigma_min"][:, :, 0:20, :],
+#                                               AR1to1s_fullstim_long["MSM_data"]["sigma_min"][:, :, 0:20, :]), axis=3), axis=(2, 3))
+# # Tx_1to1s_average = np.nanmean(np.concatenate((AR1to1s_halfstim["TFM_data"]["Tx"][:, :, 0:20, :],
+# #                                               AR1to1s_fullstim_short["TFM_data"]["Tx"][:, :, 0:20, :],
+# #                                               AR1to1s_fullstim_long["TFM_data"]["Tx"][:, :, 0:20, :]), axis=3),
+# #                               axis=(2, 3))
+# # Ty_1to1s_average = np.nanmean(np.concatenate((AR1to1s_halfstim["TFM_data"]["Ty"][:, :, 0:20, :],
+# #                                               AR1to1s_fullstim_short["TFM_data"]["Ty"][:, :, 0:20, :],
+# #                                               AR1to1s_fullstim_long["TFM_data"]["Ty"][:, :, 0:20, :]), axis=3),
+# #                               axis=(2, 3))
+#
+# # get one example
+# sigma_min_1to1d_example = AR1to1d_halfstim["MSM_data"]["sigma_min"][:, :, 0, doublet_example]
+# sigma_min_1to1s_example = AR1to1s_halfstim["MSM_data"]["sigma_min"][:, :, 0, singlet_example]
+#
+# # # calculate amplitudes
+# # T_1to1d_average = np.sqrt(Tx_1to1d_average ** 2 + Ty_1to1d_average ** 2)
+# # T_1to1s_average = np.sqrt(Tx_1to1s_average ** 2 + Ty_1to1s_average ** 2)
+# # T_1to1d_example = np.sqrt(Tx_1to1d_example ** 2 + Ty_1to1d_example ** 2)
+# # T_1to1s_example = np.sqrt(Tx_1to1s_example ** 2 + Ty_1to1s_example ** 2)
+#
+# # crop maps
+# crop_start = 8
+# crop_end = 84
+#
+# sigma_min_1to1d_average_crop = sigma_min_1to1d_average[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+# sigma_min_1to1d_example_crop = sigma_min_1to1d_example[crop_start:crop_end, crop_start:crop_end] * 1e3
+# sigma_min_1to1s_average_crop = sigma_min_1to1s_average[crop_start:crop_end, crop_start:crop_end] * 1e3
+# sigma_min_1to1s_example_crop = sigma_min_1to1s_example[crop_start:crop_end, crop_start:crop_end] * 1e3
+#
+#
+# # set up plot parameters
+# # ******************************************************************************************************************************************
+# n = 4                           # every nth arrow will be plotted
+# pixelsize = 0.864               # in µm
+# pmax = 10                        # in kPa
+# axtitle = 'mN/m'                 # unit of colorbar
+# suptitle = 'Min. principal stress'    # title of plot
+# x_end = np.shape(sigma_max_1to1d_average_crop)[1]   # create x- and y-axis for plotting maps
+# y_end = np.shape(sigma_max_1to1d_average_crop)[0]
+# extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
+# xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))  # create mesh for vectorplot
+# fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3, 2.5))    # create figure and axes
+# plt.subplots_adjust(wspace=0.02, hspace=-0.06)      # adjust space in between plots
+# # ******************************************************************************************************************************************
+#
+# im = axes[0, 0].imshow(sigma_min_1to1d_example_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
+#                        vmin=0, vmax=pmax, aspect='auto')
+# # axes[0, 0].quiver(xq[::n, ::n], yq[::n, ::n], Tx_1to1d_example_crop[::n, ::n], Ty_1to1d_example_crop[::n, ::n],
+# #                   angles='xy', scale=10, units='width', color="r")
+# # axes[0,0].set_title('n=1', pad=-400, color='r')
+#
+# axes[0, 1].imshow(sigma_min_1to1d_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent, vmin=0,
+#                   vmax=pmax, aspect='auto')
+# # axes[0, 1].quiver(xq[::n, ::n], yq[::n, ::n], Tx_1to1d_average_crop[::n, ::n], Ty_1to1d_average_crop[::n, ::n],
+# #                   angles='xy', scale=10, units='width', color="r")
+#
+# axes[1, 0].imshow(sigma_min_1to1s_example_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent, vmin=0,
+#                   vmax=pmax, aspect='auto')
+# # axes[1, 0].quiver(xq[::n, ::n], yq[::n, ::n], Tx_1to1s_example_crop[::n, ::n], Ty_1to1s_example_crop[::n, ::n],
+# #                   angles='xy', scale=10, units='width', color="r")
+#
+# axes[1, 1].imshow(sigma_min_1to1s_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent, vmin=0,
+#                   vmax=pmax, aspect='auto')
+# # axes[1, 1].quiver(xq[::n, ::n], yq[::n, ::n], Tx_1to1s_average_crop[::n, ::n], Ty_1to1s_average_crop[::n, ::n],
+# #                   angles='xy', scale=10, units='width', color="r")
+#
+# # remove axes
+# for ax in axes.flat:
+#     ax.axis('off')
+#     aspectratio = 1.0
+#     ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
+#     ax.set_aspect(ratio_default * aspectratio)
+#
+# # add colorbar
+# cbar = fig.colorbar(im, ax=axes.ravel().tolist())
+# cbar.ax.set_title(axtitle)
+#
+# # add title
+# plt.suptitle(suptitle, y=0.94, x=0.44)
+#
+# # add annotations
+# plt.text(0.25, 0.83, 'n=1', transform=plt.figure(1).transFigure, color='w')
+# plt.text(0.25, 0.455, 'n=1', transform=plt.figure(1).transFigure, color='w')
+# plt.text(0.55, 0.455, 'n=' + str(n_singlets), transform=plt.figure(1).transFigure, color='w')
+# plt.text(0.55, 0.83, 'n=' + str(n_doublets), transform=plt.figure(1).transFigure, color='w')
+#
+# fig.savefig(figfolder + 'X2.png', dpi=300, bbox_inches="tight")
+# fig.savefig(figfolder + 'X2.svg', dpi=300, bbox_inches="tight")
+# plt.show()

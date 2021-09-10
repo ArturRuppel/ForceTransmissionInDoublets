@@ -7,10 +7,19 @@ Created on Wed Jul  7 21:56:01 2021
 """
 import os
 import pickle
+
+import numpy as np
 import pandas as pd
+import matplotlib.image as mpimg
 from plot_and_filter_functions import *
+from scipy.interpolate import interp1d
 
 mpl.rcParams['font.size'] = 8
+
+
+def rgb2gray(rgb):
+    return np.dot(rgb[..., :3], [0.2989, 0.5870, 0.1140])
+
 
 # %% load data for plotting
 folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
@@ -24,12 +33,97 @@ AR1to1s_halfstim = pickle.load(open(folder + "analysed_data/AR1to1s_halfstim.dat
 
 doublet_simulation = pickle.load(open(folder + "_contour_simulations/CM_doublet_simulation.dat", "rb"))
 singlet_simulation = pickle.load(open(folder + "_contour_simulations/CM_singlet_simulation.dat", "rb"))
+feedbacks = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+
 # define some colors for the plots
 colors_parent = ['#026473', '#E3CC69', '#77C8A6', '#D96248']
 
 figfolder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_Figure4/"
 if not os.path.exists(figfolder):
     os.mkdir(figfolder)
+
+# %% plot figure A, contour strain measurement
+# prepare data first
+pixelsize = 0.864  # in µm
+initial_pixelsize = 0.108  # in µm
+# concatenate TFM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
+doublet_example = 2
+
+# get data for one example
+actin_image_path = folder + "AR1to1_doublets_full_stim_long/actin_images/cell" + str(doublet_example) + "frame32.png"
+actin_image = rgb2gray(mpimg.imread(actin_image_path))
+
+# tracking data
+x_tracking_top_bs = AR1to1d_fullstim_long["shape_data"]["Xtop"][:, 20, doublet_example] * initial_pixelsize
+y_tracking_top_bs = AR1to1d_fullstim_long["shape_data"]["Ytop"][:, 20, doublet_example] * initial_pixelsize
+x_tracking_bottom_bs = AR1to1d_fullstim_long["shape_data"]["Xbottom"][:, 20, doublet_example] * initial_pixelsize
+y_tracking_bottom_bs = AR1to1d_fullstim_long["shape_data"]["Ybottom"][:, 20, doublet_example] * initial_pixelsize
+
+x_tracking_top_as = AR1to1d_fullstim_long["shape_data"]["Xtop"][:, 30, doublet_example] * initial_pixelsize
+y_tracking_top_as = AR1to1d_fullstim_long["shape_data"]["Ytop"][:, 30, doublet_example] * initial_pixelsize
+x_tracking_bottom_as = AR1to1d_fullstim_long["shape_data"]["Xbottom"][:, 30, doublet_example] * initial_pixelsize
+y_tracking_bottom_as = AR1to1d_fullstim_long["shape_data"]["Ybottom"][:, 30, doublet_example] * initial_pixelsize
+
+# crop force maps and actin images
+crop_start = 14
+crop_end = 78
+
+# actin_image_bs_crop = actin_image_bs[crop_start * 8:crop_end * 8, crop_start * 8:crop_end * 8]
+actin_image_crop = actin_image[crop_start * 8:crop_end * 8, crop_start * 8:crop_end * 8]
+
+# remove 0 values from tracking data
+x_tracking_top_bs = x_tracking_top_bs[x_tracking_top_bs != 0]
+y_tracking_top_bs = y_tracking_top_bs[y_tracking_top_bs != 0]
+x_tracking_bottom_bs = x_tracking_bottom_bs[x_tracking_bottom_bs != 0]
+y_tracking_bottom_bs = y_tracking_bottom_bs[y_tracking_bottom_bs != 0]
+
+x_tracking_top_as = x_tracking_top_as[x_tracking_top_as != 0]
+y_tracking_top_as = y_tracking_top_as[y_tracking_top_as != 0]
+x_tracking_bottom_as = x_tracking_bottom_as[x_tracking_bottom_as != 0]
+y_tracking_bottom_as = y_tracking_bottom_as[y_tracking_bottom_as != 0]
+
+# set up plot parameters
+# ******************************************************************************************************************************************
+x_end = crop_end - crop_start
+y_end = crop_end - crop_start
+extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2.5, 2.5))  # create figure and axes
+# ******************************************************************************************************************************************
+
+# tracking data doesn't live in the same coordinate system as the actin image, so I transform it
+x_tracking_top_bs = x_tracking_top_bs - (125 - x_end) / 2 * pixelsize
+y_tracking_top_bs = -y_tracking_top_bs + extent[1] + (125 - y_end) / 2 * pixelsize
+x_tracking_bottom_bs = x_tracking_bottom_bs - (125 - x_end) / 2 * pixelsize
+y_tracking_bottom_bs = -y_tracking_bottom_bs + extent[1] + (125 - y_end) / 2 * pixelsize
+
+x_tracking_top_as = x_tracking_top_as - (125 - x_end) / 2 * pixelsize
+y_tracking_top_as = -y_tracking_top_as + extent[1] + (125 - y_end) / 2 * pixelsize
+x_tracking_bottom_as = x_tracking_bottom_as - (125 - x_end) / 2 * pixelsize
+y_tracking_bottom_as = -y_tracking_bottom_as + extent[1] + (125 - y_end) / 2 * pixelsize
+
+# plot actin image
+ax.imshow(actin_image_crop, cmap=plt.get_cmap("Greys"), interpolation="bilinear", extent=extent, aspect=(1), alpha=0.5)
+
+# plot tracking data
+ax.plot(x_tracking_top_bs[::2], y_tracking_top_bs[::2],
+        color=colors_parent[0], marker='o', markerfacecolor='none', markersize=3, markeredgewidth=0.75, linestyle='none', alpha=0.3)
+ax.plot(x_tracking_bottom_bs[::2], y_tracking_bottom_bs[::2],
+        color=colors_parent[0], marker='o', markerfacecolor='none', markersize=3, markeredgewidth=0.75, linestyle='none', alpha=0.3)
+
+ax.plot(x_tracking_top_as[::2], y_tracking_top_as[::2],
+        color=colors_parent[0], marker='o', markerfacecolor='none', markersize=3, markeredgewidth=0.75, linestyle='none', alpha=1)
+ax.plot(x_tracking_bottom_as[::2], y_tracking_bottom_as[::2],
+        color=colors_parent[0], marker='o', markerfacecolor='none', markersize=3, markeredgewidth=0.75, linestyle='none', alpha=1)
+
+ax.set_xlim([-0.1 * extent[1], 1.1 * extent[1]])
+ax.set_ylim([-0.1 * extent[3], 1.1 * extent[3]])
+
+ax.axis('off')
+
+fig.savefig(figfolder + 'A.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'A.svg', dpi=300, bbox_inches="tight")
+plt.show()
+
 
 # %% filter data to make sure that the baselines are stable
 def filter_data_main(data, title):
@@ -59,23 +153,6 @@ AR1to1s_fullstim_long = filter_data_main(AR1to1s_fullstim_long, "AR1to1s_fullsti
 AR1to1s_fullstim_short = filter_data_main(AR1to1s_fullstim_short, "AR1to1s_fullstim_short")
 AR1to1s_halfstim = filter_data_main(AR1to1s_halfstim, "AR1to1s_halfstim")
 
-# %% make some calculations on the simulated data
-feedbacks = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-doublet_epsilon_asymmetry_coefficient = []
-singlet_epsilon_asymmetry_coefficient = []
-for fb in feedbacks:
-    epsilon = doublet_simulation["EA50"]["FB" + str(fb)]["epsilon_yy"]
-    rel_epsilon = epsilon / np.min(epsilon)
-    epsilon_asymmetry_curve = rel_epsilon - np.flipud(rel_epsilon)
-    epsilon_asymmetry_coefficient = np.nanmean(epsilon_asymmetry_curve[0:int(epsilon_asymmetry_curve.shape[0] / 2)], axis=0)
-    doublet_epsilon_asymmetry_coefficient.append(epsilon_asymmetry_coefficient)
-
-for fb in feedbacks:
-    epsilon = singlet_simulation["EA50"]["FB" + str(fb)]["epsilon_yy"]
-    rel_epsilon = epsilon / np.min(epsilon)
-    epsilon_asymmetry_curve = rel_epsilon - np.flipud(rel_epsilon)
-    epsilon_asymmetry_coefficient = np.nanmean(epsilon_asymmetry_curve[0:int(epsilon_asymmetry_curve.shape[0] / 2)], axis=0)
-    singlet_epsilon_asymmetry_coefficient.append(epsilon_asymmetry_coefficient)
 # %% prepare dataframe for boxplots
 # initialize empty dictionaries
 concatenated_data_fs = {}
@@ -305,52 +382,64 @@ plt.savefig(figfolder + 'D.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 # %% plot figure E, contour strain after photoactivation
-def find_x_position_of_point_on_line(x_line, y_line, y_point):
-    # find equation describing the line
-    m = (y_line[-1] - y_line[0])/(x_line[-1] - x_line[0])
-    b = y_line[0] - x_line[0] * m
-    return (y_point - b) / m
+
+# make some calculations on the simulated data first
+epsilon_asymmetry_coefficient_all = []
+# singlet_epsilon_asymmetry_coefficient = []
+
+for fb in feedbacks:
+    epsilon = doublet_simulation["EA50"]["FB" + str(fb)]["epsilon_yy"]
+    rel_epsilon = epsilon / np.nansum(np.abs(epsilon), axis=0)
+    epsilon_asymmetry_curve = (rel_epsilon - np.flipud(rel_epsilon))
+    epsilon_asymmetry_coefficient = -np.nansum(epsilon_asymmetry_curve[0:int(epsilon_asymmetry_curve.shape[0] / 2)], axis=0)
+    epsilon_asymmetry_coefficient_all.append(epsilon_asymmetry_coefficient)
+
+# for fb in feedbacks:
+#     epsilon = singlet_simulation["EA50"]["FB" + str(fb)]["epsilon_yy"]
+#     # rel_epsilon = epsilon / np.nansum(epsilon)
+#     # epsilon_asymmetry_curve = (rel_epsilon - np.flipud(rel_epsilon)) / 2
+#     # epsilon_asymmetry_coefficient = np.nansum(np.abs(epsilon_asymmetry_curve), axis=0)
+#     # singlet_epsilon_asymmetry_coefficient.append(epsilon_asymmetry_coefficient)
+#     rel_epsilon = epsilon / np.nansum(np.abs(epsilon), axis=0)
+#     epsilon_asymmetry_curve = (rel_epsilon - np.flipud(rel_epsilon))
+#     epsilon_asymmetry_coefficient = -np.nansum(epsilon_asymmetry_curve[0:int(epsilon_asymmetry_curve.shape[0] / 2)], axis=0)
+#     singlet_epsilon_asymmetry_coefficient.append(epsilon_asymmetry_coefficient)
+
+# def find_nearest(array, value):
+#     array = np.asarray(array)
+#     idx = (np.abs(array - value)).argmin()
+#     return array[idx]
+
+def find_x_position_of_point_on_array(x_list, y_list, y_point):
+    f = interp1d(y_list, x_list, kind='cubic')
+    return f(y_point)
 
 stats_doublet = calculate_median_and_CI(df_doublet, 'ASC')
 stats_singlet = calculate_median_and_CI(df_singlet, 'ASC')
 
 fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
 
-ax.plot(feedbacks, doublet_epsilon_asymmetry_coefficient, color=colors_parent[1])
-ax.plot(feedbacks, singlet_epsilon_asymmetry_coefficient, color=colors_parent[2])
-
+ax.plot(feedbacks, epsilon_asymmetry_coefficient_all, color='grey')
+# ax.plot(feedbacks, singlet_epsilon_asymmetry_coefficient, color=colors_parent[2])
 
 # add data points
 color = colors_parent[1]
-# y_median = stats_doublet["median"]["AR1to1d_fs"]
-# y_CI = stats_doublet["CI"]["AR1to1d_fs"]
-# x = find_x_position_of_point_on_line(feedbacks, doublet_epsilon_asymmetry_coefficient, y_median)
-# x_CI = find_x_position_of_point_on_line(feedbacks, doublet_epsilon_asymmetry_coefficient, y_median-y_CI)-x
-# ax.errorbar(x, y_median, yerr=y_CI, xerr=x_CI, mfc='w', color=color, marker='o', ms=4, linewidth=0.5, ls='none',
-#             markeredgewidth=0.5)
 y_median = stats_doublet["median"]["AR1to1d_hs"]
 y_CI = stats_doublet["CI"]["AR1to1d_hs"]
-# x = find_x_position_of_point_on_line(feedbacks, doublet_epsilon_asymmetry_coefficient, y_median)
-x=0.45
-x_CI = find_x_position_of_point_on_line(feedbacks, doublet_epsilon_asymmetry_coefficient, y_median-y_CI)-x
+x = find_x_position_of_point_on_array(feedbacks, epsilon_asymmetry_coefficient_all, y_median)
+# x = 0.45
+# x_CI = find_x_position_of_point_on_line(feedbacks, doublet_epsilon_asymmetry_coefficient, y_median - y_CI) - x
 ax.errorbar(x, y_median, yerr=y_CI, mfc='w', color=color, marker='s', ms=4, linewidth=0.5, ls='none',
             markeredgewidth=0.5)
 
 color = colors_parent[2]
-# y_median = stats_singlet["median"]["AR1to1s_fs"]
-# y_CI = stats_singlet["CI"]["AR1to1s_fs"]
-# x = find_x_position_of_point_on_line(feedbacks, singlet_epsilon_asymmetry_coefficient, y_median)
-# x_CI = find_x_position_of_point_on_line(feedbacks, singlet_epsilon_asymmetry_coefficient, y_median-y_CI)-x
-# ax.errorbar(x, y_median, yerr=y_CI, xerr=x_CI, mfc='w', color=color, marker='o', ms=4, linewidth=0.5, ls='none',
-#             markeredgewidth=0.5)
 y_median = stats_singlet["median"]["AR1to1s_hs"]
-y_CI = stats_singlet["CI"]["AR1to1s_fs"]
-# x = find_x_position_of_point_on_line(feedbacks, singlet_epsilon_asymmetry_coefficient, y_median)
-x=0.35
-x_CI = find_x_position_of_point_on_line(feedbacks, singlet_epsilon_asymmetry_coefficient, y_median-y_CI)-x
+y_CI = stats_singlet["CI"]["AR1to1s_hs"]
+x = find_x_position_of_point_on_array(feedbacks, epsilon_asymmetry_coefficient_all, y_median)
+# x = 0.35
+# x_CI = find_x_position_of_point_on_line(feedbacks, singlet_epsilon_asymmetry_coefficient, y_median - y_CI) - x
 ax.errorbar(x, y_median, yerr=y_CI, mfc='w', color=color, marker='s', ms=4, linewidth=0.5, ls='none',
             markeredgewidth=0.5)
-
 
 # provide info on tick parameters
 ax.minorticks_on()

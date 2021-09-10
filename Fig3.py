@@ -57,7 +57,6 @@ AR1to1s_fullstim_long = filter_data_main(AR1to1s_fullstim_long, threshold, "AR1t
 AR1to1s_halfstim = filter_data_main(AR1to1s_halfstim, threshold, "AR1to1s_halfstim")
 
 # %% load simulation data
-
 # fullstim experiment
 sim_Es_1to1dfs = np.load(folder + "AR1to1_doublets_full_stim_long/simulation_strain_energy.npz")["energy"]
 sim_stress_xx_1to1dfs = np.load(folder + "AR1to1_doublets_full_stim_long/simulation_stress_xx_yy.npz")["stress_xx"]
@@ -97,6 +96,7 @@ sim_relstress_yy_right_1to1dhs = sim_stress_yy_right_1to1dhs / np.nanmean(sim_st
 figfolder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_Figure3/"
 if not os.path.exists(figfolder):
     os.mkdir(figfolder)
+    
 # %% prepare dataframe for boxplots
 
 # initialize empty dictionaries
@@ -302,7 +302,8 @@ ax = axes[0, 0]
 color = colors_parent[1]
 ylabel = 'doublet'
 title = 'global activation'
-y = AR1to1d_fullstim_long["TFM_data"]["relEs"]
+y = AR1to1d_fullstim_long["TFM_data"]["Es"]
+y = (y - np.nanmean(y[0:20], axis=0)) / np.nanmean(y[0:20], axis=(0, 1)) # normalize
 y = y[::2, :]
 
 # make plots
@@ -316,7 +317,8 @@ ax = axes[0, 1]
 color = colors_parent[1]
 ylabel = None
 title = 'local activation'
-y = AR1to1d_halfstim["TFM_data"]["relEs"]
+y = AR1to1d_halfstim["TFM_data"]["Es"]
+y = (y - np.nanmean(y[0:20], axis=0)) / np.nanmean(y[0:20], axis=(0, 1)) # normalize
 y = y[::2, :]
 
 # make plots
@@ -328,7 +330,8 @@ ax = axes[1, 0]
 color = colors_parent[2]
 ylabel = 'singlet'
 title = None
-y = AR1to1s_fullstim_long["TFM_data"]["relEs"]
+y = AR1to1s_fullstim_long["TFM_data"]["Es"]
+y = (y - np.nanmean(y[0:20], axis=0)) / np.nanmean(y[0:20], axis=(0, 1)) # normalize
 y = y[::2, :]
 
 # make plots
@@ -342,7 +345,8 @@ ax = axes[1, 1]
 color = colors_parent[2]
 ylabel = None
 title = None
-y = AR1to1s_halfstim["TFM_data"]["relEs"]
+y = AR1to1s_halfstim["TFM_data"]["Es"]
+y = (y - np.nanmean(y[0:20], axis=0)) / np.nanmean(y[0:20], axis=(0, 1)) # normalize
 y = y[::2, :]
 
 # make plots
@@ -397,28 +401,28 @@ plt.show()
 # prepare data first
 
 # concatenate MSM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
-sigma_normal_1to1d_average = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_normal"][:, :, 0:20, :], axis=(2, 3))
-sigma_normal_1to1s_average = np.nanmean(AR1to1s_halfstim["MSM_data"]["sigma_normal"][:, :, 0:20, :], axis=(2, 3))
+sigma_avg_normal_1to1d_average = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_avg_normal"][:, :, 0:20, :], axis=(2, 3))
+sigma_avg_normal_1to1s_average = np.nanmean(AR1to1s_halfstim["MSM_data"]["sigma_avg_normal"][:, :, 0:20, :], axis=(2, 3))
 
 # convert NaN to 0 to have black background
-sigma_normal_1to1d_average[np.isnan(sigma_normal_1to1d_average)] = 0
-sigma_normal_1to1s_average[np.isnan(sigma_normal_1to1s_average)] = 0
+sigma_avg_normal_1to1d_average[np.isnan(sigma_avg_normal_1to1d_average)] = 0
+sigma_avg_normal_1to1s_average[np.isnan(sigma_avg_normal_1to1s_average)] = 0
 
 # crop maps
 crop_start = 8
 crop_end = 84
 
-sigma_normal_1to1d_average_crop = sigma_normal_1to1d_average[crop_start:crop_end, crop_start:crop_end] * 1e3
-sigma_normal_1to1s_average_crop = sigma_normal_1to1s_average[crop_start:crop_end, crop_start:crop_end] * 1e3
+sigma_avg_normal_1to1d_average_crop = sigma_avg_normal_1to1d_average[crop_start:crop_end, crop_start:crop_end] * 1e3
+sigma_avg_normal_1to1s_average_crop = sigma_avg_normal_1to1s_average[crop_start:crop_end, crop_start:crop_end] * 1e3
 
 # set up plot parameters
 # ******************************************************************************************************************************************
 pixelsize = 0.864               # in µm
 pmax = 10                       # in mN/m
 axtitle = 'mN/m'                # unit of colorbar
-suptitle = 'Normal stress'          # title of plot
-x_end = np.shape(sigma_normal_1to1d_average_crop)[1]   # create x- and y-axis for plotting maps
-y_end = np.shape(sigma_normal_1to1d_average_crop)[0]
+suptitle = '$\mathrm{\sigma _{avg. normal}(x,y)}$'        # title of plot
+x_end = np.shape(sigma_avg_normal_1to1d_average_crop)[1]   # create x- and y-axis for plotting maps
+y_end = np.shape(sigma_avg_normal_1to1d_average_crop)[0]
 extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
 xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))  # create mesh for vectorplot
 
@@ -427,10 +431,10 @@ plt.subplots_adjust(wspace=0.02, hspace=-0.06)      # adjust space in between pl
 # ******************************************************************************************************************************************
 
 
-im = axes[0].imshow(sigma_normal_1to1d_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
+im = axes[0].imshow(sigma_avg_normal_1to1d_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
                        vmin=0, vmax=pmax, aspect='auto')
 
-axes[1].imshow(sigma_normal_1to1s_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
+axes[1].imshow(sigma_avg_normal_1to1s_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
                   vmin=0, vmax=pmax, aspect='auto')
 
 
@@ -476,8 +480,8 @@ plt.subplots_adjust(wspace=0.4, hspace=0.35)  # adjust space in between plots
 ax = axes[0]
 color = colors_parent[1]
 ylabel = None
-title = '$\mathrm{\sigma _{normal}(x)}$  [nN]\n baseline'
-y = AR1to1d_halfstim["MSM_data"]["sigma_normal_x_profile_baseline"] * 1e3  # convert to nN
+title = '$\mathrm{\sigma _{avg. normal}(x)}$ [mN/m]'
+y = AR1to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_baseline"] * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
@@ -489,7 +493,7 @@ ax = axes[1]
 color = colors_parent[2]
 ylabel = None
 title = None
-y = AR1to1s_halfstim["MSM_data"]["sigma_normal_x_profile_baseline"] * 1e3  # convert to nN
+y = AR1to1s_halfstim["MSM_data"]["sigma_avg_normal_x_profile_baseline"] * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
@@ -503,19 +507,19 @@ plt.show()
 
 # prepare data first
 
-sigma_normal_1to1d_diff = np.nanmean(
-    AR1to1d_halfstim["MSM_data"]["sigma_normal"][:, :, 32, :] - AR1to1d_halfstim["MSM_data"]["sigma_normal"][:, :, 20, :],
+sigma_avg_normal_1to1d_diff = np.nanmean(
+    AR1to1d_halfstim["MSM_data"]["sigma_avg_normal"][:, :, 32, :] - AR1to1d_halfstim["MSM_data"]["sigma_avg_normal"][:, :, 20, :],
     axis=2)
-sigma_normal_1to1s_diff = np.nanmean(
-    AR1to1s_halfstim["MSM_data"]["sigma_normal"][:, :, 32, :] - AR1to1s_halfstim["MSM_data"]["sigma_normal"][:, :, 20, :],
+sigma_avg_normal_1to1s_diff = np.nanmean(
+    AR1to1s_halfstim["MSM_data"]["sigma_avg_normal"][:, :, 32, :] - AR1to1s_halfstim["MSM_data"]["sigma_avg_normal"][:, :, 20, :],
     axis=2)
 
 # crop maps
 crop_start = 8
 crop_end = 84
 
-sigma_normal_1to1d_diff_crop = sigma_normal_1to1d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
-sigma_normal_1to1s_diff_crop = sigma_normal_1to1s_diff[crop_start:crop_end, crop_start:crop_end] * 1e3
+sigma_avg_normal_1to1d_diff_crop = sigma_avg_normal_1to1d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+sigma_avg_normal_1to1s_diff_crop = sigma_avg_normal_1to1s_diff[crop_start:crop_end, crop_start:crop_end] * 1e3
 
 
 # set up plot parameters
@@ -524,9 +528,9 @@ pixelsize = 0.864               # in µm
 pmin = -1
 pmax = 1                       # in mN/m
 axtitle = 'mN/m'                # unit of colorbar
-suptitle = '$\mathrm{\Delta}$ Normal stress'          # title of plot
-x_end = np.shape(sigma_normal_1to1d_average_crop)[1]   # create x- and y-axis for plotting maps
-y_end = np.shape(sigma_normal_1to1d_average_crop)[0]
+suptitle = '$\mathrm{\Delta \sigma _{avg. normal}(x,y)}$'          # title of plot
+x_end = np.shape(sigma_avg_normal_1to1d_diff_crop)[1]   # create x- and y-axis for plotting maps
+y_end = np.shape(sigma_avg_normal_1to1d_diff_crop)[0]
 extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
 xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))  # create mesh for vectorplot
 
@@ -535,10 +539,10 @@ plt.subplots_adjust(wspace=0.02, hspace=-0.06)      # adjust space in between pl
 # ******************************************************************************************************************************************
 
 
-im = axes[0].imshow(sigma_normal_1to1d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+im = axes[0].imshow(sigma_avg_normal_1to1d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
                        vmin=pmin, vmax=pmax, aspect='auto')
 
-axes[1].imshow(sigma_normal_1to1s_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+axes[1].imshow(sigma_avg_normal_1to1s_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
                   vmin=pmin, vmax=pmax, aspect='auto')
 
 
@@ -584,8 +588,8 @@ plt.subplots_adjust(wspace=0.4, hspace=0.35)  # adjust space in between plots
 ax = axes[0]
 color = colors_parent[1]
 ylabel = None
-title = '$\mathrm{\sigma _{normal}(x)}$ [nN] \n increase'
-y = AR1to1d_halfstim["MSM_data"]["sigma_normal_x_profile_increase"] * 1e3  # convert to nN
+title = '$\mathrm{\Delta \sigma _{avg. normal}(x)}$ [mN/m]'
+y = AR1to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"] * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
@@ -600,7 +604,7 @@ ax = axes[1]
 color = colors_parent[2]
 ylabel = None
 title = None
-y = AR1to1s_halfstim["MSM_data"]["sigma_normal_x_profile_increase"] * 1e3  # convert to nN
+y = AR1to1s_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"] * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots

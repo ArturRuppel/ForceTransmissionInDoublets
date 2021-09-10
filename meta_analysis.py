@@ -9,7 +9,7 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from lmfit import Model
+from lmfit import minimize, Parameters, Model
 
 
 def analyse_tfm_data(folder, stressmappixelsize):
@@ -134,31 +134,31 @@ def analyse_tfm_data(folder, stressmappixelsize):
         for t in np.arange(t_end):
             mask_topleft = (x[np.newaxis, :] - T_topleft_max[1]) ** 2 + (
                     y[:, np.newaxis] - T_topleft_max[0]) ** 2 < r ** 2
-            Fx_topleft[t, cell] = np.nansum(Tx[0:y_half, 0:x_half, t, cell] * mask_topleft) * stressmappixelsize ** 2\
-                                  - sigma_x[t, cell] * r * stressmappixelsize   # correcting for the contribution of the surface tension
+            Fx_topleft[t, cell] = np.nansum(Tx[0:y_half, 0:x_half, t, cell] * mask_topleft) * stressmappixelsize ** 2 \
+                                  - sigma_x[t, cell] * r * stressmappixelsize  # correcting for the contribution of the surface tension
             Fy_topleft[t, cell] = np.nansum(Ty[0:y_half, 0:x_half, t, cell] * mask_topleft) * stressmappixelsize ** 2
 
             mask_topright = (x[np.newaxis, :] - T_topright_max[1]) ** 2 + (
                     y[:, np.newaxis] - T_topright_max[0]) ** 2 < r ** 2
             Fx_topright[t, cell] = np.nansum(
-                Tx[0:y_half, x_half:x_end, t, cell] * mask_topright) * stressmappixelsize ** 2\
-                                  - sigma_x[t, cell] * r * stressmappixelsize   # correcting for the contribution of the surface tension
+                Tx[0:y_half, x_half:x_end, t, cell] * mask_topright) * stressmappixelsize ** 2 \
+                                   - sigma_x[t, cell] * r * stressmappixelsize  # correcting for the contribution of the surface tension
             Fy_topright[t, cell] = np.nansum(
                 Ty[0:y_half, x_half:x_end, t, cell] * mask_topright) * stressmappixelsize ** 2
 
             mask_bottomleft = (x[np.newaxis, :] - T_bottomleft_max[1]) ** 2 + (
                     y[:, np.newaxis] - T_bottomleft_max[0]) ** 2 < r ** 2
             Fx_bottomleft[t, cell] = np.nansum(
-                Tx[y_half:y_end, 0:x_half, t, cell] * mask_bottomleft) * stressmappixelsize ** 2\
-                                  - sigma_x[t, cell] * r * stressmappixelsize   # correcting for the contribution of the surface tension
+                Tx[y_half:y_end, 0:x_half, t, cell] * mask_bottomleft) * stressmappixelsize ** 2 \
+                                     - sigma_x[t, cell] * r * stressmappixelsize  # correcting for the contribution of the surface tension
             Fy_bottomleft[t, cell] = np.nansum(
                 Ty[y_half:y_end, 0:x_half, t, cell] * mask_bottomleft) * stressmappixelsize ** 2
 
             mask_bottomright = (x[np.newaxis, :] - T_bottomright_max[1]) ** 2 + (
                     y[:, np.newaxis] - T_bottomright_max[0]) ** 2 < r ** 2
             Fx_bottomright[t, cell] = np.nansum(
-                Tx[y_half:y_end, x_half:x_end, t, cell] * mask_bottomright) * stressmappixelsize ** 2\
-                                  - sigma_x[t, cell] * r * stressmappixelsize   # correcting for the contribution of the surface tension
+                Tx[y_half:y_end, x_half:x_end, t, cell] * mask_bottomright) * stressmappixelsize ** 2 \
+                                      - sigma_x[t, cell] * r * stressmappixelsize  # correcting for the contribution of the surface tension
             Fy_bottomright[t, cell] = np.nansum(
                 Ty[y_half:y_end, x_half:x_end, t, cell] * mask_bottomright) * stressmappixelsize ** 2
 
@@ -189,11 +189,14 @@ def analyse_msm_data(folder):
     sigma_yx[sigma_yx == 0] = 'nan'
 
     # calculate normal stress
-    sigma_normal = np.sqrt(sigma_xx ** 2 + sigma_yy ** 2 - sigma_xx * sigma_yy + 3 * sigma_xy ** 2)
+    sigma_max = (sigma_xx + sigma_yy) / 2 + np.sqrt(((sigma_xx - sigma_yy) / 2) ** 2 + sigma_xy ** 2)
+    sigma_min = (sigma_xx + sigma_yy) / 2 - np.sqrt(((sigma_xx - sigma_yy) / 2) ** 2 + sigma_xy ** 2)
 
-    # calculate stress profile along x-axis. 
+    sigma_avg_normal = (sigma_max + sigma_min) / 2
+
+    # calculate stress profile along x-axis.
     # I cut out the borders by multiplying with masks that describes the cell contour exactly to mitigate boundary effects
-    sigma_normal_x_profile = np.nanmean(sigma_normal * masks, axis=0)
+    sigma_avg_normal_x_profile = np.nanmean(sigma_avg_normal * masks, axis=0)
 
     x_end = np.shape(sigma_xx)[1]
     x_half = np.rint(x_end / 2).astype(int)
@@ -205,14 +208,15 @@ def analyse_msm_data(folder):
     sigma_yy_average = np.nanmean(sigma_yy, axis=(0, 1))
     sigma_yy_left_average = np.nanmean(sigma_yy[:, 0:x_half, :, :], axis=(0, 1))
     sigma_yy_right_average = np.nanmean(sigma_yy[:, x_half:x_end, :, :], axis=(0, 1))
-    sigma_normal_average = np.nanmean(sigma_normal, axis=(0, 1))  # maps are coming from matlab calculations where x and y-axes are inverted
-    sigma_normal_left_average = np.nanmean(sigma_normal[:, 0:x_half, :, :], axis=(0, 1))
-    sigma_normal_right_average = np.nanmean(sigma_normal[:, x_half:x_end, :, :], axis=(0, 1))
+    sigma_avg_normal_average = np.nanmean(sigma_avg_normal,
+                                          axis=(0, 1))  # maps are coming from matlab calculations where x and y-axes are inverted
+    sigma_avg_normal_left_average = np.nanmean(sigma_avg_normal[:, 0:x_half, :, :], axis=(0, 1))
+    sigma_avg_normal_right_average = np.nanmean(sigma_avg_normal[:, x_half:x_end, :, :], axis=(0, 1))
 
     # average over first twenty frames before photoactivation
     sigma_xx_baseline = np.nanmean(sigma_xx_average[0:20, :], axis=0)
     sigma_yy_baseline = np.nanmean(sigma_yy_average[0:20, :], axis=0)
-    sigma_normal_x_profile_baseline = np.nanmean(sigma_normal_x_profile[:, 0:20, :], axis=1)
+    sigma_avg_normal_x_profile_baseline = np.nanmean(sigma_avg_normal_x_profile[:, 0:20, :], axis=1)
 
     # normalize stesses by first substracting the baseline for each cell and then dividing by the average baseline
     relsigma_xx = (sigma_xx_average - np.nanmean(sigma_xx_average[0:20], axis=0)) / np.nanmean(sigma_xx_average[0:20], axis=(0, 1))
@@ -227,14 +231,14 @@ def analyse_msm_data(folder):
     relsigma_yy_right = \
         (sigma_yy_right_average - np.nanmean(sigma_yy_right_average[0:20], axis=0)) / np.nanmean(sigma_yy_right_average[0:20], axis=(0, 1))
 
-    relsigma_normal = (sigma_normal_average - np.nanmean(sigma_normal_average[0:20], axis=0)) / np.nanmean(sigma_normal_average[0:20],
-                                                                                                           axis=(0, 1))
-    relsigma_normal_left = \
-        (sigma_normal_left_average - np.nanmean(sigma_normal_left_average[0:20], axis=0)) / np.nanmean(sigma_normal_left_average[0:20],
-                                                                                                       axis=(0, 1))
-    relsigma_normal_right = \
-        (sigma_normal_right_average - np.nanmean(sigma_normal_right_average[0:20], axis=0)) / np.nanmean(sigma_normal_right_average[0:20],
-                                                                                                         axis=(0, 1))
+    relsigma_avg_normal = (sigma_avg_normal_average - np.nanmean(sigma_avg_normal_average[0:20], axis=0)) / np.nanmean(
+        sigma_avg_normal_average[0:20], axis=(0, 1))
+    relsigma_avg_normal_left = \
+        (sigma_avg_normal_left_average - np.nanmean(sigma_avg_normal_left_average[0:20], axis=0)) / np.nanmean(
+            sigma_avg_normal_left_average[0:20], axis=(0, 1))
+    relsigma_avg_normal_right = \
+        (sigma_avg_normal_right_average - np.nanmean(sigma_avg_normal_right_average[0:20], axis=0)) / np.nanmean(
+            sigma_avg_normal_right_average[0:20], axis=(0, 1))
 
     # calculate anisotropy coefficient
     AIC = (sigma_xx_average - sigma_yy_average) / (sigma_xx_average + sigma_yy_average)
@@ -249,55 +253,64 @@ def analyse_msm_data(folder):
     RSI_yy_left = relsigma_yy_left[32, :] - relsigma_yy_left[20, :]
     RSI_yy_right = relsigma_yy_right[32, :] - relsigma_yy_right[20, :]
 
-    RSI_normal = relsigma_normal[32, :] - relsigma_normal[20, :]
-    RSI_normal_left = relsigma_normal_left[32, :] - relsigma_normal_left[20, :]
-    RSI_normal_right = relsigma_normal_right[32, :] - relsigma_normal_right[20, :]
+    RSI_normal = relsigma_avg_normal[32, :] - relsigma_avg_normal[20, :]
+    RSI_normal_left = relsigma_avg_normal_left[32, :] - relsigma_avg_normal_left[20, :]
+    RSI_normal_right = relsigma_avg_normal_right[32, :] - relsigma_avg_normal_right[20, :]
 
     # calculate relative stress profile along x-axis after photoactivation
-    sigma_normal_x_profile_increase = (sigma_normal_x_profile[:, 32, :] - sigma_normal_x_profile[:, 20, :])
+    sigma_avg_normal_x_profile_increase = (sigma_avg_normal_x_profile[:, 32, :] - sigma_avg_normal_x_profile[:, 20, :])
 
     # replace 0 with NaN to not mess up smoothing
-    sigma_normal_x_profile_increase[sigma_normal_x_profile_increase == 0] = 'nan'
+    sigma_avg_normal_x_profile_increase[sigma_avg_normal_x_profile_increase == 0] = 'nan'
 
     # find position at which stress attenuates through sigmoid fit
     def find_stress_attenuation_position(stresscurve):
-        def sigmoid(x, amp, x0, l0, offset):
-            return amp / (1 + np.exp((x - x0) / l0)) + offset
+        def sigmoid(x, left_asymptote, right_asymptote, x0, l0):
+            return (right_asymptote - left_asymptote) / (1 + np.exp((x - x0) / l0)) + left_asymptote
 
-        l0_all = np.zeros(stresscurve.shape[1])
+        left_asymptote_all = np.zeros(stresscurve.shape[1])
+        right_asymptote_all = np.zeros(stresscurve.shape[1])
         x0_all = np.zeros(stresscurve.shape[1])
+        l0_all = np.zeros(stresscurve.shape[1])
+
         for c in range(stresscurve.shape[1]):
             x = np.linspace(-40, 40, stresscurve.shape[0])  # in µm
             y_current = stresscurve[:, c]
+
+            # remove nans from the curve
             x1 = np.delete(x, np.argwhere(np.isnan(y_current)))
             y1 = np.delete(y_current, np.argwhere(np.isnan(y_current)))
 
             gmodel = Model(sigmoid)
-            result = gmodel.fit(y1, x=x1, amp=1e-3, x0=0, l0=1, offset=0)
+            result = gmodel.fit(y1, x=x1, left_asymptote=0, right_asymptote=1e-3, x0=0, l0=1)
 
-            l0_all[c] = result.params.valuesdict()['l0']
+            left_asymptote_all[c] = result.params.valuesdict()['left_asymptote']
+            right_asymptote_all[c] = result.params.valuesdict()['right_asymptote']
             x0_all[c] = result.params.valuesdict()['x0']
-        return l0_all, x0_all
+            l0_all[c] = result.params.valuesdict()['l0']
+        return left_asymptote_all, right_asymptote_all, x0_all, l0_all
 
-    attenuation_length, attenuation_position = find_stress_attenuation_position(sigma_normal_x_profile_increase)
+    left_asymptote, right_asymptote, x0, l0 = find_stress_attenuation_position(sigma_avg_normal_x_profile_increase)
 
-    data = {"sigma_xx": sigma_xx, "sigma_yy": sigma_yy, "sigma_normal": sigma_normal,
+    data = {"sigma_xx": sigma_xx, "sigma_yy": sigma_yy, "sigma_avg_normal": sigma_avg_normal,
             "sigma_xx_average": sigma_xx_average, "sigma_yy_average": sigma_yy_average,
             "sigma_xx_left_average": sigma_xx_left_average,
             "sigma_yy_left_average": sigma_yy_left_average,
             "sigma_xx_right_average": sigma_xx_right_average,
             "sigma_yy_right_average": sigma_yy_right_average,
             "sigma_xx_baseline": sigma_xx_baseline, "sigma_yy_baseline": sigma_yy_baseline,
-            "sigma_normal_x_profile_baseline": sigma_normal_x_profile_baseline,
+            "sigma_avg_normal_x_profile_baseline": sigma_avg_normal_x_profile_baseline,
             "relsigma_xx": relsigma_xx, "relsigma_yy": relsigma_yy,
-            "relsigma_xx_left": relsigma_xx_left, "relsigma_yy_left": relsigma_yy_left, "relsigma_normal_left": relsigma_normal_left,
-            "relsigma_xx_right": relsigma_xx_right, "relsigma_yy_right": relsigma_yy_right, "relsigma_normal_right": relsigma_normal_right,
+            "relsigma_xx_left": relsigma_xx_left, "relsigma_yy_left": relsigma_yy_left,
+            "relsigma_avg_normal_left": relsigma_avg_normal_left,
+            "relsigma_xx_right": relsigma_xx_right, "relsigma_yy_right": relsigma_yy_right,
+            "relsigma_avg_normal_right": relsigma_avg_normal_right,
             "AIC_baseline": AIC_baseline, "AIC": AIC,
             "RSI_xx": RSI_xx, "RSI_xx_left": RSI_xx_left, "RSI_xx_right": RSI_xx_right,
             "RSI_yy": RSI_yy, "RSI_yy_left": RSI_yy_left, "RSI_yy_right": RSI_yy_right,
             "RSI_normal": RSI_normal, "RSI_normal_left": RSI_normal_left, "RSI_normal_right": RSI_normal_right,
-            "sigma_normal_x_profile_increase": sigma_normal_x_profile_increase,
-            "attenuation_length": attenuation_length, "attenuation_position": attenuation_position}
+            "sigma_avg_normal_x_profile_increase": sigma_avg_normal_x_profile_increase,
+            "left_asymptote": left_asymptote, "right_asymptote": right_asymptote, "attenuation_position": x0, "attenuation_length": l0}
     return data
 
 
@@ -356,11 +369,11 @@ def analyse_shape_data(folder, stressmappixelsize):
 
     # calculate contour strain at peak contraction
     epsilon = 1 - np.nanmean(W[:, 1:20, :], axis=1) / np.nanmean(W[:, 30:33, :], axis=1)
-    rel_epsilon = epsilon / np.min(epsilon)
+    rel_epsilon = epsilon / np.nansum(np.abs(epsilon), axis=0)
 
     # quantify degree of asymmetry of the strain
     epsilon_asymmetry_curve = (rel_epsilon - np.flipud(rel_epsilon))
-    epsilon_asymmetry_coefficient = np.nanmean(epsilon_asymmetry_curve[0:int(epsilon_asymmetry_curve.shape[0] / 2)], axis=0)
+    epsilon_asymmetry_coefficient = -np.nansum(epsilon_asymmetry_curve[0:int(epsilon_asymmetry_curve.shape[0] / 2)], axis=0)
 
     masks = np.load(folder + "/mask.npy")
 
