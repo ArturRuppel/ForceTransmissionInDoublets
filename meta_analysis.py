@@ -367,6 +367,8 @@ def analyse_shape_data(folder, stressmappixelsize):
     relW_center = (W_center - np.nanmean(W_center[0:20], axis=0)) / np.nanmean(W_center[0:20])
     relW_center_end = relW_center[-1, :]
 
+    W_center_baseline = np.nanmean(W_center[0:20, :], axis=0)
+
     # calculate contour strain at peak contraction
     epsilon = 1 - np.nanmean(W[:, 1:20, :], axis=1) / np.nanmean(W[:, 30:33, :], axis=1)
     rel_epsilon = epsilon / np.nansum(np.abs(epsilon), axis=0)
@@ -397,7 +399,7 @@ def analyse_shape_data(folder, stressmappixelsize):
     RAI_right = relactin_intensity_right[32, :] - relactin_intensity_right[20, :]
 
     data = {"Xtop": Xtop, "Xbottom": Xbottom, "Ytop": Ytop, "Ybottom": Ybottom,
-            "masks": masks, "cell_width_center": W_center, "relcell_width_center": relW_center, "relcell_width_center_end": relW_center_end,
+            "masks": masks, "cell_width_center_baseline": W_center_baseline, "cell_width_center": W_center, "relcell_width_center": relW_center, "relcell_width_center_end": relW_center_end,
             "contour_strain": epsilon, "ASC": epsilon_asymmetry_coefficient,
             "spreadingsize": spreadingsize, "spreadingsize_baseline": spreadingsize_baseline,
             "actin_angles": actin_angles,

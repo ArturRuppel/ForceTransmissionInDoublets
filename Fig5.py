@@ -65,11 +65,10 @@ concatenated_data['keys'] = keys
 df = pd.DataFrame(concatenated_data)
 
 # convert to more convenient units for plotting
-df_plot_units = df  # all units here are in SI units
-df_plot_units['Es_baseline'] *= 1e12  # convert to fJ
-df_plot_units['spreadingsize_baseline'] *= 1e12  # convert to µm²
-df_plot_units['sigma_xx_baseline'] *= 1e3  # convert to mN/m
-df_plot_units['sigma_yy_baseline'] *= 1e3  # convert to mN/m
+df['Es_baseline'] *= 1e12  # convert to fJ
+df['spreadingsize_baseline'] *= 1e12  # convert to µm²
+df['sigma_xx_baseline'] *= 1e3  # convert to mN/m
+df['sigma_yy_baseline'] *= 1e3  # convert to mN/m
 
 # %% plot figure 5A, force maps
 
@@ -380,6 +379,7 @@ df['sigma_xx_baseline'] *= 1e3  # convert to mN/m
 df['sigma_yy_baseline'] *= 1e3  # convert to mN/m
 df["left_asymptote"] *= 1e3  # convert to mN/m
 df["right_asymptote"] *= 1e3  # convert to mN/m
+df['cell_width_center_baseline'] *= stressmappixelsize / 8  # convert from pixel to µm
 df["attenuation_position"] *= stressmappixelsize   # convert to µm
 df["attenuation_length"] *= stressmappixelsize   # convert to µm
 
@@ -693,6 +693,37 @@ plt.text(xmin + 0.1 * xmax, 1.1*ymax, 'R = ' + str(corr))
 
 plt.savefig(figfolder + 'F.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'F.svg', dpi=300, bbox_inches="tight")
+plt.show()
+
+# %% plot figure 5E boxplots of attenuation length and position
+# set up global plot parameters
+# ******************************************************************************************************************************************
+xticklabels = ['1to2', '1to1', '2to1']  # which labels to put on x-axis
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2.5, 2.5))  # create figure and axes
+plt.subplots_adjust(wspace=0.45, hspace=0.45)  # adjust space in between plots
+
+# Set up plot parameters for third panel
+#######################################################################################################
+x = 'cell_width_center_baseline'
+y = 'attenuation_position'
+hue = 'keys'
+xmin = 0
+xmax = 60
+ymin = -20
+ymax = 20
+xticks = np.arange(0, 60.1, 20)
+yticks = np.arange(-20, 20.1, 10)
+xlabel = 'Junction length [µm]'
+ylabel = '$\mathrm{x_0}$ [µm]'
+
+corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
+# annotate pearson R and p-value
+plt.text(xmin + 0.1 * xmax, 1.1*ymax, 'R = ' + str(corr))
+# plt.text(xmin + 0.1 * xmax, ymin + 0.1 * ymax, 'p = ' + '{:0.2e}'.format(p))
+
+
+plt.savefig(figfolder + 'Falt.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'Falt.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 
