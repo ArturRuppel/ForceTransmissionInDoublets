@@ -539,7 +539,7 @@ ax = axes[0]
 color = colors_parent[0]
 ylabel = None
 title = '$\mathrm{\Delta \sigma _{avg. normal}(x)}$ [mN/m]'
-y = AR1to2d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"] * 1e3  # convert to nN
+y = AR1to2d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"] #* 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
@@ -553,7 +553,7 @@ color = colors_parent[1]
 yticks = np.arange(ymin, ymax + 0.001, 0.1)
 ylabel = None
 title = None
-y = AR1to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"] * 1e3  # convert to nN
+y = AR1to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"]# * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
@@ -567,7 +567,7 @@ color = colors_parent[3]
 yticks = np.arange(ymin, ymax + 0.001, 0.1)
 ylabel = None
 title = None
-y = AR2to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"] * 1e3  # convert to nN
+y = AR2to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"] #* 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots

@@ -30,6 +30,36 @@ colors_parent_dark = ['#01353D', '#564910', '#235741', '#A93B23']
 figfolder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_Figure6/"
 if not os.path.exists(figfolder):
     os.mkdir(figfolder)
+
+# %% filter data to remove cells that don't react very much to opto stimulation
+def filter_data_main(data, title):
+    # concatenate data on which it will be determined which cells will be filtered
+    filterdata = data["MSM_data"]["RSI_normal_left"]
+
+    # move axis of variable to the last position for consistency
+    filterdata = np.moveaxis(filterdata, 0, -1)
+
+    # maximal allowed slope for linear fit of baseline
+    threshold = 0.05
+    opto_increase_filter = create_opto_increase_filter(filterdata, threshold)
+
+    # remove cells with unstable baselines
+    data["TFM_data"] = apply_filter(data["TFM_data"], opto_increase_filter)
+    data["MSM_data"] = apply_filter(data["MSM_data"], opto_increase_filter)
+    # data["shape_data"] = apply_filter(data["shape_data"], opto_increase_filter)
+
+    new_N = np.sum(opto_increase_filter)
+    print(title + ": " + str(opto_increase_filter.shape[0] - new_N) + " cells were filtered out")
+
+    return data
+
+tissues_20micron_full_stim = filter_data_main(tissues_20micron_full_stim, "tissues_20micron_full_stim")
+tissues_20micron_lefthalf_stim = filter_data_main(tissues_20micron_lefthalf_stim, "tissues_20micron_lefthalf_stim")
+tissues_20micron_tophalf_stim = filter_data_main(tissues_20micron_tophalf_stim, "tissues_20micron_tophalf_stim")
+tissues_40micron_full_stim = filter_data_main(tissues_40micron_full_stim, "tissues_40micron_full_stim")
+tissues_40micron_lefthalf_stim = filter_data_main(tissues_40micron_lefthalf_stim, "tissues_40micron_lefthalf_stim")
+tissues_40micron_tophalf_stim = filter_data_main(tissues_40micron_tophalf_stim, "tissues_40micron_tophalf_stim")
+
 # %% prepare dataframe for boxplots
 
 # initialize empty dictionaries
@@ -656,9 +686,10 @@ x = np.linspace(-78, 78, 120)
 x = x[::2]  # downsample data for nicer plotting
 xticks = np.arange(-60, 60.1, 30)  # define where the major ticks are gonna be
 xlabel = 'position [µm]'
-ymin = -0.1
-ymax = 1
+ymin = 0
+ymax = 500
 yticks = np.arange(ymin, ymax + 0.001, 0.25)
+yticks = np.arange(ymin, ymax + 0.001, 50)
 fig, axes = plt.subplots(nrows=4, ncols=1, figsize=(1.2, 5.5))  # create figure and axes
 plt.subplots_adjust(wspace=0.4, hspace=0.35)  # adjust space in between plots
 # ******************************************************************************************************************************************

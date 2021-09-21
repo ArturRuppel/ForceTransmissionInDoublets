@@ -232,8 +232,8 @@ if __name__ == "__main__":
     folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
 
     main("C:/Users/Balland\Desktop/_collaborations/Vladimir Misiak/20micron_full_stim", folder, "tissues_20micron_full_stim", 31, 60)
-    main("C:/Users/Balland\Desktop/_collaborations/Vladimir Misiak/20micron_lefthalf_stim", folder, "tissues_20micron_lefthalf_stim", 8, 60)
+    main("C:/Users/Balland\Desktop/_collaborations/Vladimir Misiak/20micron_lefthalf_stim", folder, "tissues_20micron_lefthalf_stim", 25, 60)
     main("C:/Users/Balland\Desktop/_collaborations/Vladimir Misiak/20micron_tophalf_stim", folder, "tissues_20micron_tophalf_stim", 22, 60)
     main("C:/Users/Balland\Desktop/_collaborations/Vladimir Misiak/40micron_full_stim", folder, "tissues_40micron_full_stim", 15, 60)
-    main("C:/Users/Balland\Desktop/_collaborations/Vladimir Misiak/40micron_lefthalf_stim", folder, "tissues_40micron_lefthalf_stim", 8, 60)
+    main("C:/Users/Balland\Desktop/_collaborations/Vladimir Misiak/40micron_lefthalf_stim", folder, "tissues_40micron_lefthalf_stim", 16, 60)
     main("C:/Users/Balland\Desktop/_collaborations/Vladimir Misiak/40micron_tophalf_stim", folder, "tissues_40micron_tophalf_stim", 13, 60)

@@ -137,6 +137,7 @@ def analyse_msm_data(folder):
 
     # calculate normal stress
     sigma_normal = (sigma_xx + sigma_yy) / 2
+    # sigma_normal = (sigma_xx + sigma_yy) / 2
 
     # calculate stress profile along x-axis. 
     # I cut out the borders by multiplying with masks that describes the cell contour exactly to mitigate boundary effects
@@ -201,7 +202,7 @@ def analyse_msm_data(folder):
     RSI_normal_right = relsigma_normal_right[32, :] - relsigma_normal_right[20, :]
 
     # calculate relative stress profile along x-axis after photoactivation
-    sigma_normal_x_profile_increase = (sigma_normal_x_profile[:, 32, :] - sigma_normal_x_profile[:, 20, :])
+    sigma_normal_x_profile_increase = (sigma_normal_x_profile[:, 32, :] - sigma_normal_x_profile[:, 20, :]) / sigma_normal_x_profile_baseline
 
     # replace 0 with NaN to not mess up smoothing
     sigma_normal_x_profile_increase[sigma_normal_x_profile_increase == 0] = 'nan'

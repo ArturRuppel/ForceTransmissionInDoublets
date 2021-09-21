@@ -684,3 +684,125 @@ plt.show()
 # fig.savefig(figfolder + 'X2.png', dpi=300, bbox_inches="tight")
 # fig.savefig(figfolder + 'X2.svg', dpi=300, bbox_inches="tight")
 # plt.show()
+
+
+#%% make pictures for talk
+figfolder = "C:/Users/Balland/Desktop/movie_for_talk/"
+# for frame in np.arange(60):
+#     Tx = AR1to1s_halfstim["TFM_data"]["Tx"][:, :, frame, 18] * 1e-3
+#     Ty = AR1to1s_halfstim["TFM_data"]["Ty"][:, :, frame, 18] * 1e-3
+#     T = np.sqrt(Tx ** 2 + Ty ** 2)
+#
+#     # set up plot parameters
+#     # ******************************************************************************************************************************************
+#     n = 4                           # every nth arrow will be plotted
+#     pixelsize = 0.864               # in µm
+#     pmax = 2                        # in kPa
+#     axtitle = 'kPa'                 # unit of colorbar
+#     suptitle = 'Traction forces'    # title of plot
+#     x_end = np.shape(T)[1]   # create x- and y-axis for plotting maps
+#     y_end = np.shape(T)[0]
+#     extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
+#     xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))  # create mesh for vectorplot
+#     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))    # create figure and axes
+#     plt.subplots_adjust(wspace=0.02, hspace=-0.06)      # adjust space in between plots
+#     # ******************************************************************************************************************************************
+#
+#     im = ax.imshow(T, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
+#                            vmin=0, vmax=pmax, aspect='auto')
+#     ax.quiver(xq[::n, ::n], yq[::n, ::n], Tx[::n, ::n], Ty[::n, ::n],
+#                       angles='xy', scale=10, units='width', color="r")
+#
+#
+#     # remove axes
+#     ax.axis('off')
+#     aspectratio = 1.0
+#     ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
+#     ax.set_aspect(ratio_default * aspectratio)
+#
+#     # add colorbar
+#     cbar = fig.colorbar(im, ax=ax)
+#     cbar.ax.set_title(axtitle)
+#
+#     # add title
+#     plt.suptitle(suptitle, y=0.94, x=0.44)
+#
+#     fig.savefig(figfolder + str(frame), dpi=300, bbox_inches="tight")
+#     # plt.show()
+
+# figfolder = "C:/Users/Balland/Desktop/movie_for_talk/"
+# for frame in np.arange(60):
+#     sigma_avg = AR1to1d_fullstim_long["MSM_data"]["sigma_avg_normal"][:, :, frame, 5] * 1e3
+#
+#     # set up plot parameters
+#     # ******************************************************************************************************************************************
+#     n = 4  # every nth arrow will be plotted
+#     pixelsize = 0.864  # in µm
+#     pmax = 8  # in kPa
+#     axtitle = 'mN/m'  # unit of colorbar
+#     suptitle = 'Cell avg. normal stress'  # title of plot
+#     x_end = np.shape(sigma_avg)[1]  # create x- and y-axis for plotting maps
+#     y_end = np.shape(sigma_avg)[0]
+#     extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
+#     xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))  # create mesh for vectorplot
+#     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))  # create figure and axes
+#     plt.subplots_adjust(wspace=0.02, hspace=-0.06)  # adjust space in between plots
+#     # ******************************************************************************************************************************************
+#
+#     im = ax.imshow(sigma_avg, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
+#                    vmin=0, vmax=pmax, aspect='auto')
+#
+#     # remove axes
+#     ax.axis('off')
+#     aspectratio = 1.0
+#     ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
+#     ax.set_aspect(ratio_default * aspectratio)
+#
+#     # add colorbar
+#     cbar = fig.colorbar(im, ax=ax)
+#     cbar.ax.set_title(axtitle)
+#
+#     # add title
+#     plt.suptitle(suptitle, y=0.94, x=0.44)
+#
+#     fig.savefig(figfolder + str(frame), dpi=300, bbox_inches="tight")
+#     # plt.show()
+#  plot angle vs mechanical polarization
+
+# set up global plot parameters
+# ******************************************************************************************************************************************
+xticklabels = ['1to2', '1to1', '2to1']  # which labels to put on x-axis
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2.5, 2.5))  # create figure and axes
+plt.subplots_adjust(wspace=0.45, hspace=0.45)  # adjust space in between plots
+
+# Set up plot parameters for sixth panel
+#######################################################################################################
+ylabeloffset = -7
+xlabeloffset = 0
+colors = [colors_parent[1], colors_parent[2]]  # defines colors for scatterplot
+
+
+y = 'actin_angles'
+x = 'AIC_baseline'
+hue = 'keys'
+ymin = 15
+ymax = 75
+xmin = -1
+xmax = 1
+yticks = np.arange(15, 75.1, 15)
+xticks = np.arange(-1, 1.1, 0.5)
+ylabel = "Actin angle"  # "'$\mathrm{\sigma_{x, MSM}}$'
+xlabel = "Mechanical polarization"  # '$\mathrm{\sigma_{x, CM}}$'
+
+corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
+
+# add line with slope 1 for visualisation
+ax.plot([ymin, ymax], [0, 0], linewidth=0.5, linestyle=':', color='grey')
+ax.plot([45, 45], [xmin, xmax], linewidth=0.5, linestyle=':', color='grey')
+
+plt.text(0.21 * xmax + xmin, 1.05 * ymax, 'R = ' + str(corr))
+# plt.text(0.52 * xmax, 1.1 * ymax, 'p = ' + '{:0.2e}'.format(p))
+
+plt.savefig(figfolder + 'polarization_vs_actin_angle.png', dpi=300, bbox_inches="tight")
+# plt.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
+plt.show()

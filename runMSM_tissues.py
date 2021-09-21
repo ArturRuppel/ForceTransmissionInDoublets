@@ -1,24 +1,18 @@
-from pyTFM.TFM_functions import calculate_deformation, TFM_tractions, strain_energy_points, contractillity
-from pyTFM.plotting import show_quiver, plot_continuous_boundary_stresses
-from pyTFM.stress_functions import lineTension
-from pyTFM.grid_setup_solids_py import interpolation, prepare_forces, grid_setup, FEM_simulation, find_borders
-from pyTFM.utilities_TFM import round_flexible
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.ndimage.morphology import binary_fill_holes
-import os
 import scipy.io
-from skimage.morphology import closing, dilation
+from pyTFM.TFM_functions import strain_energy_points, contractillity
+from pyTFM.grid_setup_solids_py import interpolation, prepare_forces, grid_setup, FEM_simulation
 from skimage import io
+from skimage.morphology import dilation
 from skimage.morphology import disk
 
 # %% setting parameters and initialize variables
 folder = "C:/Users/Balland/Desktop/_collaborations/Vladimir Misiak/40micron_lefthalf_stim"
-noCells = 8
+noCells = 46
 ps1 = 0.162  # pixel size of the image of the beads in µm
 ps2 = 1.296  # pixel size of of the deformation field
 print("Outputfolder: " + folder)
-for cell in np.arange(5, noCells + 1):
+for cell in np.arange(11, noCells + 1):
     if cell <= 9:
         foldercellpath = folder + "/tissue0" + str(cell)
     else:

@@ -8,6 +8,7 @@ Created on Wed Jul  7 21:56:01 2021
 import os
 import pickle
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import matplotlib.image as mpimg
@@ -33,6 +34,9 @@ AR1to1s_halfstim = pickle.load(open(folder + "analysed_data/AR1to1s_halfstim.dat
 
 doublet_simulation = pickle.load(open(folder + "_contour_simulations/CM_doublet_simulation.dat", "rb"))
 singlet_simulation = pickle.load(open(folder + "_contour_simulations/CM_singlet_simulation.dat", "rb"))
+
+doublet_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_doublets.dat", "rb"))
+
 feedbacks = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
 # define some colors for the plots
@@ -41,6 +45,69 @@ colors_parent = ['#026473', '#E3CC69', '#77C8A6', '#D96248']
 figfolder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_Figure4/"
 if not os.path.exists(figfolder):
     os.mkdir(figfolder)
+
+# %% plot figure X, lp
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2.5, 2.5))  # create figure and axes
+color = colors_parent[1]
+c = 0
+# for key in doublet_FEM_simulation:
+#     c += 1
+#     y_sim = doublet_FEM_simulation[key]["sigma_normal_x_profile_increase"] * 1e3  # convert to nN
+#     x_sim = np.linspace(-22.5, 22.5, y_sim.shape[0])
+#     ax.plot(x_sim, y_sim, color=adjust_lightness(color, c / 10), alpha=0.5, linewidth=0.7)
+#     plt.axvline(x=-10, ymin=0.0, ymax=1)
+#     plt.axvline(x=-22.5 + 5, ymin=0.0, ymax=1, color="black")
+#     plt.axvline(x=22.5 - 5, ymin=0.0, ymax=1, color="black")
+
+x = np.linspace(-40, 40, 92)
+x = x[::2]  # downsample data for nicer plotting
+xticks = np.arange(-40, 40.1, 5)  # define where the major ticks are gonna be
+xlabel = 'position [µm]'
+ymin = -0.1
+ymax = 1.5
+yticks = np.arange(ymin, ymax + 0.001, 0.1)
+ylabel = None
+title = '$\mathrm{\Delta \sigma _{avg. normal}(x)}$ [mN/m]'
+y = np.sqrt(AR1to1d_halfstim["TFM_data"]["Dx"] ** 2 +  AR1to1d_halfstim["TFM_data"]["Dy"] ** 2) # convert to nN
+y = np.nanmean(y[:,:,0:20,:], axis=(1, 2))
+y = y / max(np.nanmean(y, axis=1))
+y = y[::2, :]
+
+# make plots
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+
+plt.show()
+fig.savefig(figfolder + 'X.png', dpi=300, bbox_inches="tight")
+# %% plot figure X, feedback of FEM
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2.5, 2.5))  # create figure and axes
+color = colors_parent[1]
+c = 0
+for key in doublet_FEM_simulation:
+    c += 1
+    y_sim = doublet_FEM_simulation[key]["sigma_normal_x_profile_increase"] * 1e3  # convert to nN
+    x_sim = np.linspace(-22.5, 22.5, y_sim.shape[0])
+    ax.plot(x_sim, y_sim, color=adjust_lightness(color, c / 10), alpha=0.5, linewidth=0.7)
+    plt.axvline(x=-10, ymin=0.0, ymax=1)
+    plt.axvline(x=-22.5 + 5, ymin=0.0, ymax=1, color="black")
+    plt.axvline(x=22.5 - 5, ymin=0.0, ymax=1, color="black")
+
+x = np.linspace(-40, 40, 92)
+x = x[::2]  # downsample data for nicer plotting
+xticks = np.arange(-40, 40.1, 20)  # define where the major ticks are gonna be
+xlabel = 'position [µm]'
+ymin = -0.1
+ymax = 0.5
+yticks = np.arange(ymin, ymax + 0.001, 0.1)
+ylabel = None
+title = '$\mathrm{\Delta \sigma _{avg. normal}(x)}$ [mN/m]'
+y = AR1to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"] * 1e3  # convert to nN
+y = y[::2, :]
+
+# make plots
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+
+plt.show()
+fig.savefig(figfolder + 'X.png', dpi=300, bbox_inches="tight")
 
 # %% plot figure A, contour strain measurement
 # prepare data first
@@ -394,6 +461,7 @@ for fb in feedbacks:
     epsilon_asymmetry_coefficient = -np.nansum(epsilon_asymmetry_curve[0:int(epsilon_asymmetry_curve.shape[0] / 2)], axis=0)
     epsilon_asymmetry_coefficient_all.append(epsilon_asymmetry_coefficient)
 
+
 # for fb in feedbacks:
 #     epsilon = singlet_simulation["EA50"]["FB" + str(fb)]["epsilon_yy"]
 #     # rel_epsilon = epsilon / np.nansum(epsilon)
@@ -413,6 +481,7 @@ for fb in feedbacks:
 def find_x_position_of_point_on_array(x_list, y_list, y_point):
     f = interp1d(y_list, x_list, kind='cubic')
     return f(y_point)
+
 
 stats_doublet = calculate_median_and_CI(df_doublet, 'ASC')
 stats_singlet = calculate_median_and_CI(df_singlet, 'ASC')

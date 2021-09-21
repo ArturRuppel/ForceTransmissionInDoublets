@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 from scipy.interpolate import griddata
 import matplotlib.pyplot as plt
-import seaborn as sns
+import pickle
+
 
 
 def interpolate_simulation_maps(directory, filename, x_key, y_key, data_key1, data_key2, x_start, x_end, y_start, y_end, pixelsize):
@@ -30,30 +31,54 @@ def interpolate_simulation_maps(directory, filename, x_key, y_key, data_key1, da
 
     return data1_all, data2_all
 
+def analyze_FEM_dataf(FEM_data):
+    for key in FEM_data:
+        FEM_data[key]["sigma_avg_norm"] = (FEM_data[key]["sigma_xx"] + FEM_data[key]["sigma_yy"]) / 2
+        FEM_data[key]["sigma_avg_norm_x_profile"] = np.nanmean(FEM_data[key]["sigma_avg_norm"], axis=0)
+        FEM_data[key]["sigma_normal_x_profile_increase"] = \
+            FEM_data[key]["sigma_avg_norm_x_profile"][:, 32] - FEM_data[key]["sigma_avg_norm_x_profile"][:, 20]
 
+    return FEM_data
 
 if __name__ == "__main__":
-    directory = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FEM_simulations/"
-    filename_bs = "singlet_fullstim_frame_32.csv"
-    filename_as = "singlet_fullstim_frame_22.csv"
+    directory = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FEM_simulations/doublets/"
+    filename = "stresses_feedbacks_"
+
     x_key = ":0"
     y_key = ":1"
-    data_key1 = "Stress:0"
-    data_key2 = "Stress:4"
-    x_start = -22.5     # left most x-value in micron
-    x_end = 22.5        # right most x-value in micron
-    y_start = -22.5     # left most y-value in micron
-    y_end = 22.5        # right most y-value in micron
-    pixelsize = 0.864   # desired final pixelsize in micron per pixel
+    FEM_data = {}   # initialize dictionary
+    x_start = -22.5  # left most x-value in micron
+    x_end = 22.5  # right most x-value in micron
+    y_start = -22.5  # left most y-value in micron
+    y_end = 22.5  # right most y-value in micron
+    pixelsize = 0.864  # desired final pixelsize in micron per pixel
+    no_frames = 60  # nomber of frames
+    grid_x, grid_y = np.mgrid[x_start:x_end:(x_end - x_start) / pixelsize * 1j, y_start:y_end:(y_end - y_start) / pixelsize * 1j]
 
-    sigma_xx_bs, sigma_yy_bs = interpolate_simulation_maps(directory, filename_bs, x_key, y_key, data_key1, data_key2, x_start, x_end, y_start, y_end, pixelsize)
-    sigma_xx_as, sigma_yy_as = interpolate_simulation_maps(directory, filename_as, x_key, y_key, data_key1, data_key2, x_start, x_end, y_start, y_end, pixelsize)
-    
-    sigma_avg_norm_bs = np.sqrt(sigma_xx_bs ** 2 + sigma_yy_bs ** 2)# / 2
-    sigma_avg_norm_as = (sigma_xx_as + sigma_yy_as) / 2
-    sigma_avg_norm_diff = (sigma_xx_as + sigma_yy_as) / 2 - (sigma_xx_bs + sigma_yy_bs) / 2
-    
-    sigma_avg_norm_x_profile = np.nanmean(sigma_avg_norm_bs, axis=0)
+    feedbacks = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+
+    for feedback in feedbacks:
+        print("Reading data from feedback: " + str(feedback))
+        temp_dict = {}
+        sigma_xx = np.zeros([grid_x.shape[0], grid_x.shape[1], no_frames])
+        sigma_yy = np.zeros([grid_x.shape[0], grid_x.shape[1], no_frames])
+        data_key1 = "Stress_"+str(feedback)+":0"
+        data_key2 = "Stress_"+str(feedback)+":4"
+        for frame in range(no_frames):
+            filename_full = filename + str(frame) + ".csv"
+            sigma_xx[:, :, frame], sigma_yy[:, :, frame] = interpolate_simulation_maps(directory, filename_full, x_key, y_key,
+                                                                                       data_key1, data_key2,
+                                                                                       x_start, x_end, y_start, y_end, pixelsize)
+        temp_dict["sigma_xx"] = sigma_xx
+        temp_dict["sigma_yy"] = sigma_yy
+        FEM_data["feedback" + str(feedback)] = temp_dict
+
+    FEM_data = analyze_FEM_dataf(FEM_data)
+
+    with open("C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FEM_simulations/tissues_20micron_full_stim.dat", 'wb') as outfile:
+        pickle.dump(FEM_data, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+    # sigma_avg_norm_diff = (sigma_xx_as + sigma_yy_as) / 2 - (sigma_xx_bs + sigma_yy_bs) / 2
+
 # #%%
 # df = pd.DataFrame.from_dict(np.array([x,y,sigma_yy]).T)
 # df.columns = ['X_value','Y_value','Z_value']
