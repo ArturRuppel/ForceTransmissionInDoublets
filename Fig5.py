@@ -12,8 +12,6 @@ from scipy.stats import zscore
 from plot_and_filter_functions import *
 
 
-mpl.rcParams['font.size'] = 8
-
 # %% load data for plotting
 folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
 AR1to2d_halfstim = pickle.load(open(folder + "analysed_data/AR1to2d_halfstim.dat", "rb"))
@@ -262,7 +260,7 @@ fig.savefig(figfolder + 'B.png', dpi=300, bbox_inches="tight")
 fig.savefig(figfolder + 'B.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
-# %% plot figure 5C boxplots of strain energy and spreading sizes
+# %% plot figure 5C correlation plot of stress anisotropy and average actin angle
 
 # set up global plot parameters
 # ******************************************************************************************************************************************
@@ -270,12 +268,10 @@ xticklabels = ['1to2', '1to1', '2to1']  # which labels to put on x-axis
 fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2.5, 2.5))  # create figure and axes
 plt.subplots_adjust(wspace=0.45, hspace=0.45)  # adjust space in between plots
 
-# Set up plot parameters for sixth panel
-#######################################################################################################
+
 ylabeloffset = -7
 xlabeloffset = 0
 colors = [colors_parent[0], colors_parent[1], colors_parent[3]]  # defines colors for scatterplot
-
 
 y = 'actin_angles'
 x = 'AIC_baseline'
@@ -287,7 +283,7 @@ xmax = 1
 yticks = np.arange(15, 75.1, 15)
 xticks = np.arange(-1, 1.1, 0.5)
 ylabel = "Actin angle"  # "'$\mathrm{\sigma_{x, MSM}}$'
-xlabel = "Stress anisotropy coefficient"  # '$\mathrm{\sigma_{x, CM}}$'
+xlabel = "Degree of stress anisotropy"  # '$\mathrm{\sigma_{x, CM}}$'
 
 corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
 
@@ -301,6 +297,8 @@ plt.text(0.21 * xmax + xmin, 1.05 * ymax, 'R = ' + str(corr))
 plt.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
 plt.show()
+
+
 
 # %% filter data to remove cells that don't react very much to opto stimulation
 def filter_data_main(data, title):
@@ -324,11 +322,12 @@ def filter_data_main(data, title):
 
     return data
 
+
 AR1to2d_halfstim = filter_data_main(AR1to2d_halfstim, "AR1to2d_halfstim")
 AR1to1d_halfstim = filter_data_main(AR1to1d_halfstim, "AR1to1d_halfstim")
 AR2to1d_halfstim = filter_data_main(AR2to1d_halfstim, "AR2to1d_halfstim")
 
-#%% prepare dataframe again after filtering
+# %% prepare dataframe again after filtering
 
 # initialize empty dictionaries
 concatenated_data_1to2d = {}
@@ -371,7 +370,7 @@ filter_outlier2 = np.abs(zscore(df["attenuation_length"])) < 1
 filter_outlier = np.all((filter_outlier1, filter_outlier2), axis=0)
 df = df[filter_outlier]
 
-stressmappixelsize = 0.864   # in µm
+stressmappixelsize = 0.864  # in µm
 # convert to more convenient units for plotting
 df['Es_baseline'] *= 1e12  # convert to fJ
 df['spreadingsize_baseline'] *= 1e12  # convert to µm²
@@ -380,8 +379,8 @@ df['sigma_yy_baseline'] *= 1e3  # convert to mN/m
 df["left_asymptote"] *= 1e3  # convert to mN/m
 df["right_asymptote"] *= 1e3  # convert to mN/m
 df['cell_width_center_baseline'] *= stressmappixelsize / 8  # convert from pixel to µm
-df["attenuation_position"] *= stressmappixelsize   # convert to µm
-df["attenuation_length"] *= stressmappixelsize   # convert to µm
+df["attenuation_position"] *= stressmappixelsize  # convert to µm
+df["attenuation_length"] *= stressmappixelsize  # convert to µm
 
 # %% plot figure 5D1, stress map differences
 
@@ -399,7 +398,6 @@ sigmamean_1to1d_diff = np.nanmean(
 sigmamean_2to1d_diff = np.nanmean(
     AR2to1d_halfstim["MSM_data"]["sigma_avg_normal"][:, :, 32, :] - AR2to1d_halfstim["MSM_data"]["sigma_avg_normal"][:, :, 20, :],
     axis=2)
-
 
 # crop maps
 crop_start = 2
@@ -427,19 +425,16 @@ xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3],
 fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(2, 4))
 
 im = axes[0].imshow(sigmamean_1to2d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
-                       vmin=sigma_min, vmax=sigma_max, aspect='auto')
-
+                    vmin=sigma_min, vmax=sigma_max, aspect='auto')
 
 axes[1].imshow(sigmamean_1to1d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
-                  vmin=sigma_min, vmax=sigma_max, aspect='auto')
+               vmin=sigma_min, vmax=sigma_max, aspect='auto')
 
 axes[2].imshow(sigmamean_2to1d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
-                  vmin=sigma_min, vmax=sigma_max, aspect='auto')
-
+               vmin=sigma_min, vmax=sigma_max, aspect='auto')
 
 # adjust space in between plots
 plt.subplots_adjust(wspace=0, hspace=0)
-
 
 # remove axes
 for ax in axes.flat:
@@ -453,7 +448,8 @@ cbar = fig.colorbar(im, ax=axes.ravel().tolist())
 cbar.ax.set_title('mN/m')
 
 # add title
-plt.suptitle('$\mathrm{\Delta \sigma _{avg. normal}(x,y)}$', y=0.98, x=0.5)
+# plt.suptitle('$\mathrm{\Delta \sigma _{avg. normal}(x,y)}$', y=0.98, x=0.5)
+plt.suptitle('$\mathrm{abc}$', y=0.98, x=0.5)
 # plt.text(-20, 230, '$\mathrm{\Delta}$ mean stresses')
 
 # add annotations
@@ -466,9 +462,11 @@ fig.savefig(figfolder + 'D1.png', dpi=300, bbox_inches="tight")
 fig.savefig(figfolder + 'D1.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
+
 # %% prepare data for figure 5D2
 def sigmoid(x, left_asymptote, right_asymptote, x0, l0):
     return (left_asymptote - right_asymptote) / (1 + np.exp((x - x0) / l0)) + right_asymptote
+
 
 x = np.linspace(-40, 40, 92)
 x = x[::2]  # downsample data for nicer plotting
@@ -483,7 +481,7 @@ ax.plot([-40, 40], [1, 1], linestyle=':', color='grey')
 # ax.plot([-10, 10], [0, 0], linestyle=':', color='grey')
 ax.plot([0, 0], [-0.5, 0.5], linestyle=':', color='grey')
 
-plt.plot([-8, 8], [8*0.1, -8*0.1], linestyle=':', color='grey')
+plt.plot([-8, 8], [8 * 0.1, -8 * 0.1], linestyle=':', color='grey')
 plt.savefig(figfolder + 'EX.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'EX.svg', dpi=300, bbox_inches="tight")
 plt.show()
@@ -496,7 +494,7 @@ y = np.zeros((x.shape[0], a.shape[0]))
 for cell in range(a.shape[0]):
     y[:, cell] = sigmoid(x, a[cell], b[cell], c[cell], d[cell])
 
-sigmoid1to2d = np.nanmean(y, axis=1) * 1e3 # convert to mN/m
+sigmoid1to2d = np.nanmean(y, axis=1) * 1e3  # convert to mN/m
 
 a = AR1to1d_halfstim["MSM_data"]["left_asymptote"]
 b = AR1to1d_halfstim["MSM_data"]["right_asymptote"]
@@ -506,7 +504,7 @@ y = np.zeros((x.shape[0], a.shape[0]))
 for cell in range(a.shape[0]):
     y[:, cell] = sigmoid(x, a[cell], b[cell], c[cell], d[cell])
 
-sigmoid1to1d = np.nanmean(y, axis=1) * 1e3 # convert to mN/m
+sigmoid1to1d = np.nanmean(y, axis=1) * 1e3  # convert to mN/m
 
 a = AR2to1d_halfstim["MSM_data"]["left_asymptote"]
 b = AR2to1d_halfstim["MSM_data"]["right_asymptote"]
@@ -516,7 +514,7 @@ y = np.zeros((x.shape[0], a.shape[0]))
 for cell in range(a.shape[0]):
     y[:, cell] = sigmoid(x, a[cell], b[cell], c[cell], d[cell])
 
-sigmoid2to1d = np.nanmean(y, axis=1) * 1e3 # convert to mN/m
+sigmoid2to1d = np.nanmean(y, axis=1) * 1e3  # convert to mN/m
 
 # %% plot figure 5D2
 
@@ -539,7 +537,7 @@ ax = axes[0]
 color = colors_parent[0]
 ylabel = None
 title = '$\mathrm{\Delta \sigma _{avg. normal}(x)}$ [mN/m]'
-y = AR1to2d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"] #* 1e3  # convert to nN
+y = AR1to2d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"]  # * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
@@ -553,7 +551,7 @@ color = colors_parent[1]
 yticks = np.arange(ymin, ymax + 0.001, 0.1)
 ylabel = None
 title = None
-y = AR1to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"]# * 1e3  # convert to nN
+y = AR1to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"]  # * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
@@ -567,7 +565,7 @@ color = colors_parent[3]
 yticks = np.arange(ymin, ymax + 0.001, 0.1)
 ylabel = None
 title = None
-y = AR2to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"] #* 1e3  # convert to nN
+y = AR2to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"]  # * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
@@ -577,7 +575,6 @@ ax.plot(x, sigmoid2to1d, color=color)
 plt.savefig(figfolder + 'D2.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'D2.svg', dpi=300, bbox_inches="tight")
 plt.show()
-
 
 # %% plot figure 5E boxplots of attenuation length and position
 
@@ -596,7 +593,7 @@ colors = [colors_parent[0], colors_parent[1], colors_parent[3]]  # defines color
 ymin = -0.5  # minimum value on y-axis
 ymax = 1.5  # maximum value on y-axis
 yticks = np.arange(-0.5, 1.51, 0.5)  # define where to put major ticks on y-axis
-ylabel = 'a [mN/m]'   # which label to put on y-axis
+ylabel = 'a [mN/m]'  # which label to put on y-axis
 title = 'Left asymptote'  # title of plot
 ylabeloffset = -5
 box_pairs = [('AR1to2d', 'AR1to1d'), ('AR1to1d', 'AR2to1d'), ('AR1to2d', 'AR2to1d')]
@@ -613,15 +610,13 @@ colors = [colors_parent[0], colors_parent[1], colors_parent[3]]  # defines color
 ymin = -0.5  # minimum value on y-axis
 ymax = 1.5  # maximum value on y-axis
 yticks = np.arange(-0.5, 1.51, 0.5)  # define where to put major ticks on y-axis
-ylabel = 'b [mN/m]'   # which label to put on y-axis
+ylabel = 'b [mN/m]'  # which label to put on y-axis
 title = 'Right asymptote'  # title of plot
 stat_annotation_offset = 0.15
 box_pairs = [('AR1to2d', 'AR1to1d'), ('AR1to1d', 'AR2to1d'), ('AR1to2d', 'AR2to1d')]
 
 # make plots
 make_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors, ylabeloffset=ylabeloffset)
-
-
 
 # Set up plot parameters for first panel
 #######################################################################################################
@@ -650,15 +645,13 @@ colors = [colors_parent[0], colors_parent[1], colors_parent[3]]  # defines color
 ymin = -5  # minimum value on y-axis
 ymax = 10  # maximum value on y-axis
 yticks = np.arange(-5, 10.1, 5)  # define where to put major ticks on y-axis
-ylabel = '$\mathrm{l_0}$ [µm]'   # which label to put on y-axis
+ylabel = '$\mathrm{l_0}$ [µm]'  # which label to put on y-axis
 title = 'Attenuation length'  # title of plot
 stat_annotation_offset = 0.15
 box_pairs = [('AR1to2d', 'AR1to1d'), ('AR1to1d', 'AR2to1d'), ('AR1to2d', 'AR2to1d')]
 
 # make plots
 make_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors, ylabeloffset=ylabeloffset)
-
-
 
 plt.savefig(figfolder + 'Fsup.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'Fsup.svg', dpi=300, bbox_inches="tight")
@@ -687,7 +680,7 @@ ylabel = '$\mathrm{x_0}$ [µm]'
 
 corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
 # annotate pearson R and p-value
-plt.text(xmin + 0.1 * xmax, 1.1*ymax, 'R = ' + str(corr))
+plt.text(xmin + 0.1 * xmax, 1.1 * ymax, 'R = ' + str(corr))
 # plt.text(xmin + 0.1 * xmax, ymin + 0.1 * ymax, 'p = ' + '{:0.2e}'.format(p))
 
 
@@ -718,15 +711,13 @@ ylabel = '$\mathrm{x_0}$ [µm]'
 
 corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
 # annotate pearson R and p-value
-plt.text(xmin + 0.1 * xmax, 1.1*ymax, 'R = ' + str(corr))
+plt.text(xmin + 0.1 * xmax, 1.1 * ymax, 'R = ' + str(corr))
 # plt.text(xmin + 0.1 * xmax, ymin + 0.1 * ymax, 'p = ' + '{:0.2e}'.format(p))
 
 
 plt.savefig(figfolder + 'Falt.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'Falt.svg', dpi=300, bbox_inches="tight")
 plt.show()
-
-
 
 # # %% plot figure 5D1, mean stress maps
 # 
@@ -1356,4 +1347,35 @@ plt.show()
 #
 # plt.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
 # plt.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
+# plt.show()
+
+# # %% plot figure 5C boxplots of strain energy and spreading sizes
+#
+# # set up global plot parameters
+# # ******************************************************************************************************************************************
+# xticklabels = ['1to2', '1to1', '2to1']  # which labels to put on x-axis
+# fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2.5, 2.5))  # create figure and axes
+# plt.subplots_adjust(wspace=0.45, hspace=0.45)  # adjust space in between plots
+#
+# # Set up plot parameters for sixth panel
+# #######################################################################################################
+# ylabeloffset = -7
+# xlabeloffset = 0
+# colors = [colors_parent[0], colors_parent[1], colors_parent[3]]  # defines colors for scatterplot
+#
+# y = 'AIC_baseline'
+# x = 'keys'
+# ymin = -1
+# ymax = 1.5
+# yticks = np.arange(-1, 1.6, 0.5)
+# ylabel = None
+# xlabel = None  # '$\mathrm{\sigma_{x, CM}}$'
+# title = "Mechanical polarization"
+# stat_annotation_offset = 0
+# box_pairs = [['AR1to2d', 'AR1to1d'], ['AR1to2d', 'AR2to1d'], ['AR1to1d', 'AR2to1d']]
+#
+# make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
+#
+# plt.savefig(figfolder + 'C_sup.png', dpi=300, bbox_inches="tight")
+# plt.savefig(figfolder + 'C_sup.svg', dpi=300, bbox_inches="tight")
 # plt.show()

@@ -11,6 +11,10 @@ import scipy.stats as st
 
 plt.rcParams['font.size'] = 8
 # plt.rcParams.update({"text.usetex": True})
+mpl.rcParams['mathtext.fontset'] = 'custom'
+mpl.rcParams['mathtext.rm'] = 'Bitstream Vera Sans'
+mpl.rcParams['mathtext.it'] = 'Bitstream Vera Sans:italic'
+mpl.rcParams['mathtext.bf'] = 'Bitstream Vera Sans:bold'
 
 def calculate_median_and_CI(df, quantity):
     stats = df.groupby(['keys'])[quantity].agg(['median', 'count', 'std'])

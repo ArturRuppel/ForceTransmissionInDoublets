@@ -3,10 +3,12 @@ import numpy as np
 from scipy.interpolate import griddata
 import matplotlib.pyplot as plt
 import pickle
+from skimage.morphology import closing, dilation, disk
+from scipy.sparse import coo_matrix
 
 
 
-def interpolate_simulation_maps(directory, filename, x_key, y_key, data_key1, data_key2, x_start, x_end, y_start, y_end, pixelsize):
+def interpolate_simulation_maps(directory, filename, x_key, y_key, data_key1, data_key2, grid_x, grid_y, pixelsize):
     '''x_start, x_end, y_start and y_and are the coordinates of the 4 courners of the heatmap in micron and the pixelsize in micron per pixel
     determines how many pixel the stressmap will have after interpolation'''
 
@@ -20,8 +22,6 @@ def interpolate_simulation_maps(directory, filename, x_key, y_key, data_key1, da
 
         return y, x, data1, data2
 
-    grid_x, grid_y = np.mgrid[x_start:x_end:(x_end - x_start) / pixelsize * 1j, y_start:y_end:(y_end - y_start) / pixelsize * 1j]
-
     data1_all = np.zeros([grid_x.shape[0], grid_x.shape[1]])
     data2_all = np.zeros([grid_x.shape[0], grid_x.shape[1]])
 
@@ -30,6 +30,31 @@ def interpolate_simulation_maps(directory, filename, x_key, y_key, data_key1, da
     data2_all[:, :] = griddata((x, y), data2, (grid_x, grid_y), method='cubic')
 
     return data1_all, data2_all
+
+def get_mask_from_points(directory, filename, x_key, y_key, grid_x):
+    '''x_start, x_end, y_start and y_and are the coordinates of the 4 courners of the heatmap in micron and the pixelsize in micron per pixel
+    determines how many pixel the stressmap will have after interpolation'''
+
+    def read_FEM_simulation_maps(directory, filename, x_key, y_key):
+
+        df = pd.read_csv(directory + filename)
+        x = df[x_key].values
+        y = df[y_key].values
+
+        return y, x
+
+    x, y = read_FEM_simulation_maps(directory, filename, x_key, y_key)
+    x_rounded = np.round(x * 10 + int(grid_x.shape[0]/2))
+    y_rounded = np.round(y * 10 + int(grid_x.shape[1]/2))
+    data = np.ones(x.shape)
+    mask = coo_matrix((data, (x_rounded, y_rounded)), shape=(grid_x.shape)).toarray()
+    mask = mask > 0
+    footprint = disk(20)
+    closed = closing(mask, footprint)
+    dilated = dilation(closed, footprint)
+    plt.imshow(dilated)
+    plt.show()
+    return dilated
 
 def analyze_FEM_dataf(FEM_data):
     for key in FEM_data:
@@ -41,8 +66,8 @@ def analyze_FEM_dataf(FEM_data):
     return FEM_data
 
 if __name__ == "__main__":
-    directory = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FEM_simulations/doublets/"
-    filename = "stresses_feedbacks_"
+    directory = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FEM_simulations/singlets/"
+    filename = "stress_feedbacks_"
 
     x_key = ":0"
     y_key = ":1"
@@ -67,15 +92,14 @@ if __name__ == "__main__":
         for frame in range(no_frames):
             filename_full = filename + str(frame) + ".csv"
             sigma_xx[:, :, frame], sigma_yy[:, :, frame] = interpolate_simulation_maps(directory, filename_full, x_key, y_key,
-                                                                                       data_key1, data_key2,
-                                                                                       x_start, x_end, y_start, y_end, pixelsize)
+                                                                                       data_key1, data_key2, grid_x, grid_y, pixelsize)
         temp_dict["sigma_xx"] = sigma_xx
         temp_dict["sigma_yy"] = sigma_yy
         FEM_data["feedback" + str(feedback)] = temp_dict
 
     FEM_data = analyze_FEM_dataf(FEM_data)
 
-    with open("C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FEM_simulations/tissues_20micron_full_stim.dat", 'wb') as outfile:
+    with open("C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FEM_simulations/FEM_singlets.dat", 'wb') as outfile:
         pickle.dump(FEM_data, outfile, protocol=pickle.HIGHEST_PROTOCOL)
     # sigma_avg_norm_diff = (sigma_xx_as + sigma_yy_as) / 2 - (sigma_xx_bs + sigma_yy_bs) / 2
 

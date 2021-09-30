@@ -36,6 +36,7 @@ doublet_simulation = pickle.load(open(folder + "_contour_simulations/CM_doublet_
 singlet_simulation = pickle.load(open(folder + "_contour_simulations/CM_singlet_simulation.dat", "rb"))
 
 doublet_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_doublets.dat", "rb"))
+singlet_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_singlets.dat", "rb"))
 
 feedbacks = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
@@ -68,8 +69,8 @@ ymax = 1.5
 yticks = np.arange(ymin, ymax + 0.001, 0.1)
 ylabel = None
 title = '$\mathrm{\Delta \sigma _{avg. normal}(x)}$ [mN/m]'
-y = np.sqrt(AR1to1d_halfstim["TFM_data"]["Dx"] ** 2 +  AR1to1d_halfstim["TFM_data"]["Dy"] ** 2) # convert to nN
-y = np.nanmean(y[:,:,0:20,:], axis=(1, 2))
+y = np.sqrt(AR1to1d_halfstim["TFM_data"]["Dx"] ** 2 + AR1to1d_halfstim["TFM_data"]["Dy"] ** 2)  # convert to nN
+y = np.nanmean(y[:, :, 0:20, :], axis=(1, 2))
 y = y / max(np.nanmean(y, axis=1))
 y = y[::2, :]
 
@@ -79,35 +80,127 @@ plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title
 plt.show()
 fig.savefig(figfolder + 'X.png', dpi=300, bbox_inches="tight")
 # %% plot figure X, feedback of FEM
-fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2.5, 2.5))  # create figure and axes
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(1.5, 1.5))  # create figure and axes
 color = colors_parent[1]
 c = 0
 for key in doublet_FEM_simulation:
     c += 1
     y_sim = doublet_FEM_simulation[key]["sigma_normal_x_profile_increase"] * 1e3  # convert to nN
+    # y_sim = np.nancumsum(y_sim) / y_sim.shape[0]
     x_sim = np.linspace(-22.5, 22.5, y_sim.shape[0])
     ax.plot(x_sim, y_sim, color=adjust_lightness(color, c / 10), alpha=0.5, linewidth=0.7)
-    plt.axvline(x=-10, ymin=0.0, ymax=1)
-    plt.axvline(x=-22.5 + 5, ymin=0.0, ymax=1, color="black")
-    plt.axvline(x=22.5 - 5, ymin=0.0, ymax=1, color="black")
+    # plt.axvline(x=-10, ymin=0.0, ymax=1)
+    # plt.axvline(x=-22.5 + 5, ymin=0.0, ymax=1, color="black")
+    # plt.axvline(x=22.5 - 5, ymin=0.0, ymax=1, color="black")
 
 x = np.linspace(-40, 40, 92)
 x = x[::2]  # downsample data for nicer plotting
 xticks = np.arange(-40, 40.1, 20)  # define where the major ticks are gonna be
 xlabel = 'position [µm]'
 ymin = -0.1
-ymax = 0.5
+ymax = 0.51
+# ymax = 20
 yticks = np.arange(ymin, ymax + 0.001, 0.1)
 ylabel = None
 title = '$\mathrm{\Delta \sigma _{avg. normal}(x)}$ [mN/m]'
 y = AR1to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"] * 1e3  # convert to nN
+
 y = y[::2, :]
+# y = np.nancumsum(y, axis=0) / y.shape[0]
 
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+# plt.plot(x, y, '*', markersize=4)
 
+# add line at y=0 for visualisation
+ax.plot([x[0], x[-1]], [0, 0], linewidth=0.5, linestyle=':', color='grey')
 plt.show()
-fig.savefig(figfolder + 'X.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'X.svg', dpi=300, bbox_inches="tight")
+# %% plot figure X, feedback of FEM singlets
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(1.5, 1.5))  # create figure and axes
+color = colors_parent[2]
+c = 0
+for key in singlet_FEM_simulation:
+    c += 1
+    y_sim = singlet_FEM_simulation[key]["sigma_normal_x_profile_increase"] * 1e3  # convert to nN
+    # y_sim = np.nancumsum(y_sim) / y_sim.shape[0]
+    x_sim = np.linspace(-22.5, 22.5, y_sim.shape[0])
+    ax.plot(x_sim, y_sim, color=adjust_lightness(color, c / 10), alpha=0.5, linewidth=0.7)
+    # plt.axvline(x=-10, ymin=0.0, ymax=1)
+    # plt.axvline(x=-22.5 + 5, ymin=0.0, ymax=1, color="black")
+    # plt.axvline(x=22.5 - 5, ymin=0.0, ymax=1, color="black")
+
+x = np.linspace(-40, 40, 92)
+x = x[::2]  # downsample data for nicer plotting
+xticks = np.arange(-40, 40.1, 20)  # define where the major ticks are gonna be
+xlabel = 'position [µm]'
+ymin = -0.1
+ymax = 0.51
+# ymax = 20
+yticks = np.arange(ymin, ymax + 0.001, 0.1)
+ylabel = None
+title = '$\mathrm{\Delta \sigma _{avg. normal}(x)}$ [mN/m]'
+y = AR1to1s_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"] * 1e3  # convert to nN
+
+y = y[::2, :]
+# y = np.nancumsum(y, axis=0) / y.shape[0]
+
+# make plots
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+# plt.plot(x, y, '*', markersize=4)
+
+# add line at y=0 for visualisation
+ax.plot([x[0], x[-1]], [0, 0], linewidth=0.5, linestyle=':', color='grey')
+plt.show()
+fig.savefig(figfolder + 'X1.svg', dpi=300, bbox_inches="tight")
+
+# %% plot figure 3X1, normal-stress maps difference simulation
+
+# prepare data first
+key = "feedback0.1"
+sigma_avg_normal_doublet_sim = (doublet_FEM_simulation[key]["sigma_avg_norm"][:, :, 32] - \
+                                doublet_FEM_simulation[key]["sigma_avg_norm"][:, :, 20]) * 1e3 # convert to mN/m
+
+# sigma_avg_normal_doublet_sim = (doublet_FEM_simulation[key]["sigma_avg_norm"][:, :, 32]) * 1e2 # convert to mN/m
+# set up plot parameters
+# ******************************************************************************************************************************************
+pixelsize = 0.864  # in µm
+pmin = -1
+pmax = 1  # in mN/m
+axtitle = 'mN/m'  # unit of colorbar
+suptitle = '$\mathrm{\Delta \sigma _{avg. normal}(x,y)}$'  # title of plot
+x_end = np.shape(sigma_avg_normal_doublet_sim)[1]  # create x- and y-axis for plotting maps
+y_end = np.shape(sigma_avg_normal_doublet_sim)[0]
+extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
+xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))  # create mesh for vectorplot
+
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(1.7, 1.7))  # create figure and axes
+plt.subplots_adjust(wspace=0.02, hspace=-0.06)  # adjust space in between plots
+# ******************************************************************************************************************************************
+
+
+im = ax.imshow(sigma_avg_normal_doublet_sim, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+                    vmin=pmin, vmax=pmax, aspect='auto')
+
+
+# remove axes
+ax.axis('off')
+aspectratio = 1.0
+ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
+ax.set_aspect(ratio_default * aspectratio)
+
+# add colorbar
+cbar = fig.colorbar(im, ax=ax)
+cbar.ax.set_title(axtitle)
+
+# add title
+plt.suptitle(suptitle, y=0.94, x=0.44)
+
+
+# save figure
+fig.savefig(figfolder + 'X2.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'X2.svg', dpi=300, bbox_inches="tight")
+plt.show()
 
 # %% plot figure A, contour strain measurement
 # prepare data first
