@@ -135,6 +135,7 @@ T_1to1s_example_crop = T_1to1s_example[crop_start:crop_end, crop_start:crop_end]
 # ******************************************************************************************************************************************
 n = 4                           # every nth arrow will be plotted
 pixelsize = 0.864               # in µm
+pmin = 0
 pmax = 2                        # in kPa
 axtitle = 'kPa'                 # unit of colorbar
 suptitle = 'Traction forces'    # title of plot
@@ -146,26 +147,11 @@ fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3, 2.5))    # create figure 
 plt.subplots_adjust(wspace=0.02, hspace=-0.06)      # adjust space in between plots
 # ******************************************************************************************************************************************
 
-im = axes[0, 0].imshow(T_1to1d_example_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
-                       vmin=0, vmax=pmax, aspect='auto')
-axes[0, 0].quiver(xq[::n, ::n], yq[::n, ::n], Tx_1to1d_example_crop[::n, ::n], Ty_1to1d_example_crop[::n, ::n],
-                  angles='xy', scale=10, units='width', color="r")
-# axes[0,0].set_title('n=1', pad=-400, color='r')
+im = plot_forcemaps(axes[0, 0], Tx_1to1d_example_crop, Ty_1to1d_example_crop, pixelsize, pmax, pmin)
+plot_forcemaps(axes[0, 1], Tx_1to1d_average_crop, Ty_1to1d_average_crop, pixelsize, pmax, pmin)
+plot_forcemaps(axes[1, 0], Tx_1to1s_example_crop, Ty_1to1s_example_crop, pixelsize, pmax, pmin)
+plot_forcemaps(axes[1, 1], Tx_1to1s_average_crop, Ty_1to1s_average_crop, pixelsize, pmax, pmin)
 
-axes[0, 1].imshow(T_1to1d_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent, vmin=0,
-                  vmax=pmax, aspect='auto')
-axes[0, 1].quiver(xq[::n, ::n], yq[::n, ::n], Tx_1to1d_average_crop[::n, ::n], Ty_1to1d_average_crop[::n, ::n],
-                  angles='xy', scale=10, units='width', color="r")
-
-axes[1, 0].imshow(T_1to1s_example_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent, vmin=0,
-                  vmax=pmax, aspect='auto')
-axes[1, 0].quiver(xq[::n, ::n], yq[::n, ::n], Tx_1to1s_example_crop[::n, ::n], Ty_1to1s_example_crop[::n, ::n],
-                  angles='xy', scale=10, units='width', color="r")
-
-axes[1, 1].imshow(T_1to1s_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent, vmin=0,
-                  vmax=pmax, aspect='auto')
-axes[1, 1].quiver(xq[::n, ::n], yq[::n, ::n], Tx_1to1s_average_crop[::n, ::n], Ty_1to1s_average_crop[::n, ::n],
-                  angles='xy', scale=10, units='width', color="r")
 
 # remove axes
 for ax in axes.flat:
@@ -187,9 +173,14 @@ plt.text(0.25, 0.455, 'n=1', transform=plt.figure(1).transFigure, color='w')
 plt.text(0.55, 0.455, 'n=' + str(n_singlets), transform=plt.figure(1).transFigure, color='w')
 plt.text(0.55, 0.83, 'n=' + str(n_doublets), transform=plt.figure(1).transFigure, color='w')
 
+# draw pattern
+for ax in axes.flat:
+    draw_pattern(ax, color="grey")
+
 fig.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
 fig.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
 plt.show()
+
 # %% plot figure 1D_1, xx-stress maps
 
 # prepare data first
@@ -226,6 +217,7 @@ sigma_xx_1to1s_example_crop = sigma_xx_1to1s_example[crop_start:crop_end, crop_s
 # set up plot parameters
 # ******************************************************************************************************************************************
 pixelsize = 0.864               # in µm
+pmin = 0                        # in mN/m
 pmax = 10                       # in mN/m
 axtitle = 'mN/m'                # unit of colorbar
 suptitle = 'xx-Stress'          # title of plot
@@ -237,18 +229,10 @@ fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3, 2.5))    # create figure 
 plt.subplots_adjust(wspace=0.02, hspace=-0.06)      # adjust space in between plots
 # ******************************************************************************************************************************************
 
-
-im = axes[0, 0].imshow(sigma_xx_1to1d_example_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
-                       vmin=0, vmax=pmax, aspect='auto')
-
-axes[0, 1].imshow(sigma_xx_1to1d_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
-                  vmin=0, vmax=pmax, aspect='auto')
-
-axes[1, 0].imshow(sigma_xx_1to1s_example_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
-                  vmin=0, vmax=pmax, aspect='auto')
-
-axes[1, 1].imshow(sigma_xx_1to1s_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
-                  vmin=0, vmax=pmax, aspect='auto')
+plot_stressmaps(axes[0, 0], sigma_xx_1to1d_example_crop, pixelsize, pmax, pmin)
+plot_stressmaps(axes[0, 1], sigma_xx_1to1d_average_crop, pixelsize, pmax, pmin)
+plot_stressmaps(axes[1, 0], sigma_xx_1to1s_example_crop, pixelsize, pmax, pmin)
+plot_stressmaps(axes[1, 1], sigma_xx_1to1s_average_crop, pixelsize, pmax, pmin)
 
 
 # remove axes
@@ -271,12 +255,16 @@ plt.text(0.25, 0.455, 'n=1', transform=plt.figure(1).transFigure, color='w')
 plt.text(0.55, 0.455, 'n=' + str(n_singlets), transform=plt.figure(1).transFigure, color='w')
 plt.text(0.55, 0.83, 'n=' + str(n_doublets), transform=plt.figure(1).transFigure, color='w')
 
+# draw pattern
+for ax in axes.flat:
+    draw_pattern(ax, color="grey")
+
 # save figure
 fig.savefig(figfolder + 'D1.png', dpi=300, bbox_inches="tight")
 fig.savefig(figfolder + 'D1.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
-# %% plot figure 1D_2, yy-stress maps
+#%%%% plot figure 1D_2, yy-stress maps
 
 # prepare data first
 
@@ -312,30 +300,20 @@ sigma_yy_1to1s_example_crop = sigma_yy_1to1s_example[crop_start:crop_end, crop_s
 # set up plot parameters
 # ******************************************************************************************************************************************
 pixelsize = 0.864               # in µm
+pmin = 0                        # in mN/m
 pmax = 10                       # in mN/m
 axtitle = 'mN/m'                # unit of colorbar
 suptitle = 'yy-Stress'          # title of plot
-x_end = np.shape(T_1to1d_average_crop)[1]   # create x- and y-axis for plotting maps
-y_end = np.shape(T_1to1d_average_crop)[0]
-extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
-xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))  # create mesh for vectorplot
 
 fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3, 2.5))    # create figure and axes
 plt.subplots_adjust(wspace=0.02, hspace=-0.06)      # adjust space in between plots
 # ******************************************************************************************************************************************
 
 
-im = axes[0, 0].imshow(sigma_yy_1to1d_example_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
-                       vmin=0, vmax=pmax, aspect='auto')
-
-axes[0, 1].imshow(sigma_yy_1to1d_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
-                  vmin=0, vmax=pmax, aspect='auto')
-
-axes[1, 0].imshow(sigma_yy_1to1s_example_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
-                  vmin=0, vmax=pmax, aspect='auto')
-
-axes[1, 1].imshow(sigma_yy_1to1s_average_crop, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
-                  vmin=0, vmax=pmax, aspect='auto')
+plot_stressmaps(axes[0, 0], sigma_yy_1to1d_example_crop, pixelsize, pmax, pmin)
+plot_stressmaps(axes[0, 1], sigma_yy_1to1d_average_crop, pixelsize, pmax, pmin)
+plot_stressmaps(axes[1, 0], sigma_yy_1to1s_example_crop, pixelsize, pmax, pmin)
+plot_stressmaps(axes[1, 1], sigma_yy_1to1s_average_crop, pixelsize, pmax, pmin)
 
 
 # remove axes
@@ -357,6 +335,10 @@ plt.text(0.25, 0.83, 'n=1', transform=plt.figure(1).transFigure, color='w')
 plt.text(0.25, 0.455, 'n=1', transform=plt.figure(1).transFigure, color='w')
 plt.text(0.55, 0.455, 'n=' + str(n_singlets), transform=plt.figure(1).transFigure, color='w')
 plt.text(0.55, 0.83, 'n=' + str(n_doublets), transform=plt.figure(1).transFigure, color='w')
+
+# draw pattern
+for ax in axes.flat:
+    draw_pattern(ax, color="grey")
 
 # save figure
 fig.savefig(figfolder + 'D2.png', dpi=300, bbox_inches="tight")
@@ -687,7 +669,7 @@ plt.show()
 
 
 #%% make pictures for talk
-figfolder = "C:/Users/Balland/Desktop/movie_for_talk/"
+# figfolder = "C:/Users/Balland/Desktop/movie_for_talk/"
 # for frame in np.arange(60):
 #     Tx = AR1to1s_halfstim["TFM_data"]["Tx"][:, :, frame, 18] * 1e-3
 #     Ty = AR1to1s_halfstim["TFM_data"]["Ty"][:, :, frame, 18] * 1e-3
@@ -769,40 +751,40 @@ figfolder = "C:/Users/Balland/Desktop/movie_for_talk/"
 #     # plt.show()
 #  plot angle vs mechanical polarization
 
-# set up global plot parameters
-# ******************************************************************************************************************************************
-xticklabels = ['1to2', '1to1', '2to1']  # which labels to put on x-axis
-fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2.5, 2.5))  # create figure and axes
-plt.subplots_adjust(wspace=0.45, hspace=0.45)  # adjust space in between plots
-
-# Set up plot parameters for sixth panel
-#######################################################################################################
-ylabeloffset = -7
-xlabeloffset = 0
-colors = [colors_parent[1], colors_parent[2]]  # defines colors for scatterplot
-
-
-y = 'actin_angles'
-x = 'AIC_baseline'
-hue = 'keys'
-ymin = 15
-ymax = 75
-xmin = -1
-xmax = 1
-yticks = np.arange(15, 75.1, 15)
-xticks = np.arange(-1, 1.1, 0.5)
-ylabel = "Actin angle"  # "'$\mathrm{\sigma_{x, MSM}}$'
-xlabel = "Mechanical polarization"  # '$\mathrm{\sigma_{x, CM}}$'
-
-corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
-
-# add line with slope 1 for visualisation
-ax.plot([ymin, ymax], [0, 0], linewidth=0.5, linestyle=':', color='grey')
-ax.plot([45, 45], [xmin, xmax], linewidth=0.5, linestyle=':', color='grey')
-
-plt.text(0.21 * xmax + xmin, 1.05 * ymax, 'R = ' + str(corr))
-# plt.text(0.52 * xmax, 1.1 * ymax, 'p = ' + '{:0.2e}'.format(p))
-
-plt.savefig(figfolder + 'polarization_vs_actin_angle.png', dpi=300, bbox_inches="tight")
-# plt.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
-plt.show()
+# # set up global plot parameters
+# # ******************************************************************************************************************************************
+# xticklabels = ['1to2', '1to1', '2to1']  # which labels to put on x-axis
+# fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2.5, 2.5))  # create figure and axes
+# plt.subplots_adjust(wspace=0.45, hspace=0.45)  # adjust space in between plots
+#
+# # Set up plot parameters for sixth panel
+# #######################################################################################################
+# ylabeloffset = -7
+# xlabeloffset = 0
+# colors = [colors_parent[1], colors_parent[2]]  # defines colors for scatterplot
+#
+#
+# y = 'actin_angles'
+# x = 'AIC_baseline'
+# hue = 'keys'
+# ymin = 15
+# ymax = 75
+# xmin = -1
+# xmax = 1
+# yticks = np.arange(15, 75.1, 15)
+# xticks = np.arange(-1, 1.1, 0.5)
+# ylabel = "Actin angle"  # "'$\mathrm{\sigma_{x, MSM}}$'
+# xlabel = "Mechanical polarization"  # '$\mathrm{\sigma_{x, CM}}$'
+#
+# corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
+#
+# # add line with slope 1 for visualisation
+# ax.plot([ymin, ymax], [0, 0], linewidth=0.5, linestyle=':', color='grey')
+# ax.plot([45, 45], [xmin, xmax], linewidth=0.5, linestyle=':', color='grey')
+#
+# plt.text(0.21 * xmax + xmin, 1.05 * ymax, 'R = ' + str(corr))
+# # plt.text(0.52 * xmax, 1.1 * ymax, 'p = ' + '{:0.2e}'.format(p))
+#
+# plt.savefig(figfolder + 'polarization_vs_actin_angle.png', dpi=300, bbox_inches="tight")
+# # plt.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
+# plt.show()

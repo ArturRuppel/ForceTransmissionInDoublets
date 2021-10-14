@@ -301,31 +301,58 @@ plt.show()
 
 
 # %% filter data to remove cells that don't react very much to opto stimulation
-def filter_data_main(data, title):
+# def filter_data_main(data, threshold, title):
+#     # concatenate data on which it will be determined which cells will be filtered
+#     filterdata = data["MSM_data"]["RSI_normal_left"]
+#
+#     # move axis of variable to the last position for consistency
+#     filterdata = np.moveaxis(filterdata, 0, -1)
+#
+#     opto_increase_filter = create_opto_increase_filter(filterdata, threshold)
+#
+#     # remove cells with unstable baselines
+#     data["TFM_data"] = apply_filter(data["TFM_data"], opto_increase_filter)
+#     data["MSM_data"] = apply_filter(data["MSM_data"], opto_increase_filter)
+#     data["shape_data"] = apply_filter(data["shape_data"], opto_increase_filter)
+#
+#     new_N = np.sum(opto_increase_filter)
+#     print(title + ": " + str(opto_increase_filter.shape[0] - new_N) + " cells were filtered out")
+#
+#     return data
+#
+# # minimal allowed stress increase of left cell
+# threshold = 0.05
+
+def filter_data_main(data, threshold, title):
     # concatenate data on which it will be determined which cells will be filtered
-    filterdata = data["MSM_data"]["RSI_normal_left"]
+    filterdata = np.stack(
+        (data["TFM_data"]["relEs"][0:20, :], data["MSM_data"]["relsigma_xx"][0:20, :], data["MSM_data"]["relsigma_yy"][0:20, :],
+         data["MSM_data"]["relsigma_xx_left"][0:20, :], data["MSM_data"]["relsigma_xx_right"][0:20, :],
+         data["MSM_data"]["relsigma_yy_left"][0:20, :], data["MSM_data"]["relsigma_yy_right"][0:20, :]))
 
     # move axis of variable to the last position for consistency
     filterdata = np.moveaxis(filterdata, 0, -1)
 
     # maximal allowed slope for linear fit of baseline
-    threshold = 0.05
-    opto_increase_filter = create_opto_increase_filter(filterdata, threshold)
+
+    baselinefilter = create_baseline_filter(filterdata, threshold)
 
     # remove cells with unstable baselines
-    data["TFM_data"] = apply_filter(data["TFM_data"], opto_increase_filter)
-    data["MSM_data"] = apply_filter(data["MSM_data"], opto_increase_filter)
-    data["shape_data"] = apply_filter(data["shape_data"], opto_increase_filter)
+    data["TFM_data"] = apply_filter(data["TFM_data"], baselinefilter)
+    data["MSM_data"] = apply_filter(data["MSM_data"], baselinefilter)
+    data["shape_data"] = apply_filter(data["shape_data"], baselinefilter)
 
-    new_N = np.sum(opto_increase_filter)
-    print(title + ": " + str(opto_increase_filter.shape[0] - new_N) + " cells were filtered out")
+    new_N = np.sum(baselinefilter)
+    print(title + ": " + str(baselinefilter.shape[0] - new_N) + " cells were filtered out")
 
     return data
 
 
-AR1to2d_halfstim = filter_data_main(AR1to2d_halfstim, "AR1to2d_halfstim")
-AR1to1d_halfstim = filter_data_main(AR1to1d_halfstim, "AR1to1d_halfstim")
-AR2to1d_halfstim = filter_data_main(AR2to1d_halfstim, "AR2to1d_halfstim")
+threshold = 0.005
+
+AR1to2d_halfstim = filter_data_main(AR1to2d_halfstim, threshold, "AR1to2d_halfstim")
+AR1to1d_halfstim = filter_data_main(AR1to1d_halfstim, threshold, "AR1to1d_halfstim")
+AR2to1d_halfstim = filter_data_main(AR2to1d_halfstim, threshold, "AR2to1d_halfstim")
 
 # %% prepare dataframe again after filtering
 
@@ -448,8 +475,8 @@ cbar = fig.colorbar(im, ax=axes.ravel().tolist())
 cbar.ax.set_title('mN/m')
 
 # add title
-# plt.suptitle('$\mathrm{\Delta \sigma _{avg. normal}(x,y)}$', y=0.98, x=0.5)
-plt.suptitle('$\mathrm{abc}$', y=0.98, x=0.5)
+plt.suptitle('$\mathrm{\Delta \sigma _{avg. normal}(x,y)}$', y=0.98, x=0.5)
+# plt.suptitle('$\mathrm{abc}$', y=0.98, x=0.5)
 # plt.text(-20, 230, '$\mathrm{\Delta}$ mean stresses')
 
 # add annotations
@@ -537,12 +564,12 @@ ax = axes[0]
 color = colors_parent[0]
 ylabel = None
 title = '$\mathrm{\Delta \sigma _{avg. normal}(x)}$ [mN/m]'
-y = AR1to2d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"]  # * 1e3  # convert to nN
+y = AR1to2d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"]   * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False, titleoffset=20)
-ax.plot(x, sigmoid1to2d, color=color)
+# ax.plot(x, sigmoid1to2d, color=color)
 
 # # Set up plot parameters for fifth panel
 # #######################################################################################################
@@ -551,12 +578,12 @@ color = colors_parent[1]
 yticks = np.arange(ymin, ymax + 0.001, 0.1)
 ylabel = None
 title = None
-y = AR1to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"]  # * 1e3  # convert to nN
+y = AR1to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"]   * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
-ax.plot(x, sigmoid1to1d, color=color)
+# ax.plot(x, sigmoid1to1d, color=color)
 
 # # Set up plot parameters for sixth panel
 # # #######################################################################################################
@@ -565,12 +592,12 @@ color = colors_parent[3]
 yticks = np.arange(ymin, ymax + 0.001, 0.1)
 ylabel = None
 title = None
-y = AR2to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"]  # * 1e3  # convert to nN
+y = AR2to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"]   * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
-ax.plot(x, sigmoid2to1d, color=color)
+# ax.plot(x, sigmoid2to1d, color=color)
 
 plt.savefig(figfolder + 'D2.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'D2.svg', dpi=300, bbox_inches="tight")
@@ -718,7 +745,340 @@ plt.text(xmin + 0.1 * xmax, 1.1 * ymax, 'R = ' + str(corr))
 plt.savefig(figfolder + 'Falt.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'Falt.svg', dpi=300, bbox_inches="tight")
 plt.show()
+# %% plot figure 5DX1, xxstress map differences
 
+# prepare data first
+
+# concatenate TFM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
+sigmamean_1to2d_diff = np.nanmean(
+    AR1to2d_halfstim["MSM_data"]["sigma_xx"][:, :, 32, :] - AR1to2d_halfstim["MSM_data"]["sigma_xx"][:, :, 20, :],
+    axis=2)
+
+sigmamean_1to1d_diff = np.nanmean(
+    AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 32, :] - AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 20, :],
+    axis=2)
+
+sigmamean_2to1d_diff = np.nanmean(
+    AR2to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 32, :] - AR2to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 20, :],
+    axis=2)
+
+# crop maps
+crop_start = 2
+crop_end = 90
+
+sigmamean_1to2d_diff_crop = sigmamean_1to2d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+sigmamean_1to1d_diff_crop = sigmamean_1to1d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+sigmamean_2to1d_diff_crop = sigmamean_2to1d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+
+# sigmamean_1to2d_diff_crop = 100 * sigmamean_1to2d_diff[crop_start:crop_end, crop_start:crop_end] / np.nanmean(AR1to2d_halfstim["MSM_data"]["sigma_xx_baseline"])  # convert to mN/m
+# sigmamean_1to1d_diff_crop = 100 * sigmamean_1to1d_diff[crop_start:crop_end, crop_start:crop_end] / np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_xx_baseline"]) # convert to mN/m
+# sigmamean_2to1d_diff_crop = 100 * sigmamean_2to1d_diff[crop_start:crop_end, crop_start:crop_end] / np.nanmean(AR2to1d_halfstim["MSM_data"]["sigma_xx_baseline"])
+
+
+# set up plot parameters
+# *****************************************************************************
+
+pixelsize = 0.864  # in µm
+sigma_max = 1  # kPa
+sigma_min = -1  # kPa
+
+# create x- and y-axis for plotting maps
+x_end = np.shape(sigmamean_1to1d_diff_crop)[1]
+y_end = np.shape(sigmamean_1to1d_diff_crop)[0]
+extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
+
+# create mesh for vectorplot
+xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))
+
+fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(2, 4))
+
+im = axes[0].imshow(sigmamean_1to2d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+                    vmin=sigma_min, vmax=sigma_max, aspect='auto')
+
+axes[1].imshow(sigmamean_1to1d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+               vmin=sigma_min, vmax=sigma_max, aspect='auto')
+
+axes[2].imshow(sigmamean_2to1d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+               vmin=sigma_min, vmax=sigma_max, aspect='auto')
+
+# adjust space in between plots
+plt.subplots_adjust(wspace=0, hspace=0)
+
+# remove axes
+for ax in axes.flat:
+    ax.axis('off')
+    aspectratio = 1.0
+    ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
+    ax.set_aspect(ratio_default * aspectratio)
+
+# add colorbar
+cbar = fig.colorbar(im, ax=axes.ravel().tolist())
+cbar.ax.set_title('mN/m')
+
+# add title
+# plt.suptitle('$\mathrm{\Delta \sigma _{avg. normal}(x,y)}$', y=0.98, x=0.5)
+plt.suptitle('$\mathrm{xx}$', y=0.98, x=0.5)
+# plt.text(-20, 230, '$\mathrm{\Delta}$ mean stresses')
+
+# add annotations
+plt.text(0.43, 0.853, 'n=' + str(n_1to2d), transform=plt.figure(1).transFigure, color='black')
+plt.text(0.43, 0.598, 'n=' + str(n_1to1d), transform=plt.figure(1).transFigure, color='black')
+plt.text(0.43, 0.343, 'n=' + str(n_2to1d), transform=plt.figure(1).transFigure, color='black')
+
+# save figure
+fig.savefig(figfolder + 'DX1.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'DX1.svg', dpi=300, bbox_inches="tight")
+plt.show()
+# %% plot figure 5DX2, yystress map differences
+
+# prepare data first
+
+# concatenate TFM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
+sigmamean_1to2d_diff = np.nanmean(
+    AR1to2d_halfstim["MSM_data"]["sigma_yy"][:, :, 32, :] - AR1to2d_halfstim["MSM_data"]["sigma_yy"][:, :, 20, :],
+    axis=2)
+
+sigmamean_1to1d_diff = np.nanmean(
+    AR1to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 32, :] - AR1to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 20, :],
+    axis=2)
+
+sigmamean_2to1d_diff = np.nanmean(
+    AR2to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 32, :] - AR2to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 20, :],
+    axis=2)
+
+# crop maps
+crop_start = 2
+crop_end = 90
+
+sigmamean_1to2d_diff_crop = sigmamean_1to2d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+sigmamean_1to1d_diff_crop = sigmamean_1to1d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+sigmamean_2to1d_diff_crop = sigmamean_2to1d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+
+# sigmamean_1to2d_diff_crop = 100 * sigmamean_1to2d_diff[crop_start:crop_end, crop_start:crop_end] / np.nanmean(AR1to2d_halfstim["MSM_data"]["sigma_yy_baseline"])  # convert to mN/m
+# sigmamean_1to1d_diff_crop = 100 * sigmamean_1to1d_diff[crop_start:crop_end, crop_start:crop_end] / np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_yy_baseline"]) # convert to mN/m
+# sigmamean_2to1d_diff_crop = 100 * sigmamean_2to1d_diff[crop_start:crop_end, crop_start:crop_end] / np.nanmean(AR2to1d_halfstim["MSM_data"]["sigma_yy_baseline"])
+
+# set up plot parameters
+# *****************************************************************************
+
+pixelsize = 0.864  # in µm
+sigma_max = 1  # kPa
+sigma_min = -1  # kPa
+
+# create x- and y-axis for plotting maps
+x_end = np.shape(sigmamean_1to1d_diff_crop)[1]
+y_end = np.shape(sigmamean_1to1d_diff_crop)[0]
+extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
+
+# create mesh for vectorplot
+xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))
+
+fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(2, 4))
+
+im = axes[0].imshow(sigmamean_1to2d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+                    vmin=sigma_min, vmax=sigma_max, aspect='auto')
+
+axes[1].imshow(sigmamean_1to1d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+               vmin=sigma_min, vmax=sigma_max, aspect='auto')
+
+axes[2].imshow(sigmamean_2to1d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+               vmin=sigma_min, vmax=sigma_max, aspect='auto')
+
+# adjust space in between plots
+plt.subplots_adjust(wspace=0, hspace=0)
+
+# remove axes
+for ax in axes.flat:
+    ax.axis('off')
+    aspectratio = 1.0
+    ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
+    ax.set_aspect(ratio_default * aspectratio)
+
+# add colorbar
+cbar = fig.colorbar(im, ax=axes.ravel().tolist())
+cbar.ax.set_title('mN/m')
+
+# add title
+# plt.suptitle('$\mathrm{\Delta \sigma _{avg. normal}(x,y)}$', y=0.98, x=0.5)
+plt.suptitle('$\mathrm{yy}$', y=0.98, x=0.5)
+# plt.text(-20, 230, '$\mathrm{\Delta}$ mean stresses')
+
+# add annotations
+plt.text(0.43, 0.853, 'n=' + str(n_1to2d), transform=plt.figure(1).transFigure, color='black')
+plt.text(0.43, 0.598, 'n=' + str(n_1to1d), transform=plt.figure(1).transFigure, color='black')
+plt.text(0.43, 0.343, 'n=' + str(n_2to1d), transform=plt.figure(1).transFigure, color='black')
+
+# save figure
+fig.savefig(figfolder + 'DX2.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'DX2.svg', dpi=300, bbox_inches="tight")
+plt.show()
+# %% plot figure 5DX3, xxstress map differences
+
+# prepare data first
+
+# concatenate TFM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
+sigmamean_1to2d_diff = np.nanmean(
+    AR1to2d_halfstim["MSM_data"]["sigma_xx"][:, :, 32, :] - AR1to2d_halfstim["MSM_data"]["sigma_xx"][:, :, 20, :],
+    axis=2)
+
+sigmamean_1to1d_diff = np.nanmean(
+    AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 32, :] - AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 20, :],
+    axis=2)
+
+sigmamean_2to1d_diff = np.nanmean(
+    AR2to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 32, :] - AR2to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 20, :],
+    axis=2)
+
+# crop maps
+crop_start = 2
+crop_end = 90
+
+# sigmamean_1to2d_diff_crop = sigmamean_1to2d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+# sigmamean_1to1d_diff_crop = sigmamean_1to1d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+# sigmamean_2to1d_diff_crop = sigmamean_2to1d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+
+sigmamean_1to2d_diff_crop = 100 * sigmamean_1to2d_diff[crop_start:crop_end, crop_start:crop_end] / np.nanmean(AR1to2d_halfstim["MSM_data"]["sigma_xx_baseline"])  # convert to mN/m
+sigmamean_1to1d_diff_crop = 100 * sigmamean_1to1d_diff[crop_start:crop_end, crop_start:crop_end] / np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_xx_baseline"]) # convert to mN/m
+sigmamean_2to1d_diff_crop = 100 * sigmamean_2to1d_diff[crop_start:crop_end, crop_start:crop_end] / np.nanmean(AR2to1d_halfstim["MSM_data"]["sigma_xx_baseline"])
+
+
+# set up plot parameters
+# *****************************************************************************
+
+pixelsize = 0.864  # in µm
+sigma_max = 50  # kPa
+sigma_min = -50  # kPa
+
+# create x- and y-axis for plotting maps
+x_end = np.shape(sigmamean_1to1d_diff_crop)[1]
+y_end = np.shape(sigmamean_1to1d_diff_crop)[0]
+extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
+
+# create mesh for vectorplot
+xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))
+
+fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(2, 4))
+
+im = axes[0].imshow(sigmamean_1to2d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+                    vmin=sigma_min, vmax=sigma_max, aspect='auto')
+
+axes[1].imshow(sigmamean_1to1d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+               vmin=sigma_min, vmax=sigma_max, aspect='auto')
+
+axes[2].imshow(sigmamean_2to1d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+               vmin=sigma_min, vmax=sigma_max, aspect='auto')
+
+# adjust space in between plots
+plt.subplots_adjust(wspace=0, hspace=0)
+
+# remove axes
+for ax in axes.flat:
+    ax.axis('off')
+    aspectratio = 1.0
+    ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
+    ax.set_aspect(ratio_default * aspectratio)
+
+# add colorbar
+cbar = fig.colorbar(im, ax=axes.ravel().tolist())
+cbar.ax.set_title('%')
+
+# add title
+# plt.suptitle('$\mathrm{\Delta \sigma _{avg. normal}(x,y)}$', y=0.98, x=0.5)
+plt.suptitle('$\mathrm{xx}$', y=0.98, x=0.5)
+# plt.text(-20, 230, '$\mathrm{\Delta}$ mean stresses')
+
+# add annotations
+plt.text(0.43, 0.853, 'n=' + str(n_1to2d), transform=plt.figure(1).transFigure, color='black')
+plt.text(0.43, 0.598, 'n=' + str(n_1to1d), transform=plt.figure(1).transFigure, color='black')
+plt.text(0.43, 0.343, 'n=' + str(n_2to1d), transform=plt.figure(1).transFigure, color='black')
+
+# save figure
+fig.savefig(figfolder + 'DX3.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'DX3.svg', dpi=300, bbox_inches="tight")
+plt.show()
+# %% plot figure 5DX4, yystress map differences
+
+# prepare data first
+
+# concatenate TFM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
+sigmamean_1to2d_diff = np.nanmean(
+    AR1to2d_halfstim["MSM_data"]["sigma_yy"][:, :, 32, :] - AR1to2d_halfstim["MSM_data"]["sigma_yy"][:, :, 20, :],
+    axis=2)
+
+sigmamean_1to1d_diff = np.nanmean(
+    AR1to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 32, :] - AR1to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 20, :],
+    axis=2)
+
+sigmamean_2to1d_diff = np.nanmean(
+    AR2to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 32, :] - AR2to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 20, :],
+    axis=2)
+
+# crop maps
+crop_start = 2
+crop_end = 90
+
+# sigmamean_1to2d_diff_crop = sigmamean_1to2d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+# sigmamean_1to1d_diff_crop = sigmamean_1to1d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+# sigmamean_2to1d_diff_crop = sigmamean_2to1d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+
+sigmamean_1to2d_diff_crop = 100 * sigmamean_1to2d_diff[crop_start:crop_end, crop_start:crop_end] / np.nanmean(AR1to2d_halfstim["MSM_data"]["sigma_yy_baseline"])  # convert to mN/m
+sigmamean_1to1d_diff_crop = 100 * sigmamean_1to1d_diff[crop_start:crop_end, crop_start:crop_end] / np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_yy_baseline"]) # convert to mN/m
+sigmamean_2to1d_diff_crop = 100 * sigmamean_2to1d_diff[crop_start:crop_end, crop_start:crop_end] / np.nanmean(AR2to1d_halfstim["MSM_data"]["sigma_yy_baseline"])
+
+# set up plot parameters
+# *****************************************************************************
+
+pixelsize = 0.864  # in µm
+sigma_max = 50  # kPa
+sigma_min = -50  # kPa
+
+# create x- and y-axis for plotting maps
+x_end = np.shape(sigmamean_1to1d_diff_crop)[1]
+y_end = np.shape(sigmamean_1to1d_diff_crop)[0]
+extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
+
+# create mesh for vectorplot
+xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))
+
+fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(2, 4))
+
+im = axes[0].imshow(sigmamean_1to2d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+                    vmin=sigma_min, vmax=sigma_max, aspect='auto')
+
+axes[1].imshow(sigmamean_1to1d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+               vmin=sigma_min, vmax=sigma_max, aspect='auto')
+
+axes[2].imshow(sigmamean_2to1d_diff_crop, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+               vmin=sigma_min, vmax=sigma_max, aspect='auto')
+
+# adjust space in between plots
+plt.subplots_adjust(wspace=0, hspace=0)
+
+# remove axes
+for ax in axes.flat:
+    ax.axis('off')
+    aspectratio = 1.0
+    ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
+    ax.set_aspect(ratio_default * aspectratio)
+
+# add colorbar
+cbar = fig.colorbar(im, ax=axes.ravel().tolist())
+cbar.ax.set_title('%')
+
+# add title
+# plt.suptitle('$\mathrm{\Delta \sigma _{avg. normal}(x,y)}$', y=0.98, x=0.5)
+plt.suptitle('$\mathrm{yy}$', y=0.98, x=0.5)
+# plt.text(-20, 230, '$\mathrm{\Delta}$ mean stresses')
+
+# add annotations
+plt.text(0.43, 0.853, 'n=' + str(n_1to2d), transform=plt.figure(1).transFigure, color='black')
+plt.text(0.43, 0.598, 'n=' + str(n_1to1d), transform=plt.figure(1).transFigure, color='black')
+plt.text(0.43, 0.343, 'n=' + str(n_2to1d), transform=plt.figure(1).transFigure, color='black')
+
+# save figure
+fig.savefig(figfolder + 'DX4.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'DX4.svg', dpi=300, bbox_inches="tight")
+plt.show()
 # # %% plot figure 5D1, mean stress maps
 # 
 # # prepare data first

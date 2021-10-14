@@ -188,6 +188,17 @@ def analyse_msm_data(folder):
     sigma_xy[sigma_xy == 0] = 'nan'
     sigma_yx[sigma_yx == 0] = 'nan'
 
+    # from scipy import ndimage
+    # for cell in np.arange(sigma_xx.shape[3]):
+    #     for x in np.arange(sigma_xx.shape[0]):
+    #         # lol[x,:,:,cell] = ndimage.median_filter(sigma_xx[x,:,:,cell], size=20)
+    #         sigma_xx[x,:,:,cell] = ndimage.median_filter(sigma_xx[x, :, :, cell], size=20)
+    #         # lol = ndimage.median_filter(sigma_xx[x,:,:,cell], size=3)
+    #         # plt.imshow(sigma_xx[x,:,:,cell])
+    #         # plt.show()
+    #         # plt.imshow(lol)
+    #         # plt.show()
+
     # calculate normal stress
     sigma_max = (sigma_xx + sigma_yy) / 2 + np.sqrt(((sigma_xx - sigma_yy) / 2) ** 2 + sigma_xy ** 2)
     sigma_min = (sigma_xx + sigma_yy) / 2 - np.sqrt(((sigma_xx - sigma_yy) / 2) ** 2 + sigma_xy ** 2)
@@ -196,6 +207,8 @@ def analyse_msm_data(folder):
 
     # calculate stress profile along x-axis.
     # I cut out the borders by multiplying with masks that describes the cell contour exactly to mitigate boundary effects
+    sigma_xx_x_profile = np.nanmean(sigma_xx * masks, axis=0)
+    sigma_yy_x_profile = np.nanmean(sigma_yy * masks, axis=0)
     sigma_avg_normal_x_profile = np.nanmean(sigma_avg_normal * masks, axis=0)
 
     x_end = np.shape(sigma_xx)[1]
@@ -216,6 +229,9 @@ def analyse_msm_data(folder):
     # average over first twenty frames before photoactivation
     sigma_xx_baseline = np.nanmean(sigma_xx_average[0:20, :], axis=0)
     sigma_yy_baseline = np.nanmean(sigma_yy_average[0:20, :], axis=0)
+
+    sigma_xx_x_profile_baseline = np.nanmean(sigma_xx_x_profile[:, 0:20, :], axis=1)
+    sigma_yy_x_profile_baseline = np.nanmean(sigma_yy_x_profile[:, 0:20, :], axis=1)
     sigma_avg_normal_x_profile_baseline = np.nanmean(sigma_avg_normal_x_profile[:, 0:20, :], axis=1)
 
     # normalize stesses by first substracting the baseline for each cell and then dividing by the average baseline
@@ -258,10 +274,24 @@ def analyse_msm_data(folder):
     RSI_normal_right = relsigma_avg_normal_right[32, :] - relsigma_avg_normal_right[20, :]
 
     # calculate relative stress profile along x-axis after photoactivation
-    sigma_avg_normal_x_profile_increase = (sigma_avg_normal_x_profile[:, 32, :] - sigma_avg_normal_x_profile[:, 20, :])
+    sigma_xx_x_profile_increase = (np.median(sigma_xx_x_profile[:, 30:33, :], axis=1) - np.median(sigma_xx_x_profile[:, 0:20, :], axis=1))
+    sigma_yy_x_profile_increase = (np.median(sigma_yy_x_profile[:, 30:33, :], axis=1) - np.median(sigma_yy_x_profile[:, 0:20, :], axis=1))
+    sigma_avg_normal_x_profile_increase = (np.median(sigma_avg_normal_x_profile[:, 30:33, :], axis=1) - np.median(sigma_avg_normal_x_profile[:, 0:20, :], axis=1))
+    # sigma_avg_normal_x_profile_increase = (sigma_avg_normal_x_profile[:, 32, :] - sigma_avg_normal_x_profile[:, 20, :])
+
+    # SI_normal_left = np.nansum(sigma_avg_normal_x_profile_increase[0:int(sigma_avg_normal_x_profile_increase.shape[0] / 2)], axis=0)
+    # SI_normal_right = np.nansum(sigma_avg_normal_x_profile_increase[int(sigma_avg_normal_x_profile_increase.shape[0] / 2):-1], axis=0)
 
     # replace 0 with NaN to not mess up smoothing
     sigma_avg_normal_x_profile_increase[sigma_avg_normal_x_profile_increase == 0] = 'nan'
+
+    # quantify degree of asymmetry of the strain
+    # rel_sigma_curve = sigma_avg_normal_x_profile_increase / np.nansum(np.abs(sigma_avg_normal_x_profile_increase), axis=0)
+
+    # sigma_avg_normal_x_profile_increase_asymmetry_curve = (rel_sigma_curve - np.flipud(rel_sigma_curve))
+    # sigma_increase_asymmetry_coefficient = np.nansum(sigma_avg_normal_x_profile_increase_asymmetry_curve[0:int(sigma_avg_normal_x_profile_increase_asymmetry_curve.shape[0] / 2)], axis=0)
+    # sigma_increase_asymmetry_coefficient = SI_normal_right / SI_normal_left
+
 
     # find position at which stress attenuates through sigmoid fit
     def find_stress_attenuation_position(stresscurve):
@@ -299,6 +329,8 @@ def analyse_msm_data(folder):
             "sigma_xx_right_average": sigma_xx_right_average,
             "sigma_yy_right_average": sigma_yy_right_average,
             "sigma_xx_baseline": sigma_xx_baseline, "sigma_yy_baseline": sigma_yy_baseline,
+            "sigma_xx_x_profile_baseline": sigma_xx_x_profile_baseline,
+            "sigma_yy_x_profile_baseline": sigma_yy_x_profile_baseline,
             "sigma_avg_normal_x_profile_baseline": sigma_avg_normal_x_profile_baseline,
             "relsigma_xx": relsigma_xx, "relsigma_yy": relsigma_yy,
             "relsigma_xx_left": relsigma_xx_left, "relsigma_yy_left": relsigma_yy_left,
@@ -309,7 +341,10 @@ def analyse_msm_data(folder):
             "RSI_xx": RSI_xx, "RSI_xx_left": RSI_xx_left, "RSI_xx_right": RSI_xx_right,
             "RSI_yy": RSI_yy, "RSI_yy_left": RSI_yy_left, "RSI_yy_right": RSI_yy_right,
             "RSI_normal": RSI_normal, "RSI_normal_left": RSI_normal_left, "RSI_normal_right": RSI_normal_right,
+            "sigma_xx_x_profile_increase": sigma_xx_x_profile_increase,
+            "sigma_yy_x_profile_increase": sigma_yy_x_profile_increase,
             "sigma_avg_normal_x_profile_increase": sigma_avg_normal_x_profile_increase,
+            # "sigma_increase_asymmetry_coefficient": sigma_increase_asymmetry_coefficient,
             "left_asymptote": left_asymptote, "right_asymptote": right_asymptote, "attenuation_position": x0, "attenuation_length": l0}
     return data
 

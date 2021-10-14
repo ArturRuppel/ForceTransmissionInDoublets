@@ -16,6 +16,70 @@ mpl.rcParams['mathtext.rm'] = 'Bitstream Vera Sans'
 mpl.rcParams['mathtext.it'] = 'Bitstream Vera Sans:italic'
 mpl.rcParams['mathtext.bf'] = 'Bitstream Vera Sans:bold'
 
+def plot_forcemaps(ax, forcemap_x, forcemap_y, pixelsize, pmax, pmin, n=2, scale=10):
+    x_end = np.shape(forcemap_x)[1]  # create x- and y-axis for plotting maps
+    y_end = np.shape(forcemap_x)[0]
+    extent = [-int(x_end * pixelsize / 2), int(x_end * pixelsize / 2), -int(y_end * pixelsize / 2), int(y_end * pixelsize / 2)]
+    xq, yq = np.meshgrid(np.linspace(extent[0], extent[1], x_end), np.linspace(extent[2], extent[3], y_end))
+
+    forcemap = np.sqrt(forcemap_x ** 2 + forcemap_y ** 2)
+    im = ax.imshow(forcemap, cmap=plt.get_cmap("turbo"), interpolation="bilinear", extent=extent,
+                           vmin=pmin, vmax=pmax, aspect='auto')
+    ax.quiver(xq[::n, ::n], yq[::n, ::n], forcemap_x[::n, ::n], forcemap_y[::n, ::n],
+                      angles='xy', scale=scale, units='width', color="grey", alpha=0.9)
+
+    return im
+
+def plot_forcemaps_diff(ax, forcemap_x, forcemap_y, forcemap, pixelsize, pmax, pmin, n=2, scale=10):
+    x_end = np.shape(forcemap_x)[1]  # create x- and y-axis for plotting maps
+    y_end = np.shape(forcemap_x)[0]
+    extent = [-int(x_end * pixelsize / 2), int(x_end * pixelsize / 2), -int(y_end * pixelsize / 2), int(y_end * pixelsize / 2)]
+    xq, yq = np.meshgrid(np.linspace(extent[0], extent[1], x_end), np.linspace(extent[2], extent[3], y_end))
+
+    im = ax.imshow(forcemap, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
+                           vmin=pmin, vmax=pmax, aspect='auto')
+    ax.quiver(xq[::n, ::n], yq[::n, ::n], forcemap_x[::n, ::n], forcemap_y[::n, ::n],
+                      angles='xy', scale=scale, units='width', color="grey", alpha=0.9)
+
+    return im
+
+def plot_stressmaps(ax, stressmap, pixelsize, pmax, pmin, cmap="turbo"):
+    x_end = np.shape(stressmap)[1]  # create x- and y-axis for plotting maps
+    y_end = np.shape(stressmap)[0]
+    extent = [-int(x_end * pixelsize / 2), int(x_end * pixelsize / 2), -int(y_end * pixelsize / 2), int(y_end * pixelsize / 2)]
+
+    im = ax.imshow(stressmap, cmap=plt.get_cmap(cmap), interpolation="bilinear", extent=extent,
+                           vmin=pmin, vmax=pmax, aspect='auto')
+
+    return im
+
+def draw_pattern(ax, color="grey"):
+    # draw pattern over the TFM maps
+    # define coordinates of pattern in undeformed coordinate system
+    # coord = [[-22.5, -22.5], [22.5, -22.5], [22.5, 22.5], [-22.5, 22.5]]
+    coords = [[-23.5, 23.5], [-16.5, 23.5], [-16.5, 3.5], [16.5, 3.5], [16.5, 23.5], [23.5, 23.5],
+              [23.5, -23.5], [23.5, -23.5], [16.5, -23.5], [16.5, -3.5], [-16.5, -3.5], [-16.5, -23.5], [-23.5, -23.5]]
+    coords.append(coords[0])  # repeat the first point to create a 'closed loop'
+    coords_warped = []
+
+    # deform by 0.5 micron, which is the approximate deformation in the corners induced by the cells
+    for coord in coords:
+        coord_warped = []
+        if coord[0] > 0:
+            coord_warped.append(coord[0] - 0.5)
+        elif coord[0] < 0:
+            coord_warped.append(coord[0] + 0.5)
+        if coord[1] > 0:
+            coord_warped.append(coord[1] - 0.5)
+        elif coord[1] < 0:
+            coord_warped.append(coord[1] + 0.5)
+
+        coords_warped.append(coord_warped)
+
+    xs, ys = zip(*coords_warped)  # create lists of x and y values
+
+    ax.plot(xs, ys, color=color, linestyle="dashed", alpha=0.5)
+
 def calculate_median_and_CI(df, quantity):
     stats = df.groupby(['keys'])[quantity].agg(['median', 'count', 'std'])
     confidence = 0.95

@@ -15,7 +15,7 @@ import matplotlib.image as mpimg
 from plot_and_filter_functions import *
 from scipy.interpolate import interp1d
 
-mpl.rcParams['font.size'] = 8
+mpl.rcParams["font.size"] = 8
 
 
 def rgb2gray(rgb):
@@ -41,173 +41,593 @@ singlet_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_singlet
 feedbacks = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
 # define some colors for the plots
-colors_parent = ['#026473', '#E3CC69', '#77C8A6', '#D96248']
+colors_parent = ["#026473", "#E3CC69", "#77C8A6", "#D96248"]
 
 figfolder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_Figure4/"
 if not os.path.exists(figfolder):
     os.mkdir(figfolder)
 
-# %% plot figure X, lp
-fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2.5, 2.5))  # create figure and axes
-color = colors_parent[1]
-c = 0
-# for key in doublet_FEM_simulation:
-#     c += 1
-#     y_sim = doublet_FEM_simulation[key]["sigma_normal_x_profile_increase"] * 1e3  # convert to nN
-#     x_sim = np.linspace(-22.5, 22.5, y_sim.shape[0])
-#     ax.plot(x_sim, y_sim, color=adjust_lightness(color, c / 10), alpha=0.5, linewidth=0.7)
-#     plt.axvline(x=-10, ymin=0.0, ymax=1)
-#     plt.axvline(x=-22.5 + 5, ymin=0.0, ymax=1, color="black")
-#     plt.axvline(x=22.5 - 5, ymin=0.0, ymax=1, color="black")
 
-x = np.linspace(-40, 40, 92)
-x = x[::2]  # downsample data for nicer plotting
-xticks = np.arange(-40, 40.1, 5)  # define where the major ticks are gonna be
-xlabel = 'position [µm]'
-ymin = -0.1
-ymax = 1.5
-yticks = np.arange(ymin, ymax + 0.001, 0.1)
-ylabel = None
-title = '$\mathrm{\Delta \sigma _{avg. normal}(x)}$ [mN/m]'
-y = np.sqrt(AR1to1d_halfstim["TFM_data"]["Dx"] ** 2 + AR1to1d_halfstim["TFM_data"]["Dy"] ** 2)  # convert to nN
-y = np.nanmean(y[:, :, 0:20, :], axis=(1, 2))
-y = y / max(np.nanmean(y, axis=1))
-y = y[::2, :]
+# %% filter data to make sure that the baselines are stable
+def filter_data_main(data, threshold, title):
+    # concatenate data on which it will be determined which cells will be filtered
+    filterdata = np.stack(
+        (data["TFM_data"]["relEs"][0:20, :], data["MSM_data"]["relsigma_xx"][0:20, :], data["MSM_data"]["relsigma_yy"][0:20, :],
+         data["MSM_data"]["relsigma_xx_left"][0:20, :], data["MSM_data"]["relsigma_xx_right"][0:20, :],
+         data["MSM_data"]["relsigma_yy_left"][0:20, :], data["MSM_data"]["relsigma_yy_right"][0:20, :]))
 
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
+    # move axis of variable to the last position for consistency
+    filterdata = np.moveaxis(filterdata, 0, -1)
 
-plt.show()
-fig.savefig(figfolder + 'X.png', dpi=300, bbox_inches="tight")
-# %% plot figure X, feedback of FEM
-fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(1.5, 1.5))  # create figure and axes
-color = colors_parent[1]
-c = 0
-for key in doublet_FEM_simulation:
-    c += 1
-    y_sim = doublet_FEM_simulation[key]["sigma_normal_x_profile_increase"] * 1e3  # convert to nN
-    # y_sim = np.nancumsum(y_sim) / y_sim.shape[0]
-    x_sim = np.linspace(-22.5, 22.5, y_sim.shape[0])
-    ax.plot(x_sim, y_sim, color=adjust_lightness(color, c / 10), alpha=0.5, linewidth=0.7)
-    # plt.axvline(x=-10, ymin=0.0, ymax=1)
-    # plt.axvline(x=-22.5 + 5, ymin=0.0, ymax=1, color="black")
-    # plt.axvline(x=22.5 - 5, ymin=0.0, ymax=1, color="black")
+    # maximal allowed slope for linear fit of baseline
 
-x = np.linspace(-40, 40, 92)
-x = x[::2]  # downsample data for nicer plotting
-xticks = np.arange(-40, 40.1, 20)  # define where the major ticks are gonna be
-xlabel = 'position [µm]'
-ymin = -0.1
-ymax = 0.51
-# ymax = 20
-yticks = np.arange(ymin, ymax + 0.001, 0.1)
-ylabel = None
-title = '$\mathrm{\Delta \sigma _{avg. normal}(x)}$ [mN/m]'
-y = AR1to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"] * 1e3  # convert to nN
+    baselinefilter = create_baseline_filter(filterdata, threshold)
 
-y = y[::2, :]
-# y = np.nancumsum(y, axis=0) / y.shape[0]
+    # remove cells with unstable baselines
+    data["TFM_data"] = apply_filter(data["TFM_data"], baselinefilter)
+    data["MSM_data"] = apply_filter(data["MSM_data"], baselinefilter)
+    data["shape_data"] = apply_filter(data["shape_data"], baselinefilter)
 
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
-# plt.plot(x, y, '*', markersize=4)
+    new_N = np.sum(baselinefilter)
+    print(title + ": " + str(baselinefilter.shape[0] - new_N) + " cells were filtered out")
 
-# add line at y=0 for visualisation
-ax.plot([x[0], x[-1]], [0, 0], linewidth=0.5, linestyle=':', color='grey')
-plt.show()
-fig.savefig(figfolder + 'X.svg', dpi=300, bbox_inches="tight")
-# %% plot figure X, feedback of FEM singlets
-fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(1.5, 1.5))  # create figure and axes
-color = colors_parent[2]
-c = 0
-for key in singlet_FEM_simulation:
-    c += 1
-    y_sim = singlet_FEM_simulation[key]["sigma_normal_x_profile_increase"] * 1e3  # convert to nN
-    # y_sim = np.nancumsum(y_sim) / y_sim.shape[0]
-    x_sim = np.linspace(-22.5, 22.5, y_sim.shape[0])
-    ax.plot(x_sim, y_sim, color=adjust_lightness(color, c / 10), alpha=0.5, linewidth=0.7)
-    # plt.axvline(x=-10, ymin=0.0, ymax=1)
-    # plt.axvline(x=-22.5 + 5, ymin=0.0, ymax=1, color="black")
-    # plt.axvline(x=22.5 - 5, ymin=0.0, ymax=1, color="black")
+    return data
 
-x = np.linspace(-40, 40, 92)
-x = x[::2]  # downsample data for nicer plotting
-xticks = np.arange(-40, 40.1, 20)  # define where the major ticks are gonna be
-xlabel = 'position [µm]'
-ymin = -0.1
-ymax = 0.51
-# ymax = 20
-yticks = np.arange(ymin, ymax + 0.001, 0.1)
-ylabel = None
-title = '$\mathrm{\Delta \sigma _{avg. normal}(x)}$ [mN/m]'
-y = AR1to1s_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"] * 1e3  # convert to nN
 
-y = y[::2, :]
-# y = np.nancumsum(y, axis=0) / y.shape[0]
+threshold = 0.005
 
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
-# plt.plot(x, y, '*', markersize=4)
+AR1to1d_fullstim_long = filter_data_main(AR1to1d_fullstim_long, threshold, "AR1to1d_fullstim_long")
+AR1to1d_fullstim_short = filter_data_main(AR1to1d_fullstim_short, threshold, "AR1to1d_fullstim_short")
+AR1to1d_halfstim = filter_data_main(AR1to1d_halfstim, threshold, "AR1to1d_halfstim")
 
-# add line at y=0 for visualisation
-ax.plot([x[0], x[-1]], [0, 0], linewidth=0.5, linestyle=':', color='grey')
-plt.show()
-fig.savefig(figfolder + 'X1.svg', dpi=300, bbox_inches="tight")
+AR1to1s_fullstim_long = filter_data_main(AR1to1s_fullstim_long, threshold, "AR1to1s_fullstim_long")
+AR1to1s_fullstim_short = filter_data_main(AR1to1s_fullstim_short, threshold, "AR1to1s_fullstim_short")
+AR1to1s_halfstim = filter_data_main(AR1to1s_halfstim, threshold, "AR1to1s_halfstim")
 
-# %% plot figure 3X1, normal-stress maps difference simulation
+# %% prepare dataframe for boxplots
+# initialize empty dictionaries
+concatenated_data_fs = {}
+concatenated_data_hs = {}
+concatenated_data_doublet = {}
+concatenated_data_singlet = {}
+
+# loop over all keys
+for key1 in AR1to1d_fullstim_long:  # keys are the same for all dictionaries so I"m just taking one example here
+    for key2 in AR1to1d_fullstim_long[key1]:
+        if AR1to1d_fullstim_long[key1][key2].ndim == 1:  # only 1D data can be stored in the data frame
+            concatenated_data_doublet[key2] = np.concatenate(
+                (AR1to1d_fullstim_long[key1][key2], AR1to1d_halfstim[key1][key2]))
+            concatenated_data_singlet[key2] = np.concatenate(
+                (AR1to1s_fullstim_long[key1][key2], AR1to1s_halfstim[key1][key2]))
+key1 = "TFM_data"
+key2 = "Es_baseline"
+
+# get number of elements for both condition
+n_d_fullstim = AR1to1d_fullstim_long[key1][key2].shape[0]
+n_d_halfstim = AR1to1d_halfstim[key1][key2].shape[0]
+n_s_fullstim = AR1to1s_fullstim_long[key1][key2].shape[0]
+n_s_halfstim = AR1to1s_halfstim[key1][key2].shape[0]
+
+# create a list of keys with the same dimensions as the data
+keys1to1d_fs = ["AR1to1d_fs" for i in range(n_d_fullstim)]
+keys1to1s_fs = ["AR1to1s_fs" for i in range(n_s_fullstim)]
+keys1to1d_hs = ["AR1to1d_hs" for i in range(n_d_halfstim)]
+keys1to1s_hs = ["AR1to1s_hs" for i in range(n_s_halfstim)]
+
+keys_doublet = np.concatenate((keys1to1d_fs, keys1to1d_hs))
+keys_singlet = np.concatenate((keys1to1s_fs, keys1to1s_hs))
+
+# add keys to dictionary with concatenated data
+concatenated_data_doublet["keys"] = keys_doublet
+concatenated_data_singlet["keys"] = keys_singlet
+
+# Creates DataFrame
+df_doublet = pd.DataFrame(concatenated_data_doublet)
+df_singlet = pd.DataFrame(concatenated_data_singlet)
+
+# %% plot figure 4A1, xx-stress maps difference experiment vs simulation
 
 # prepare data first
-key = "feedback0.1"
-sigma_avg_normal_doublet_sim = (doublet_FEM_simulation[key]["sigma_avg_norm"][:, :, 32] - \
-                                doublet_FEM_simulation[key]["sigma_avg_norm"][:, :, 20]) * 1e3 # convert to mN/m
+key = "feedback0.0"
+sigma_xx_doublet_sim = (doublet_FEM_simulation[key]["sigma_xx"][:, :, 32] - doublet_FEM_simulation[key]["sigma_xx"][:, :,
+                                                                            20]) * 1e3  # convert to mN/m
+sigma_xx_1to1d_diff = np.nanmean(
+    AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 32, :] - AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 20, :], axis=2)
 
-# sigma_avg_normal_doublet_sim = (doublet_FEM_simulation[key]["sigma_avg_norm"][:, :, 32]) * 1e2 # convert to mN/m
+# crop maps
+crop_start = 8
+crop_end = 84
+
+sigma_xx_1to1d_diff_crop = sigma_xx_1to1d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+
+# # pad simulation maps to make shapes equal. only works when shape is a square
+paddingdistance = int((sigma_xx_1to1d_diff_crop.shape[0] - sigma_xx_doublet_sim.shape[0]) / 2)
+sigma_xx_doublet_sim = np.pad(sigma_xx_doublet_sim, (paddingdistance, paddingdistance), "constant", constant_values=(0, 0))
+
 # set up plot parameters
 # ******************************************************************************************************************************************
 pixelsize = 0.864  # in µm
 pmin = -1
 pmax = 1  # in mN/m
-axtitle = 'mN/m'  # unit of colorbar
-suptitle = '$\mathrm{\Delta \sigma _{avg. normal}(x,y)}$'  # title of plot
-x_end = np.shape(sigma_avg_normal_doublet_sim)[1]  # create x- and y-axis for plotting maps
-y_end = np.shape(sigma_avg_normal_doublet_sim)[0]
-extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
-xq, yq = np.meshgrid(np.linspace(0, extent[1], x_end), np.linspace(0, extent[3], y_end))  # create mesh for vectorplot
+axtitle = "mN/m"  # unit of colorbar
+suptitle = "$\mathrm{\Delta \sigma _{xx}(x,y)}$"  # title of plot
+cmap = "seismic"
 
-fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(1.7, 1.7))  # create figure and axes
+fig, axes = plt.subplots(nrows=2, ncols=1, figsize=((2.5, 4)))  # create figure and axes
 plt.subplots_adjust(wspace=0.02, hspace=-0.06)  # adjust space in between plots
 # ******************************************************************************************************************************************
 
-
-im = ax.imshow(sigma_avg_normal_doublet_sim, cmap=plt.get_cmap("seismic"), interpolation="bilinear", extent=extent,
-                    vmin=pmin, vmax=pmax, aspect='auto')
-
+im = plot_stressmaps(axes[0], sigma_xx_1to1d_diff_crop, pixelsize, pmax, pmin, cmap=cmap)
+plot_stressmaps(axes[1], sigma_xx_doublet_sim, pixelsize, pmax, pmin, cmap=cmap)
 
 # remove axes
-ax.axis('off')
-aspectratio = 1.0
-ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
-ax.set_aspect(ratio_default * aspectratio)
+for ax in axes.flat:
+    ax.axis("off")
+    aspectratio = 1.0
+    ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
+    ax.set_aspect(ratio_default * aspectratio)
 
 # add colorbar
-cbar = fig.colorbar(im, ax=ax)
+cbar = fig.colorbar(im, ax=axes.ravel().tolist())
 cbar.ax.set_title(axtitle)
 
 # add title
 plt.suptitle(suptitle, y=0.94, x=0.44)
 
+# draw pattern
+for ax in axes.flat:
+    draw_pattern(ax)
 
 # save figure
-fig.savefig(figfolder + 'X2.png', dpi=300, bbox_inches="tight")
-fig.savefig(figfolder + 'X2.svg', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + "A1.png", dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + "A1.svg", dpi=300, bbox_inches="tight")
+plt.show()
+# %% plot figure 4A2, yy-stress maps difference experiment vs simulation
+
+# prepare data first
+key = "feedback0.0"
+sigma_yy_doublet_sim = (doublet_FEM_simulation[key]["sigma_yy"][:, :, 32] - doublet_FEM_simulation[key]["sigma_yy"][:, :,
+                                                                            20]) * 1e3  # convert to mN/m
+sigma_yy_1to1d_diff = np.nanmean(
+    AR1to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 32, :] - AR1to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 20, :], axis=2)
+
+# crop maps
+crop_start = 8
+crop_end = 84
+
+sigma_yy_1to1d_diff_crop = sigma_yy_1to1d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+
+# # pad simulation maps to make shapes equal. only works when shape is a square
+paddingdistance = int((sigma_yy_1to1d_diff_crop.shape[0] - sigma_yy_doublet_sim.shape[0]) / 2)
+sigma_yy_doublet_sim = np.pad(sigma_yy_doublet_sim, (paddingdistance, paddingdistance), "constant", constant_values=(0, 0))
+
+# set up plot parameters
+# ******************************************************************************************************************************************
+pixelsize = 0.864  # in µm
+pmin = -1
+pmax = 1  # in mN/m
+axtitle = "mN/m"  # unit of colorbar
+suptitle = "$\mathrm{\Delta \sigma _{yy}(x,y)}$"  # title of plot
+cmap = "seismic"
+
+fig, axes = plt.subplots(nrows=2, ncols=1, figsize=((2.5, 4)))  # create figure and axes
+plt.subplots_adjust(wspace=0.02, hspace=-0.06)  # adjust space in between plots
+# ******************************************************************************************************************************************
+
+im = plot_stressmaps(axes[0], sigma_yy_1to1d_diff_crop, pixelsize, pmax, pmin, cmap=cmap)
+plot_stressmaps(axes[1], sigma_yy_doublet_sim, pixelsize, pmax, pmin, cmap=cmap)
+
+# remove axes
+for ax in axes.flat:
+    ax.axis("off")
+    aspectratio = 1.0
+    ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
+    ax.set_aspect(ratio_default * aspectratio)
+
+# add colorbar
+cbar = fig.colorbar(im, ax=axes.ravel().tolist())
+cbar.ax.set_title(axtitle)
+
+# add title
+plt.suptitle(suptitle, y=0.94, x=0.44)
+
+# draw pattern
+for ax in axes.flat:
+    draw_pattern(ax)
+
+# save figure
+fig.savefig(figfolder + "A2.png", dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + "A2.svg", dpi=300, bbox_inches="tight")
 plt.show()
 
-# %% plot figure A, contour strain measurement
+# %% plot figure 4B1, stress profile increase MSM vs FEM
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3.8, 3.8))  # create figure and axes
+plt.subplots_adjust(wspace=0.4, hspace=0.4)  # adjust space in between plots
+
+c = 0
+
+# panel 1
+color = colors_parent[1]
+x = np.linspace(-40, 40, 92)
+x = x[::2]  # downsample data for nicer plotting
+xticks = np.arange(-40, 40.1, 20)  # define where the major ticks are gonna be
+xlabel = "position [µm]"
+ymin = -0.2
+ymax = 0.41
+# ymax = 20
+yticks = np.arange(ymin, ymax + 0.001, 0.1)
+ylabel = None
+title = "$\mathrm{\Delta \sigma _{xx}(x)}$ [mN/m]"
+y = AR1to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"] * 1e3  # convert to nN
+y = y[::2, :]
+
+# make plots
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, axes[0, 0], color, optolinewidth=False)
+
+# panel 2
+color = colors_parent[2]
+ylabel = None
+title = "$\mathrm{\Delta \sigma _{xx}(x)}$ [mN/m]"
+y = AR1to1s_halfstim["MSM_data"]["sigma_xx_x_profile_increase"] * 1e3  # convert to nN
+y = y[::2, :]
+
+# make plots
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, axes[0, 1], color, optolinewidth=False)
+
+# panel 3
+color = colors_parent[1]
+ax = axes[1, 0]
+for key in doublet_FEM_simulation:
+    c += 1
+    y_sim = doublet_FEM_simulation[key]["sigma_xx_x_profile_increase"] * 1e3  # convert to nN
+    x_sim = np.linspace(-22.5, 22.5, y_sim.shape[0])
+    ax.plot(x_sim, y_sim, color=adjust_lightness(color, c / 10), alpha=0.5, linewidth=0.7)
+
+# panel 4
+color = colors_parent[2]
+ax = axes[1, 1]
+for key in singlet_FEM_simulation:
+    c += 1
+    if np.mod(c, 2) == 1:
+        y_sim = singlet_FEM_simulation[key]["sigma_xx_x_profile_increase"] * 1e3  # convert to nN
+        x_sim = np.linspace(-22.5, 22.5, y_sim.shape[0])
+        ax.plot(x_sim, y_sim, color=adjust_lightness(color, c / 25), alpha=0.5, linewidth=0.7)
+
+for ax in axes.flat:
+    # set ticks
+    ax.xaxis.set_ticks(xticks)
+    ax.yaxis.set_ticks(yticks)
+
+    # provide info on tick parameters
+    ax.minorticks_on()
+    ax.tick_params(direction="in", which="minor", length=3, bottom=True, top=False, left=True, right=True)
+    ax.tick_params(direction="in", which="major", length=6, bottom=True, top=False, left=True, right=True)
+
+    # set limits
+    ax.set_ylim(ymin=ymin, ymax=ymax)
+    ax.set_xlim(xmin=min(x))
+
+    ax.set_xlabel(xlabel=xlabel, labelpad=1)
+    ax.set_ylabel(ylabel=ylabel, labelpad=1)
+
+    # add line at y=0 for visualisation
+    ax.plot([x[0], x[-1]], [0, 0], linewidth=0.5, linestyle=":", color="grey")
+
+    # add line at x=-10 to show opto stimulation border
+    ax.axvline(x=-10, ymin=0.0, ymax=1, linewidth=0.5, color="cyan")
+
+fig.savefig(figfolder + "B1.png", dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + "B1.svg", dpi=300, bbox_inches="tight")
+plt.show()
+# %% plot figure 4B2, stress profile increase MSM vs FEM
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3.8, 3.8))  # create figure and axes
+plt.subplots_adjust(wspace=0.4, hspace=0.4)  # adjust space in between plots
+
+c = 0
+
+# panel 1
+color = colors_parent[1]
+x = np.linspace(-40, 40, 92)
+x = x[::2]  # downsample data for nicer plotting
+xticks = np.arange(-40, 40.1, 20)  # define where the major ticks are gonna be
+xlabel = "position [µm]"
+ymin = -0.2
+ymax = 0.41
+# ymax = 20
+yticks = np.arange(ymin, ymax + 0.001, 0.1)
+ylabel = None
+title = "$\mathrm{\Delta \sigma _{yy}(x)}$ [mN/m]"
+y = AR1to1d_halfstim["MSM_data"]["sigma_yy_x_profile_increase"] * 1e3  # convert to nN
+y = y[::2, :]
+
+# make plots
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, axes[0, 0], color, optolinewidth=False)
+
+# panel 2
+color = colors_parent[2]
+ylabel = None
+title = "$\mathrm{\Delta \sigma _{yy}(x)}$ [mN/m]"
+y = AR1to1s_halfstim["MSM_data"]["sigma_yy_x_profile_increase"] * 1e3  # convert to nN
+y = y[::2, :]
+
+# make plots
+plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, axes[0, 1], color, optolinewidth=False)
+
+# panel 3
+color = colors_parent[1]
+ax = axes[1, 0]
+for key in doublet_FEM_simulation:
+    c += 1
+    y_sim = doublet_FEM_simulation[key]["sigma_yy_x_profile_increase"] * 1e3  # convert to nN
+    x_sim = np.linspace(-22.5, 22.5, y_sim.shape[0])
+    ax.plot(x_sim, y_sim, color=adjust_lightness(color, c / 10), alpha=0.5, linewidth=0.7)
+
+# panel 4
+color = colors_parent[2]
+ax = axes[1, 1]
+for key in singlet_FEM_simulation:
+    c += 1
+    if np.mod(c, 2) == 1:
+        y_sim = singlet_FEM_simulation[key]["sigma_yy_x_profile_increase"] * 1e3  # convert to nN
+        x_sim = np.linspace(-22.5, 22.5, y_sim.shape[0])
+        ax.plot(x_sim, y_sim, color=adjust_lightness(color, c / 25), alpha=0.5, linewidth=0.7)
+
+for ax in axes.flat:
+    # set ticks
+    ax.xaxis.set_ticks(xticks)
+    ax.yaxis.set_ticks(yticks)
+
+    # provide info on tick parameters
+    ax.minorticks_on()
+    ax.tick_params(direction="in", which="minor", length=3, bottom=True, top=False, left=True, right=True)
+    ax.tick_params(direction="in", which="major", length=6, bottom=True, top=False, left=True, right=True)
+
+    # set limits
+    ax.set_ylim(ymin=ymin, ymax=ymax)
+    ax.set_xlim(xmin=min(x))
+
+    ax.set_xlabel(xlabel=xlabel, labelpad=1)
+    ax.set_ylabel(ylabel=ylabel, labelpad=1)
+
+    # add line at y=0 for visualisation
+    ax.plot([x[0], x[-1]], [0, 0], linewidth=0.5, linestyle=":", color="grey")
+
+    # add line at x=-10 to show opto stimulation border
+    ax.axvline(x=-10, ymin=0.0, ymax=1, linewidth=0.5, color="cyan")
+
+fig.savefig(figfolder + "B2.png", dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + "B2.svg", dpi=300, bbox_inches="tight")
+plt.show()
+
+
+# %% plot figure Ctest, coupling
+def find_x_position_of_point_on_array(x_list, y_list, y_point):
+    f = interp1d(y_list, x_list, kind="linear")
+    return f(y_point)
+
+
+# make some calculations on the simulated data first
+sigma_ratio_all_doublet = []
+sigma_ratio_all_singlet = []
+
+feedbacks_d = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+
+for fb in feedbacks_d:
+    sigma_ratio_all_doublet.append(doublet_FEM_simulation["feedback" + str(fb)]["coupling"])
+
+feedbacks_s = [-1.0, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+
+for fb in feedbacks_s:
+    sigma_ratio_all_singlet.append(singlet_FEM_simulation["feedback" + str(fb)]["coupling"])
+
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
+
+ax.plot(feedbacks_d, sigma_ratio_all_doublet, color=colors_parent[1])
+ax.plot(feedbacks_s, sigma_ratio_all_singlet, color=colors_parent[2])
+
+# add data points
+sigma_map_doublet = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_avg_normal"], axis=3)
+sigma_baseline = np.nanmean(sigma_map_doublet[:, :, 0:20])
+sigma_opto_left = np.nanmean(sigma_map_doublet[:, 0:46, 30:33])
+sigma_opto_right = np.nanmean(sigma_map_doublet[:, 46:-1, 30:33])
+
+color = colors_parent[1]
+y_median = (sigma_opto_left * sigma_opto_right) / (sigma_baseline ** 2)
+y_error = 0
+# x = find_x_position_of_point_on_array(feedbacks_d, sigma_ratio_all_doublet, y_median)
+x = 0
+# x_CI = find_x_position_of_point_on_line(feedbacks, doublet_sigma_asymmetry_coefficient, y_median - y_CI) - x
+ax.errorbar(x, y_median, yerr=y_error, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
+            markeredgewidth=0.5)
+
+sigma_map_singlet = np.nanmean(AR1to1s_halfstim["MSM_data"]["sigma_avg_normal"], axis=3)
+sigma_baseline = np.nanmean(sigma_map_singlet[:, :, 0:20])
+sigma_opto_left = np.nanmean(sigma_map_singlet[:, 0:37, 30:33])
+sigma_opto_right = np.nanmean(sigma_map_singlet[:, 37:-1, 30:33])
+
+color = colors_parent[2]
+y_median = (sigma_opto_left * sigma_opto_right) / (sigma_baseline ** 2)
+# y_error = stats_singlet["CI"]["AR1to1s_hs"]
+# x = find_x_position_of_point_on_array(feedbacks_s, sigma_ratio_all_singlet, y_median)
+x = -1
+# x_CI = find_x_position_of_point_on_line(feedbacks, singlet_sigma_asymmetry_coefficient, y_median - y_CI) - x
+ax.errorbar(x, y_median, yerr=y_error, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
+            markeredgewidth=0.5)
+
+# provide info on tick parameters
+ax.minorticks_on()
+ax.tick_params(direction="in", which="minor", length=3, bottom=True, top=False, left=True, right=True)
+ax.tick_params(direction="in", which="major", length=6, bottom=True, top=False, left=True, right=True)
+
+plt.xlabel("stress coupling coefficient")
+plt.ylabel("RSI product")
+plt.title("Stress coupling")
+plt.savefig(figfolder + "Ctest.png", dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + "Ctest", dpi=300, bbox_inches="tight")
+plt.show()
+
+
+# %% plot figure C1, asymmetry coefficient theory vs exp
+def find_x_position_of_point_on_array(x_list, y_list, y_point):
+    f = interp1d(y_list, x_list, kind="linear")
+    return f(y_point)
+
+
+# make some calculations on the simulated data first
+sigma_ratio_all_doublet = []
+sigma_ratio_all_singlet = []
+
+feedbacks_d = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+
+for fb in feedbacks_d:
+    sigma = doublet_FEM_simulation["feedback" + str(fb)]["sigma_xx_x_profile_increase"]
+    sigma_BL = np.nanmean(doublet_FEM_simulation["feedback" + str(fb)]["sigma_xx_x_profile"])
+    SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
+    SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
+    sigma_ratio = SI_right * SI_left / (sigma_BL ** 2)
+    sigma_ratio_all_doublet.append(sigma_ratio)
+
+feedbacks_s = [-1.0, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+
+for fb in feedbacks_s:
+    sigma = singlet_FEM_simulation["feedback" + str(fb)]["sigma_xx_x_profile_increase"]
+    sigma_BL = np.nanmean(singlet_FEM_simulation["feedback" + str(fb)]["sigma_xx_x_profile"])
+    SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
+    SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
+    sigma_ratio = SI_right * SI_left / (sigma_BL ** 2)
+    sigma_ratio_all_singlet.append(sigma_ratio)
+
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
+
+# ax.plot(feedbacks_s, sigma_ratio_all_singlet, color="grey")
+# ax.plot(feedbacks_s, sigma_asymmetry_coefficient_all_singlet, color="grey")
+ax.plot(feedbacks_d, sigma_ratio_all_doublet, color=colors_parent[1])
+ax.plot(feedbacks_s, sigma_ratio_all_singlet, color=colors_parent[2])
+
+# add data points
+color = colors_parent[1]
+sigma = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1)  # convert to nN
+sigma_BL = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_xx_baseline"])
+SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
+SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
+# y_mean = SI_right / (SI_left + SI_right)
+y_mean = SI_right * SI_left / (sigma_BL ** 2)
+y_error = 0.1
+# x = find_x_position_of_point_on_array(feedbacks_s, sigma_ratio_all_singlet, y_mean)
+x = 0.45
+# x_CI = find_x_position_of_point_on_line(feedbacks, doublet_sigma_asymmetry_coefficient, y_median - y_CI) - x
+ax.errorbar(x, y_mean, yerr=y_error, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
+            markeredgewidth=0.5)
+
+color = colors_parent[2]
+sigma = np.nanmean(AR1to1s_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1)  # convert to nN
+sigma_BL = np.nanmean(AR1to1s_halfstim["MSM_data"]["sigma_xx_baseline"])
+SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
+SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
+# y_mean = SI_right / (SI_left + SI_right)
+y_mean = SI_right * SI_left / (sigma_BL ** 2)
+
+y_error = 0.1
+# x = find_x_position_of_point_on_array(feedbacks_s, sigma_ratio_all_singlet, y_mean)
+x = -1
+# x_CI = find_x_position_of_point_on_line(feedbacks, singlet_sigma_asymmetry_coefficient, y_median - y_CI) - x
+ax.errorbar(x, y_mean, yerr=y_error, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
+            markeredgewidth=0.5)
+
+# provide info on tick parameters
+ax.minorticks_on()
+ax.tick_params(direction="in", which="minor", length=3, bottom=True, top=False, left=True, right=True)
+ax.tick_params(direction="in", which="major", length=6, bottom=True, top=False, left=True, right=True)
+
+plt.xlabel("stress coupling coefficient")
+plt.ylabel("sigma_nonactivated / (|sigma_activated| + |sigma_nonactivated|")
+plt.title("xx-Stress coupling")
+plt.savefig(figfolder + "C2.png", dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + "C2", dpi=300, bbox_inches="tight")
+plt.show()
+
+
+# %% plot figure C2, asymmetry coefficient theory vs exp
+def find_x_position_of_point_on_array(x_list, y_list, y_point):
+    f = interp1d(y_list, x_list, kind="linear")
+    return f(y_point)
+
+
+# make some calculations on the simulated data first
+sigma_ratio_all_doublet = []
+sigma_ratio_all_singlet = []
+
+feedbacks_d = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+
+for fb in feedbacks_d:
+    sigma = doublet_FEM_simulation["feedback" + str(fb)]["sigma_xx_x_profile_increase"]
+    SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
+    SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
+    sigma_ratio = (1 + SI_right) / (1 + SI_left)
+    sigma_ratio_all_doublet.append(sigma_ratio)
+
+feedbacks_s = [-1.0, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+
+for fb in feedbacks_s:
+    sigma = singlet_FEM_simulation["feedback" + str(fb)]["sigma_xx_x_profile_increase"]
+    SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
+    SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
+    sigma_ratio = (1 + SI_right) / (1 + SI_left)
+    sigma_ratio_all_singlet.append(sigma_ratio)
+
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
+
+ax.plot(feedbacks_s, sigma_ratio_all_singlet, color="grey")
+# ax.plot(feedbacks_s, sigma_asymmetry_coefficient_all_singlet, color="grey")
+# ax.plot(feedbacks_d, sigma_ratio_all_doublet, color=colors_parent[1])
+# ax.plot(feedbacks_s, sigma_asymmetry_coefficient_all_singlet, color=colors_parent[2])
+
+# add data points
+color = colors_parent[1]
+sigma = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1)  # convert to nN
+SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
+SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
+# y_mean = SI_right / (SI_left + SI_right)
+y_mean = (1 + SI_right) / (1 + SI_left)
+y_error = 0.1
+# x = find_x_position_of_point_on_array(feedbacks_s, sigma_ratio_all_singlet, y_mean)
+x = 0.45
+# x_CI = find_x_position_of_point_on_line(feedbacks, doublet_sigma_asymmetry_coefficient, y_median - y_CI) - x
+# ax.errorbar(x, y_mean, yerr=y_error, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
+#             markeredgewidth=0.5)
+
+color = colors_parent[2]
+sigma = np.nanmean(AR1to1s_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1)  # convert to nN
+SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
+SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
+# y_mean = SI_right / (SI_left + SI_right)
+y_mean = SI_right / (np.abs(SI_left) + np.abs(SI_right))
+
+y_error = 0.1
+# x = find_x_position_of_point_on_array(feedbacks_s, sigma_ratio_all_singlet, y_mean)
+x = 0.35
+# x_CI = find_x_position_of_point_on_line(feedbacks, singlet_sigma_asymmetry_coefficient, y_median - y_CI) - x
+# ax.errorbar(x, y_mean, yerr=y_error, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
+#             markeredgewidth=0.5)
+
+# provide info on tick parameters
+ax.minorticks_on()
+ax.tick_params(direction="in", which="minor", length=3, bottom=True, top=False, left=True, right=True)
+ax.tick_params(direction="in", which="major", length=6, bottom=True, top=False, left=True, right=True)
+
+plt.xlabel("stress coupling coefficient")
+plt.ylabel("sigma_nonactivated / (|sigma_activated| + |sigma_nonactivated|")
+plt.title("xx-Stress coupling")
+plt.savefig(figfolder + "C1.png", dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + "C1", dpi=300, bbox_inches="tight")
+plt.show()
+
+# %% plot figure D, contour strain measurement
 # prepare data first
 pixelsize = 0.864  # in µm
 initial_pixelsize = 0.108  # in µm
 # concatenate TFM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
-doublet_example = 2
+doublet_example = 3
 
 # get data for one example
 actin_image_path = folder + "AR1to1_doublets_full_stim_long/actin_images/cell" + str(doublet_example) + "frame32.png"
@@ -250,7 +670,7 @@ extent = [0, x_end * pixelsize, 0, y_end * pixelsize]
 fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2.5, 2.5))  # create figure and axes
 # ******************************************************************************************************************************************
 
-# tracking data doesn't live in the same coordinate system as the actin image, so I transform it
+# tracking data doesn"t live in the same coordinate system as the actin image, so I transform it
 x_tracking_top_bs = x_tracking_top_bs - (125 - x_end) / 2 * pixelsize
 y_tracking_top_bs = -y_tracking_top_bs + extent[1] + (125 - y_end) / 2 * pixelsize
 x_tracking_bottom_bs = x_tracking_bottom_bs - (125 - x_end) / 2 * pixelsize
@@ -266,95 +686,25 @@ ax.imshow(actin_image_crop, cmap=plt.get_cmap("Greys"), interpolation="bilinear"
 
 # plot tracking data
 ax.plot(x_tracking_top_bs[::2], y_tracking_top_bs[::2],
-        color=colors_parent[0], marker='o', markerfacecolor='none', markersize=3, markeredgewidth=0.75, linestyle='none', alpha=0.3)
+        color=colors_parent[0], marker="o", markerfacecolor="none", markersize=3, markeredgewidth=0.75, linestyle="none", alpha=0.3)
 ax.plot(x_tracking_bottom_bs[::2], y_tracking_bottom_bs[::2],
-        color=colors_parent[0], marker='o', markerfacecolor='none', markersize=3, markeredgewidth=0.75, linestyle='none', alpha=0.3)
+        color=colors_parent[0], marker="o", markerfacecolor="none", markersize=3, markeredgewidth=0.75, linestyle="none", alpha=0.3)
 
 ax.plot(x_tracking_top_as[::2], y_tracking_top_as[::2],
-        color=colors_parent[0], marker='o', markerfacecolor='none', markersize=3, markeredgewidth=0.75, linestyle='none', alpha=1)
+        color=colors_parent[0], marker="o", markerfacecolor="none", markersize=3, markeredgewidth=0.75, linestyle="none", alpha=1)
 ax.plot(x_tracking_bottom_as[::2], y_tracking_bottom_as[::2],
-        color=colors_parent[0], marker='o', markerfacecolor='none', markersize=3, markeredgewidth=0.75, linestyle='none', alpha=1)
+        color=colors_parent[0], marker="o", markerfacecolor="none", markersize=3, markeredgewidth=0.75, linestyle="none", alpha=1)
 
 ax.set_xlim([-0.1 * extent[1], 1.1 * extent[1]])
 ax.set_ylim([-0.1 * extent[3], 1.1 * extent[3]])
 
-ax.axis('off')
+ax.axis("off")
 
-fig.savefig(figfolder + 'A.png', dpi=300, bbox_inches="tight")
-plt.savefig(figfolder + 'A.svg', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + "D.png", dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + "D.svg", dpi=300, bbox_inches="tight")
 plt.show()
 
-
-# %% filter data to make sure that the baselines are stable
-def filter_data_main(data, title):
-    # concatenate data on which it will be determined which cells will be filtered
-    filterdata = data["shape_data"]["relcell_width_center"][0:20, :]
-
-    # maximal allowed slope for linear fit of baseline
-    threshold = 0.002
-    baselinefilter = create_baseline_filter(filterdata, threshold)
-
-    # remove cells with unstable baselines
-    data["TFM_data"] = apply_filter(data["TFM_data"], baselinefilter)
-    data["MSM_data"] = apply_filter(data["MSM_data"], baselinefilter)
-    data["shape_data"] = apply_filter(data["shape_data"], baselinefilter)
-
-    new_N = np.sum(baselinefilter)
-    print(title + ": " + str(baselinefilter.shape[0] - new_N) + " cells were filtered out")
-
-    return data
-
-
-AR1to1d_fullstim_long = filter_data_main(AR1to1d_fullstim_long, "AR1to1d_fullstim_long")
-AR1to1d_fullstim_short = filter_data_main(AR1to1d_fullstim_short, "AR1to1d_fullstim_short")
-AR1to1d_halfstim = filter_data_main(AR1to1d_halfstim, "AR1to1d_halfstim")
-
-AR1to1s_fullstim_long = filter_data_main(AR1to1s_fullstim_long, "AR1to1s_fullstim_long")
-AR1to1s_fullstim_short = filter_data_main(AR1to1s_fullstim_short, "AR1to1s_fullstim_short")
-AR1to1s_halfstim = filter_data_main(AR1to1s_halfstim, "AR1to1s_halfstim")
-
-# %% prepare dataframe for boxplots
-# initialize empty dictionaries
-concatenated_data_fs = {}
-concatenated_data_hs = {}
-concatenated_data_doublet = {}
-concatenated_data_singlet = {}
-
-# loop over all keys
-for key1 in AR1to1d_fullstim_long:  # keys are the same for all dictionaries so I'm just taking one example here
-    for key2 in AR1to1d_fullstim_long[key1]:
-        if AR1to1d_fullstim_long[key1][key2].ndim == 1:  # only 1D data can be stored in the data frame
-            concatenated_data_doublet[key2] = np.concatenate(
-                (AR1to1d_fullstim_long[key1][key2], AR1to1d_halfstim[key1][key2]))
-            concatenated_data_singlet[key2] = np.concatenate(
-                (AR1to1s_fullstim_long[key1][key2], AR1to1s_halfstim[key1][key2]))
-key1 = "TFM_data"
-key2 = "Es_baseline"
-
-# get number of elements for both condition
-n_d_fullstim = AR1to1d_fullstim_long[key1][key2].shape[0]
-n_d_halfstim = AR1to1d_halfstim[key1][key2].shape[0]
-n_s_fullstim = AR1to1s_fullstim_long[key1][key2].shape[0]
-n_s_halfstim = AR1to1s_halfstim[key1][key2].shape[0]
-
-# create a list of keys with the same dimensions as the data
-keys1to1d_fs = ['AR1to1d_fs' for i in range(n_d_fullstim)]
-keys1to1s_fs = ['AR1to1s_fs' for i in range(n_s_fullstim)]
-keys1to1d_hs = ['AR1to1d_hs' for i in range(n_d_halfstim)]
-keys1to1s_hs = ['AR1to1s_hs' for i in range(n_s_halfstim)]
-
-keys_doublet = np.concatenate((keys1to1d_fs, keys1to1d_hs))
-keys_singlet = np.concatenate((keys1to1s_fs, keys1to1s_hs))
-
-# add keys to dictionary with concatenated data
-concatenated_data_doublet['keys'] = keys_doublet
-concatenated_data_singlet['keys'] = keys_singlet
-
-# Creates DataFrame
-df_doublet = pd.DataFrame(concatenated_data_doublet)
-df_singlet = pd.DataFrame(concatenated_data_singlet)
-
-# %% plot figure B, contour strain after photoactivation
+# %% plot figure E, contour strain after photoactivation
 
 # set up global plot parameters
 # ******************************************************************************************************************************************
@@ -364,106 +714,8 @@ ymin = -0.06
 ymax = 0
 xticks = np.arange(-15, 15.1, 15)  # define where the major ticks are gonna be
 yticks = np.arange(ymin, ymax + 0.001, 0.02)
-xlabel = 'position [µm]'
-xticklabels = ['global \n act.', 'local \n act.']  # which labels to put on x-axis
-fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(5, 3))  # create figure and axes
-plt.subplots_adjust(wspace=0.4, hspace=0.35)  # adjust space in between plots
-# ******************************************************************************************************************************************
-
-# Set up plot parameters for first panel
-#######################################################################################################
-ax = axes[0, 0]
-color = colors_parent[1]
-ylabel = 'doublet'
-title = 'global activation'
-y = AR1to1d_fullstim_long["shape_data"]["contour_strain"]
-y = y[::2, :]
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
-
-# Set up plot parameters for second panel
-#######################################################################################################
-ax = axes[0, 1]
-color = colors_parent[1]
-ylabel = None
-title = 'local activation'
-y = AR1to1d_halfstim["shape_data"]["contour_strain"]
-y = y[::2, :]
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
-
-# Set up plot parameters for third panel
-#######################################################################################################
-ax = axes[1, 0]
-color = colors_parent[2]
-ylabel = 'singlet'
-title = None
-y = AR1to1s_fullstim_long["shape_data"]["contour_strain"]
-y = y[::2, :]
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
-
-# Set up plot parameters for fourth panel
-#######################################################################################################
-ax = axes[1, 1]
-color = colors_parent[2]
-ylabel = None
-title = None
-y = AR1to1s_halfstim["shape_data"]["contour_strain"]
-y = y[::2, :]
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
-
-# Set up plot parameters for fifth panel
-#######################################################################################################
-x = 'keys'  # variable by which to group the data
-y = 'ASC'  # variable that goes on the y-axis
-ax = axes[0, 2]  # define on which axis the plot goes
-colors = [colors_parent[1], colors_parent[1]]  # defines colors
-ymin = -1  # minimum value on y-axis
-ymax = 1  # maximum value on y-axis
-yticks = np.arange(-1, 1.1, 0.5)  # define where to put major ticks on y-axis
-stat_annotation_offset = -0.15  # vertical offset of statistical annotation
-ylabel = None  # which label to put on y-axis
-title = None  # title of plot
-box_pairs = [('AR1to1d_fs', 'AR1to1d_hs')]  # which groups to perform statistical test on
-
-# make plots
-make_box_and_swarmplots_with_test(x, y, df_doublet, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title,
-                                  colors)
-
-# Set up plot parameters for sixth panel
-# #######################################################################################################
-x = 'keys'  # variable by which to group the data
-y = 'ASC'  # variable that goes on the y-axis
-ax = axes[1, 2]  # define on which axis the plot goes
-colors = [colors_parent[2], colors_parent[2]]  # defines colors
-stat_annotation_offset = 0.15  # vertical offset of statistical annotation
-ylabel = None  # which label to put on y-axis
-title = None  # title of plot
-ylabeloffset = -1
-box_pairs = [('AR1to1s_fs', 'AR1to1s_hs')]  # which groups to perform statistical test on
-
-# make plots
-make_box_and_swarmplots_with_test(x, y, df_singlet, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title,
-                                  colors)
-
-plt.savefig(figfolder + 'B.png', dpi=300, bbox_inches="tight")
-plt.savefig(figfolder + 'B.svg', dpi=300, bbox_inches="tight")
-plt.show()
-
-# %% plot figure D, contour strain after photoactivation
-
-# set up global plot parameters
-# ******************************************************************************************************************************************
-x = np.linspace(-17.5, 17.5, 50)
-x = x[::2]  # downsample data for nicer plotting
-ymin = -0.06
-ymax = 0
-xticks = np.arange(-15, 15.1, 15)  # define where the major ticks are gonna be
-yticks = np.arange(ymin, ymax + 0.001, 0.02)
-xlabel = 'position [µm]'
-xticklabels = ['global \n act.', 'local \n act.']  # which labels to put on x-axis
+xlabel = "position [µm]"
+xticklabels = ["global \n act.", "local \n act."]  # which labels to put on x-axis
 fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3.2, 3))  # create figure and axes
 plt.subplots_adjust(wspace=0.4, hspace=0.35)  # adjust space in between plots
 # ******************************************************************************************************************************************
@@ -472,8 +724,8 @@ plt.subplots_adjust(wspace=0.4, hspace=0.35)  # adjust space in between plots
 #######################################################################################################
 ax = axes[0, 0]
 color = colors_parent[1]
-ylabel = 'doublet'
-title = 'global activation'
+ylabel = "doublet"
+title = "global activation"
 y = AR1to1d_fullstim_long["shape_data"]["contour_strain"]
 y = y[::2, :]
 
@@ -490,7 +742,7 @@ plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title
 ax = axes[0, 1]
 color = colors_parent[1]
 ylabel = None
-title = 'local activation'
+title = "local activation"
 y = AR1to1d_halfstim["shape_data"]["contour_strain"]
 y = y[::2, :]
 
@@ -506,7 +758,7 @@ plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title
 #######################################################################################################
 ax = axes[1, 0]
 color = colors_parent[2]
-ylabel = 'singlet'
+ylabel = "singlet"
 title = None
 ymin = -0.03
 y = AR1to1s_fullstim_long["shape_data"]["contour_strain"]
@@ -537,11 +789,11 @@ for fb in feedbacks:
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
 
-plt.savefig(figfolder + 'D.png', dpi=300, bbox_inches="tight")
-plt.savefig(figfolder + 'D.svg', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + "E.png", dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + "E.svg", dpi=300, bbox_inches="tight")
 plt.show()
 
-# %% plot figure E, contour strain after photoactivation
+# %% plot figure F, contour strain after photoactivation
 
 # make some calculations on the simulated data first
 epsilon_asymmetry_coefficient_all = []
@@ -572,16 +824,16 @@ for fb in feedbacks:
 #     return array[idx]
 
 def find_x_position_of_point_on_array(x_list, y_list, y_point):
-    f = interp1d(y_list, x_list, kind='cubic')
+    f = interp1d(y_list, x_list, kind="cubic")
     return f(y_point)
 
 
-stats_doublet = calculate_median_and_CI(df_doublet, 'ASC')
-stats_singlet = calculate_median_and_CI(df_singlet, 'ASC')
+stats_doublet = calculate_median_and_CI(df_doublet, "ASC")
+stats_singlet = calculate_median_and_CI(df_singlet, "ASC")
 
 fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
 
-ax.plot(feedbacks, epsilon_asymmetry_coefficient_all, color='grey')
+ax.plot(feedbacks, epsilon_asymmetry_coefficient_all, color="grey")
 # ax.plot(feedbacks, singlet_epsilon_asymmetry_coefficient, color=colors_parent[2])
 
 # add data points
@@ -591,7 +843,7 @@ y_CI = stats_doublet["CI"]["AR1to1d_hs"]
 x = find_x_position_of_point_on_array(feedbacks, epsilon_asymmetry_coefficient_all, y_median)
 # x = 0.45
 # x_CI = find_x_position_of_point_on_line(feedbacks, doublet_epsilon_asymmetry_coefficient, y_median - y_CI) - x
-ax.errorbar(x, y_median, yerr=y_CI, mfc='w', color=color, marker='s', ms=4, linewidth=0.5, ls='none',
+ax.errorbar(x, y_median, yerr=y_CI, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
             markeredgewidth=0.5)
 
 color = colors_parent[2]
@@ -600,64 +852,88 @@ y_CI = stats_singlet["CI"]["AR1to1s_hs"]
 x = find_x_position_of_point_on_array(feedbacks, epsilon_asymmetry_coefficient_all, y_median)
 # x = 0.35
 # x_CI = find_x_position_of_point_on_line(feedbacks, singlet_epsilon_asymmetry_coefficient, y_median - y_CI) - x
-ax.errorbar(x, y_median, yerr=y_CI, mfc='w', color=color, marker='s', ms=4, linewidth=0.5, ls='none',
+ax.errorbar(x, y_median, yerr=y_CI, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
             markeredgewidth=0.5)
 
 # provide info on tick parameters
 ax.minorticks_on()
-ax.tick_params(direction='in', which='minor', length=3, bottom=True, top=False, left=True, right=True)
-ax.tick_params(direction='in', which='major', length=6, bottom=True, top=False, left=True, right=True)
+ax.tick_params(direction="in", which="minor", length=3, bottom=True, top=False, left=True, right=True)
+ax.tick_params(direction="in", which="major", length=6, bottom=True, top=False, left=True, right=True)
 
-plt.xlabel('feedback')
-plt.ylabel('ASC')
-plt.title('Asymmetry coefficient')
-plt.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")
-plt.savefig(figfolder + 'E.svg', dpi=300, bbox_inches="tight")
+plt.xlabel("feedback")
+plt.ylabel("ASC")
+plt.title("Asymmetry coefficient")
+plt.savefig(figfolder + "F.png", dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + "F.svg", dpi=300, bbox_inches="tight")
 plt.show()
-# %% prepare dataframe for boxplots
-# initialize empty dictionaries
-concatenated_data_fsl = {}
-concatenated_data_fss = {}
-concatenated_data_doublet = {}
-concatenated_data_singlet = {}
 
-# loop over all keys
-for key1 in AR1to1d_fullstim_long:  # keys are the same for all dictionaries so I'm just taking one example here
-    for key2 in AR1to1d_fullstim_long[key1]:
-        if AR1to1d_fullstim_long[key1][key2].ndim == 1:  # only 1D data can be stored in the data frame
+# %% plot figure 4SX, xx-stress maps difference experiment vs simulation
 
-            concatenated_data_doublet[key2] = np.concatenate(
-                (AR1to1d_fullstim_long[key1][key2], AR1to1d_fullstim_short[key1][key2]))
-            concatenated_data_singlet[key2] = np.concatenate(
-                (AR1to1s_fullstim_long[key1][key2], AR1to1s_fullstim_short[key1][key2]))
-key1 = "TFM_data"
-key2 = "Es_baseline"
-# get number of elements for both condition
-n_d_fullstim_long = AR1to1d_fullstim_long[key1][key2].shape[0]
-n_d_fullstim_short = AR1to1d_fullstim_short[key1][key2].shape[0]
-n_s_fullstim_long = AR1to1s_fullstim_long[key1][key2].shape[0]
-n_s_fullstim_short = AR1to1s_fullstim_short[key1][key2].shape[0]
+# prepare data first
 
-# create a list of keys with the same dimensions as the data
-keys1to1d_fsl = ['AR1to1d_fsl' for i in range(n_d_fullstim_long)]
-keys1to1s_fsl = ['AR1to1s_fsl' for i in range(n_s_fullstim_long)]
-keys1to1d_fss = ['AR1to1d_fss' for i in range(n_d_fullstim_short)]
-keys1to1s_fss = ['AR1to1s_fss' for i in range(n_s_fullstim_short)]
+sigma_xx_1to1d_diff = np.nanmean(
+    AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 32, :] - AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 20, :],
+    axis=2)
+sigma_yy_1to1d_diff = np.nanmean(
+    AR1to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 32, :] - AR1to1d_halfstim["MSM_data"]["sigma_yy"][:, :, 20, :],
+    axis=2)
 
-keys_fsl = np.concatenate((keys1to1d_fsl, keys1to1s_fsl))
-keys_fss = np.concatenate((keys1to1d_fss, keys1to1s_fss))
-keys_doublet = np.concatenate((keys1to1d_fsl, keys1to1d_fss))
-keys_singlet = np.concatenate((keys1to1s_fsl, keys1to1s_fss))
+sigma_xx_1to1s_diff = np.nanmean(
+    AR1to1s_halfstim["MSM_data"]["sigma_xx"][:, :, 32, :] - AR1to1s_halfstim["MSM_data"]["sigma_xx"][:, :, 20, :],
+    axis=2)
+sigma_yy_1to1s_diff = np.nanmean(
+    AR1to1s_halfstim["MSM_data"]["sigma_yy"][:, :, 32, :] - AR1to1s_halfstim["MSM_data"]["sigma_yy"][:, :, 20, :],
+    axis=2)
 
-# add keys to dictionary with concatenated data
-concatenated_data_fsl['keys'] = keys_fsl
-concatenated_data_fss['keys'] = keys_fss
-concatenated_data_doublet['keys'] = keys_doublet
-concatenated_data_singlet['keys'] = keys_singlet
+# crop maps
+crop_start = 8
+crop_end = 84
 
-# Creates DataFrame
-df_doublet_afterfilter = pd.DataFrame(concatenated_data_doublet)
-df_singlet_afterfilter = pd.DataFrame(concatenated_data_singlet)
+sigma_xx_1to1d_diff_crop = sigma_xx_1to1d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+sigma_yy_1to1d_diff_crop = sigma_yy_1to1d_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+sigma_xx_1to1s_diff_crop = sigma_xx_1to1s_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+sigma_yy_1to1s_diff_crop = sigma_yy_1to1s_diff[crop_start:crop_end, crop_start:crop_end] * 1e3  # convert to mN/m
+
+# set up plot parameters
+# ******************************************************************************************************************************************
+pixelsize = 0.864  # in µm
+pmin = -1
+pmax = 1  # in mN/m
+axtitle = "mN/m"  # unit of colorbar
+suptitle = "$\mathrm{\Delta \sigma _{avg. normal}(x,y)}$"  # title of plot
+cmap = "seismic"
+
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=((4, 4)))  # create figure and axes
+plt.subplots_adjust(wspace=0.02, hspace=-0.06)  # adjust space in between plots
+# ******************************************************************************************************************************************
+
+im = plot_stressmaps(axes[0, 0], sigma_xx_1to1d_diff_crop, pixelsize, pmax, pmin, cmap=cmap)
+plot_stressmaps(axes[0, 1], sigma_yy_1to1d_diff_crop, pixelsize, pmax, pmin, cmap=cmap)
+plot_stressmaps(axes[1, 0], sigma_xx_1to1s_diff_crop, pixelsize, pmax, pmin, cmap=cmap)
+plot_stressmaps(axes[1, 1], sigma_yy_1to1s_diff_crop, pixelsize, pmax, pmin, cmap=cmap)
+
+# remove axes
+for ax in axes.flat:
+    ax.axis("off")
+    aspectratio = 1.0
+    ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
+    ax.set_aspect(ratio_default * aspectratio)
+
+# add colorbar
+cbar = fig.colorbar(im, ax=axes.ravel().tolist())
+cbar.ax.set_title(axtitle)
+
+# add title
+plt.suptitle(suptitle, y=0.94, x=0.44)
+
+# draw pattern
+for ax in axes.flat:
+    draw_pattern(ax)
+
+# save figure
+fig.savefig(figfolder + "SX.png", dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + "SX.svg", dpi=300, bbox_inches="tight")
+plt.show()
 
 # %% plot figure SA, cell width in the center over time
 
@@ -669,7 +945,7 @@ ymin = -0.06
 ymax = 0.02
 xticks = np.arange(0, 61, 20)  # define where the major ticks are gonna be
 yticks = np.arange(ymin, ymax + 0.001, 0.02)
-xlabel = 'time [min]'
+xlabel = "time [min]"
 fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(5, 3))  # create figure and axes
 plt.subplots_adjust(wspace=0.4, hspace=0.35)  # adjust space in between plots
 # ******************************************************************************************************************************************
@@ -679,8 +955,8 @@ plt.subplots_adjust(wspace=0.4, hspace=0.35)  # adjust space in between plots
 #######################################################################################################
 ax = axes[0, 0]
 color = colors_parent[1]
-ylabel = 'doublet'
-title = 'long activation'
+ylabel = "doublet"
+title = "long activation"
 y = AR1to1d_fullstim_long["shape_data"]["relcell_width_center"]
 y = y[::2, :]
 x = np.arange(60)
@@ -693,7 +969,7 @@ plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title
 ax = axes[0, 1]
 color = colors_parent[1]
 ylabel = None
-title = 'short activation'
+title = "short activation"
 y = AR1to1d_fullstim_short["shape_data"]["relcell_width_center"]
 y = y[::2, :]
 x = np.arange(50)
@@ -707,7 +983,7 @@ for i in np.arange(3):
 #######################################################################################################
 ax = axes[1, 0]
 color = colors_parent[2]
-ylabel = 'singlet'
+ylabel = "singlet"
 title = None
 y = AR1to1s_fullstim_long["shape_data"]["relcell_width_center"]
 y = y[::2, :]
@@ -734,46 +1010,46 @@ for i in np.arange(3):
 
 # Set up plot parameters for fifth panel
 #######################################################################################################
-x = 'keys'  # variable by which to group the data
-y = 'relcell_width_center_end'  # variable that goes on the y-axis
+x = "keys"  # variable by which to group the data
+y = "relcell_width_center_end"  # variable that goes on the y-axis
 ax = axes[0, 2]  # define on which axis the plot goes
 colors = [colors_parent[1], colors_parent[1]]  # defines colors
 ymin = -0.1  # minimum value on y-axis
 ymax = 0.1  # maximum value on y-axis
 yticks = np.arange(-0.1, 0.11, 0.1)  # define where to put major ticks on y-axis
-xticklabels = ['long \n act.', 'short \n act.']  # which labels to put on x-axis
+xticklabels = ["long \n act.", "short \n act."]  # which labels to put on x-axis
 stat_annotation_offset = 0  # vertical offset of statistical annotation
 ylabel = None  # which label to put on y-axis
 title = None  # title of plot
-box_pairs = [('AR1to1d_fsl', 'AR1to1d_fss')]  # which groups to perform statistical test on
+box_pairs = [("AR1to1d_fsl", "AR1to1d_fss")]  # which groups to perform statistical test on
 
 # make plots
-make_box_and_swarmplots_with_test(x, y, df_doublet_afterfilter, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels,
+make_box_and_swarmplots_with_test(x, y, df_doublet, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels,
                                   ylabel, title, colors)
 
 # Set up plot parameters for sixth panel
 #######################################################################################################
-x = 'keys'  # variable by which to group the data
-y = 'relcell_width_center_end'  # variable that goes on the y-axis
+x = "keys"  # variable by which to group the data
+y = "relcell_width_center_end"  # variable that goes on the y-axis
 ax = axes[1, 2]  # define on which axis the plot goes
 colors = [colors_parent[2], colors_parent[2]]  # defines colors
 ymin = -0.1  # minimum value on y-axis
 ymax = 0.1  # maximum value on y-axis
 yticks = np.arange(-0.1, 0.11, 0.1)  # define where to put major ticks on y-axis
-xticklabels = ['long \n act.', 'short \n act.']  # which labels to put on x-axis
+xticklabels = ["long \n act.", "short \n act."]  # which labels to put on x-axis
 stat_annotation_offset = 0  # vertical offset of statistical annotation
 ylabel = None  # which label to put on y-axis
 title = None  # title of plot
-box_pairs = [('AR1to1s_fsl', 'AR1to1s_fss')]  # which groups to perform statistical test on
+box_pairs = [("AR1to1s_fsl", "AR1to1s_fss")]  # which groups to perform statistical test on
 
 # make plots
-make_box_and_swarmplots_with_test(x, y, df_singlet_afterfilter, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels,
+make_box_and_swarmplots_with_test(x, y, df_singlet, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels,
                                   ylabel, title, colors)
 
 # write title for panels 1 to 4
-plt.text(-5.2, 0.415, 'Cell width at x=0 $\mathrm{\mu}$m', fontsize=10)
+plt.text(-5.2, 0.415, "Cell width at x=0 $\mathrm{\mu}$m", fontsize=10)
 # write title for panels 5 to 6
-plt.text(-1.15, 0.378, 'Cell width at x=0 $\mathrm{\mu}$m \n        after recovery', fontsize=10)
+plt.text(-1.15, 0.378, "Cell width at x=0 $\mathrm{\mu}$m \n        after recovery", fontsize=10)
 
-plt.savefig(figfolder + 'SA.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + "SA.png", dpi=300, bbox_inches="tight")
 plt.show()
