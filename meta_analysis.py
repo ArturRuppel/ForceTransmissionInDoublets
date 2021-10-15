@@ -274,7 +274,7 @@ def analyse_msm_data(folder):
     RSI_normal_right = relsigma_avg_normal_right[32, :] - relsigma_avg_normal_right[20, :]
 
     # calculate relative stress profile along x-axis after photoactivation
-    sigma_xx_x_profile_increase = (np.median(sigma_xx_x_profile[:, 30:33, :], axis=1) - np.median(sigma_xx_x_profile[:, 0:20, :], axis=1))
+    sigma_xx_x_profile_increase = (np.median(sigma_xx_x_profile[:, 30:33, :], axis=1) - np.median(sigma_xx_x_profile[:, 0:20, :], axis=1))  # take median to mitigate outliers
     sigma_yy_x_profile_increase = (np.median(sigma_yy_x_profile[:, 30:33, :], axis=1) - np.median(sigma_yy_x_profile[:, 0:20, :], axis=1))
     sigma_avg_normal_x_profile_increase = (np.median(sigma_avg_normal_x_profile[:, 30:33, :], axis=1) - np.median(sigma_avg_normal_x_profile[:, 0:20, :], axis=1))
     # sigma_avg_normal_x_profile_increase = (sigma_avg_normal_x_profile[:, 32, :] - sigma_avg_normal_x_profile[:, 20, :])
@@ -294,33 +294,71 @@ def analyse_msm_data(folder):
 
 
     # find position at which stress attenuates through sigmoid fit
-    def find_stress_attenuation_position(stresscurve):
-        def sigmoid(x, left_asymptote, right_asymptote, x0, l0):
-            return (left_asymptote - right_asymptote) / (1 + np.exp((x - x0) / l0)) + right_asymptote
+    # def find_stress_attenuation_position(stresscurve):
+    #     def sigmoid(x, left_asymptote, right_asymptote, x0, l0):
+    #         return (left_asymptote - right_asymptote) / (1 + np.exp((x - x0) / l0)) + right_asymptote
+    #
+    #     left_asymptote_all = np.zeros(stresscurve.shape[1])
+    #     right_asymptote_all = np.zeros(stresscurve.shape[1])
+    #     x0_all = np.zeros(stresscurve.shape[1])
+    #     l0_all = np.zeros(stresscurve.shape[1])
+    #
+    #     for c in range(stresscurve.shape[1]):
+    #         x = np.linspace(-40, 40, stresscurve.shape[0])  # in µm
+    #         y_current = stresscurve[:, c]
+    #
+    #         # remove nans from the curve
+    #         x1 = np.delete(x, np.argwhere(np.isnan(y_current)))
+    #         y1 = np.delete(y_current, np.argwhere(np.isnan(y_current)))
+    #
+    #         gmodel = Model(sigmoid)
+    #         result = gmodel.fit(y1, x=x1, left_asymptote=0, right_asymptote=1e-3, x0=0, l0=1)
+    #
+    #         left_asymptote_all[c] = result.params.valuesdict()['left_asymptote']
+    #         right_asymptote_all[c] = result.params.valuesdict()['right_asymptote']
+    #         x0_all[c] = result.params.valuesdict()['x0']
+    #         l0_all[c] = result.params.valuesdict()['l0']
+    #     return left_asymptote_all, right_asymptote_all, x0_all, l0_all
 
-        left_asymptote_all = np.zeros(stresscurve.shape[1])
-        right_asymptote_all = np.zeros(stresscurve.shape[1])
-        x0_all = np.zeros(stresscurve.shape[1])
-        l0_all = np.zeros(stresscurve.shape[1])
+    # left_asymptote, right_asymptote, x0, l0 = find_stress_attenuation_position(sigma_avg_normal_x_profile_increase)
 
-        for c in range(stresscurve.shape[1]):
-            x = np.linspace(-40, 40, stresscurve.shape[0])  # in µm
-            y_current = stresscurve[:, c]
-
-            # remove nans from the curve
-            x1 = np.delete(x, np.argwhere(np.isnan(y_current)))
-            y1 = np.delete(y_current, np.argwhere(np.isnan(y_current)))
-
-            gmodel = Model(sigmoid)
-            result = gmodel.fit(y1, x=x1, left_asymptote=0, right_asymptote=1e-3, x0=0, l0=1)
-
-            left_asymptote_all[c] = result.params.valuesdict()['left_asymptote']
-            right_asymptote_all[c] = result.params.valuesdict()['right_asymptote']
-            x0_all[c] = result.params.valuesdict()['x0']
-            l0_all[c] = result.params.valuesdict()['l0']
-        return left_asymptote_all, right_asymptote_all, x0_all, l0_all
-
-    left_asymptote, right_asymptote, x0, l0 = find_stress_attenuation_position(sigma_avg_normal_x_profile_increase)
+    # def fit_double_gaussian(stresscurve):
+    #     def double_gaussian(x, peak_left, peak_right, center_left, center_right, width_left, width_right):
+    #         return peak_left * np.exp(-(x - center_left) ** 2 / width_left) + peak_right * np.exp(-(x - center_right) ** 2 / width_right)
+    #
+    #     peak_left_all = np.zeros(stresscurve.shape[1])
+    #     peak_right_all = np.zeros(stresscurve.shape[1])
+    #
+    #     for c in range(stresscurve.shape[1]):
+    #         x = np.linspace(-40, 40, stresscurve.shape[0])  # in µm
+    #         y_current = stresscurve[:, c]
+    #
+    #         # remove nans from the curve
+    #         x1 = np.delete(x, np.argwhere(np.isnan(y_current)))
+    #         y1 = np.delete(y_current, np.argwhere(np.isnan(y_current)))
+    #
+    #         gmodel = Model(double_gaussian)
+    #         params = Parameters()
+    #         params.add('peak_left', value=0.0005)
+    #         params.add('peak_right', value=0.0005)
+    #         params.add('center_left', value=-20, max=0, min=-40)
+    #         params.add('center_right', value=20, max=40, min=0)
+    #         params.add('width_left', value=50, min=1)
+    #         params.add('width_right', value=50, min=1)
+    #         result = gmodel.fit(y1, params, x=x1)
+    #
+    #         # y_fit = double_gaussian(x1, 0.0005, 0, -10, 10, 50, 50)
+    #         plt.plot(x1, result.best_fit)
+    #         plt.plot(x1, y1)
+    #         plt.show()
+    #
+    #         peak_left_all[c] = result.params.valuesdict()['peak_left']
+    #         peak_right_all[c] = result.params.valuesdict()['peak_right']
+    #     return peak_left_all, peak_right_all
+    #
+    # sigma_peak_left, sigma_peak_right = fit_double_gaussian(sigma_avg_normal_x_profile_increase)
+    #
+    # relative_sigma_peak_right = sigma_peak_right / (np.abs(sigma_peak_left) + np.abs(sigma_peak_right))
 
     data = {"sigma_xx": sigma_xx, "sigma_yy": sigma_yy, "sigma_avg_normal": sigma_avg_normal,
             "sigma_xx_average": sigma_xx_average, "sigma_yy_average": sigma_yy_average,
@@ -344,8 +382,7 @@ def analyse_msm_data(folder):
             "sigma_xx_x_profile_increase": sigma_xx_x_profile_increase,
             "sigma_yy_x_profile_increase": sigma_yy_x_profile_increase,
             "sigma_avg_normal_x_profile_increase": sigma_avg_normal_x_profile_increase,
-            # "sigma_increase_asymmetry_coefficient": sigma_increase_asymmetry_coefficient,
-            "left_asymptote": left_asymptote, "right_asymptote": right_asymptote, "attenuation_position": x0, "attenuation_length": l0}
+            }
     return data
 
 

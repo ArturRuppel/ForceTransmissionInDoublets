@@ -11,7 +11,7 @@ import pandas as pd
 from scipy.stats import zscore
 from plot_and_filter_functions import *
 
-
+pixelsize = 0.864  # in µm
 # %% load data for plotting
 folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
 AR1to2d_halfstim = pickle.load(open(folder + "analysed_data/AR1to2d_halfstim.dat", "rb"))
@@ -67,6 +67,7 @@ df['Es_baseline'] *= 1e12  # convert to fJ
 df['spreadingsize_baseline'] *= 1e12  # convert to µm²
 df['sigma_xx_baseline'] *= 1e3  # convert to mN/m
 df['sigma_yy_baseline'] *= 1e3  # convert to mN/m
+
 
 # %% plot figure 5A, force maps
 
@@ -303,7 +304,7 @@ plt.show()
 # %% filter data to remove cells that don't react very much to opto stimulation
 # def filter_data_main(data, threshold, title):
 #     # concatenate data on which it will be determined which cells will be filtered
-#     filterdata = data["MSM_data"]["RSI_normal_left"]
+#     filterdata = data["MSM_data"]["sigma_peak_left"] / np.nanmean(data["MSM_data"]["sigma_avg_normal"])
 #
 #     # move axis of variable to the last position for consistency
 #     filterdata = np.moveaxis(filterdata, 0, -1)
@@ -348,11 +349,94 @@ def filter_data_main(data, threshold, title):
     return data
 
 
-threshold = 0.005
+threshold = 0.0075
 
 AR1to2d_halfstim = filter_data_main(AR1to2d_halfstim, threshold, "AR1to2d_halfstim")
 AR1to1d_halfstim = filter_data_main(AR1to1d_halfstim, threshold, "AR1to1d_halfstim")
 AR2to1d_halfstim = filter_data_main(AR2to1d_halfstim, threshold, "AR2to1d_halfstim")
+
+
+#%% calculate some stuff
+sigma_xx_x_profile_increase_1to2 = np.nanmean(AR1to2d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1)
+sigma_xx_x_profile_increase_1to2_sem = np.nanstd(AR1to2d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1) / np.sqrt(
+    np.shape(AR1to2d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"])[1])
+
+sigma_xx_x_profile_increase_1to1 = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1)
+sigma_xx_x_profile_increase_1to1_sem = np.nanstd(AR1to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1) / np.sqrt(
+    np.shape(AR1to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"])[1])
+
+sigma_xx_x_profile_increase_2to1 = np.nanmean(AR2to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1)
+sigma_xx_x_profile_increase_2to1_sem = np.nanstd(AR2to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1) / np.sqrt(
+    np.shape(AR2to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"])[1])
+
+
+activation_front = int(sigma_xx_x_profile_increase_1to1.shape[0] / 2) - int(10 * pixelsize)  # activation front ist 10 micron left of center
+mirror_front = int(sigma_xx_x_profile_increase_1to1.shape[0] / 2) + int(10 * pixelsize)
+
+SI_xx_left_1to2 = np.nansum(sigma_xx_x_profile_increase_1to2[0:activation_front])
+SI_xx_right_1to2 = np.nansum(sigma_xx_x_profile_increase_1to2[mirror_front:-1])
+SI_xx_right_1to2_max = np.nansum(sigma_xx_x_profile_increase_1to2[mirror_front:-1] + sigma_xx_x_profile_increase_1to2_sem[mirror_front:-1])
+SI_xx_right_1to2_min = np.nansum(sigma_xx_x_profile_increase_1to2[mirror_front:-1] - sigma_xx_x_profile_increase_1to2_sem[mirror_front:-1])
+
+SI_xx_left_1to1 = np.nansum(sigma_xx_x_profile_increase_1to1[0:activation_front])
+SI_xx_right_1to1 = np.nansum(sigma_xx_x_profile_increase_1to1[mirror_front:-1])
+SI_xx_right_1to1_max = np.nansum(sigma_xx_x_profile_increase_1to1[mirror_front:-1] + sigma_xx_x_profile_increase_1to1_sem[mirror_front:-1])
+SI_xx_right_1to1_min = np.nansum(sigma_xx_x_profile_increase_1to1[mirror_front:-1] - sigma_xx_x_profile_increase_1to1_sem[mirror_front:-1])
+
+SI_xx_left_2to1 = np.nansum(sigma_xx_x_profile_increase_2to1[0:activation_front])
+SI_xx_right_2to1 = np.nansum(sigma_xx_x_profile_increase_2to1[mirror_front:-1])
+SI_xx_right_2to1_max = np.nansum(sigma_xx_x_profile_increase_2to1[mirror_front:-1] + sigma_xx_x_profile_increase_2to1_sem[mirror_front:-1])
+SI_xx_right_2to1_min = np.nansum(sigma_xx_x_profile_increase_2to1[mirror_front:-1] - sigma_xx_x_profile_increase_2to1_sem[mirror_front:-1])
+
+xx_stress_increase_ratio_1to2 = (SI_xx_right_1to2) / (np.abs(SI_xx_right_1to2) + np.abs(SI_xx_left_1to2))
+xx_stress_increase_ratio_1to2_err = 0.5 * (SI_xx_right_1to2_max - SI_xx_right_1to2_min) / (np.abs(SI_xx_right_1to2) + np.abs(SI_xx_left_1to2))
+
+xx_stress_increase_ratio_1to1 = (SI_xx_right_1to1) / (np.abs(SI_xx_right_1to1) + np.abs(SI_xx_left_1to1))
+xx_stress_increase_ratio_1to1_err = 0.5 * (SI_xx_right_1to1_max - SI_xx_right_1to1_min) / (np.abs(SI_xx_right_1to1) + np.abs(SI_xx_left_1to1))
+
+xx_stress_increase_ratio_2to1 = (SI_xx_right_2to1) / (np.abs(SI_xx_right_2to1) + np.abs(SI_xx_left_2to1))
+xx_stress_increase_ratio_2to1_err = 0.5 * (SI_xx_right_2to1_max - SI_xx_right_2to1_min) / (np.abs(SI_xx_right_2to1) + np.abs(SI_xx_left_2to1))
+
+sigma_yy_x_profile_increase_1to2 = np.nanmean(AR1to2d_halfstim["MSM_data"]["sigma_yy_x_profile_increase"], axis=1)
+sigma_yy_x_profile_increase_1to2_sem = np.nanstd(AR1to2d_halfstim["MSM_data"]["sigma_yy_x_profile_increase"], axis=1) / np.sqrt(
+    np.shape(AR1to2d_halfstim["MSM_data"]["sigma_yy_x_profile_increase"])[1])
+
+sigma_yy_x_profile_increase_1to1 = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_yy_x_profile_increase"], axis=1)
+sigma_yy_x_profile_increase_1to1_sem = np.nanstd(AR1to1d_halfstim["MSM_data"]["sigma_yy_x_profile_increase"], axis=1) / np.sqrt(
+    np.shape(AR1to1d_halfstim["MSM_data"]["sigma_yy_x_profile_increase"])[1])
+
+sigma_yy_x_profile_increase_2to1 = np.nanmean(AR2to1d_halfstim["MSM_data"]["sigma_yy_x_profile_increase"], axis=1)
+sigma_yy_x_profile_increase_2to1_sem = np.nanstd(AR2to1d_halfstim["MSM_data"]["sigma_yy_x_profile_increase"], axis=1) / np.sqrt(
+    np.shape(AR2to1d_halfstim["MSM_data"]["sigma_yy_x_profile_increase"])[1])
+
+
+activation_front = int(sigma_yy_x_profile_increase_1to1.shape[0] / 2) - int(10 * pixelsize)  # activation front ist 10 micron left of center
+mirror_front = int(sigma_yy_x_profile_increase_1to1.shape[0] / 2) + int(10 * pixelsize)
+
+SI_yy_left_1to2 = np.nansum(sigma_yy_x_profile_increase_1to2[0:activation_front])
+SI_yy_right_1to2 = np.nansum(sigma_yy_x_profile_increase_1to2[mirror_front:-1])
+SI_yy_right_1to2_max = np.nansum(sigma_yy_x_profile_increase_1to2[mirror_front:-1] + sigma_yy_x_profile_increase_1to2_sem[mirror_front:-1])
+SI_yy_right_1to2_min = np.nansum(sigma_yy_x_profile_increase_1to2[mirror_front:-1] - sigma_yy_x_profile_increase_1to2_sem[mirror_front:-1])
+
+SI_yy_left_1to1 = np.nansum(sigma_yy_x_profile_increase_1to1[0:activation_front])
+SI_yy_right_1to1 = np.nansum(sigma_yy_x_profile_increase_1to1[mirror_front:-1])
+SI_yy_right_1to1_max = np.nansum(sigma_yy_x_profile_increase_1to1[mirror_front:-1] + sigma_yy_x_profile_increase_1to1_sem[mirror_front:-1])
+SI_yy_right_1to1_min = np.nansum(sigma_yy_x_profile_increase_1to1[mirror_front:-1] - sigma_yy_x_profile_increase_1to1_sem[mirror_front:-1])
+
+SI_yy_left_2to1 = np.nansum(sigma_yy_x_profile_increase_2to1[0:activation_front])
+SI_yy_right_2to1 = np.nansum(sigma_yy_x_profile_increase_2to1[mirror_front:-1])
+SI_yy_right_2to1_max = np.nansum(sigma_yy_x_profile_increase_2to1[mirror_front:-1] + sigma_yy_x_profile_increase_2to1_sem[mirror_front:-1])
+SI_yy_right_2to1_min = np.nansum(sigma_yy_x_profile_increase_2to1[mirror_front:-1] - sigma_yy_x_profile_increase_2to1_sem[mirror_front:-1])
+
+yy_stress_increase_ratio_1to2 = (SI_yy_right_1to2) / (np.abs(SI_yy_right_1to2) + np.abs(SI_yy_left_1to2))
+yy_stress_increase_ratio_1to2_err = 0.5 * (SI_yy_right_1to2_max - SI_yy_right_1to2_min) / (np.abs(SI_yy_right_1to2) + np.abs(SI_yy_left_1to2))
+
+yy_stress_increase_ratio_1to1 = (SI_yy_right_1to1) / (np.abs(SI_yy_right_1to1) + np.abs(SI_yy_left_1to1))
+yy_stress_increase_ratio_1to1_err = 0.5 * (SI_yy_right_1to1_max - SI_yy_right_1to1_min) / (np.abs(SI_yy_right_1to1) + np.abs(SI_yy_left_1to1))
+
+yy_stress_increase_ratio_2to1 = (SI_yy_right_2to1) / (np.abs(SI_yy_right_2to1) + np.abs(SI_yy_left_2to1))
+yy_stress_increase_ratio_2to1_err = 0.5 * (SI_yy_right_2to1_max - SI_yy_right_2to1_min) / (np.abs(SI_yy_right_2to1) + np.abs(SI_yy_left_2to1))
+
 
 # %% prepare dataframe again after filtering
 
@@ -392,10 +476,10 @@ concatenated_data['keys'] = keys
 df = pd.DataFrame(concatenated_data)
 
 # # remove outliers
-filter_outlier1 = np.abs(zscore(df["attenuation_position"])) < 1
-filter_outlier2 = np.abs(zscore(df["attenuation_length"])) < 1
-filter_outlier = np.all((filter_outlier1, filter_outlier2), axis=0)
-df = df[filter_outlier]
+# filter_outlier1 = np.abs(zscore(df["attenuation_position"])) < 1
+# filter_outlier2 = np.abs(zscore(df["attenuation_length"])) < 1
+# filter_outlier = np.all((filter_outlier1, filter_outlier2), axis=0)
+# df = df[filter_outlier]
 
 stressmappixelsize = 0.864  # in µm
 # convert to more convenient units for plotting
@@ -403,11 +487,11 @@ df['Es_baseline'] *= 1e12  # convert to fJ
 df['spreadingsize_baseline'] *= 1e12  # convert to µm²
 df['sigma_xx_baseline'] *= 1e3  # convert to mN/m
 df['sigma_yy_baseline'] *= 1e3  # convert to mN/m
-df["left_asymptote"] *= 1e3  # convert to mN/m
-df["right_asymptote"] *= 1e3  # convert to mN/m
+# df["left_asymptote"] *= 1e3  # convert to mN/m
+# df["right_asymptote"] *= 1e3  # convert to mN/m
 df['cell_width_center_baseline'] *= stressmappixelsize / 8  # convert from pixel to µm
-df["attenuation_position"] *= stressmappixelsize  # convert to µm
-df["attenuation_length"] *= stressmappixelsize  # convert to µm
+# df["attenuation_position"] *= stressmappixelsize  # convert to µm
+# df["attenuation_length"] *= stressmappixelsize  # convert to µm
 
 # %% plot figure 5D1, stress map differences
 
@@ -475,8 +559,8 @@ cbar = fig.colorbar(im, ax=axes.ravel().tolist())
 cbar.ax.set_title('mN/m')
 
 # add title
-plt.suptitle('$\mathrm{\Delta \sigma _{avg. normal}(x,y)}$', y=0.98, x=0.5)
-# plt.suptitle('$\mathrm{abc}$', y=0.98, x=0.5)
+# plt.suptitle('$\mathrm{\Delta \sigma _{avg. normal}(x,y)}$', y=0.98, x=0.5)
+plt.suptitle('$\mathrm{abc}$', y=0.98, x=0.5)
 # plt.text(-20, 230, '$\mathrm{\Delta}$ mean stresses')
 
 # add annotations
@@ -564,12 +648,12 @@ ax = axes[0]
 color = colors_parent[0]
 ylabel = None
 title = '$\mathrm{\Delta \sigma _{avg. normal}(x)}$ [mN/m]'
-y = AR1to2d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"]   * 1e3  # convert to nN
+y = AR1to2d_halfstim["MSM_data"]["sigma_yy_x_profile_increase"]  # * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False, titleoffset=20)
-# ax.plot(x, sigmoid1to2d, color=color)
+ax.plot(x, sigmoid1to2d, color=color)
 
 # # Set up plot parameters for fifth panel
 # #######################################################################################################
@@ -578,12 +662,12 @@ color = colors_parent[1]
 yticks = np.arange(ymin, ymax + 0.001, 0.1)
 ylabel = None
 title = None
-y = AR1to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"]   * 1e3  # convert to nN
+y = AR1to1d_halfstim["MSM_data"]["sigma_yy_x_profile_increase"]  # * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
-# ax.plot(x, sigmoid1to1d, color=color)
+ax.plot(x, sigmoid1to1d, color=color)
 
 # # Set up plot parameters for sixth panel
 # # #######################################################################################################
@@ -592,12 +676,12 @@ color = colors_parent[3]
 yticks = np.arange(ymin, ymax + 0.001, 0.1)
 ylabel = None
 title = None
-y = AR2to1d_halfstim["MSM_data"]["sigma_avg_normal_x_profile_increase"]   * 1e3  # convert to nN
+y = AR2to1d_halfstim["MSM_data"]["sigma_yy_x_profile_increase"]  # * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False)
-# ax.plot(x, sigmoid2to1d, color=color)
+ax.plot(x, sigmoid2to1d, color=color)
 
 plt.savefig(figfolder + 'D2.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'D2.svg', dpi=300, bbox_inches="tight")
@@ -694,14 +778,14 @@ plt.subplots_adjust(wspace=0.45, hspace=0.45)  # adjust space in between plots
 # Set up plot parameters for third panel
 #######################################################################################################
 x = 'AIC_baseline'
-y = 'attenuation_position'
+y = 'relative_sigma_peak_right'
 hue = 'keys'
 xmin = -1
 xmax = 1
-ymin = -20
-ymax = 20
+ymin = -0.5
+ymax = 0.5
 xticks = np.arange(-1, 1.1, 0.5)
-yticks = np.arange(-20, 20.1, 10)
+yticks = np.arange(-2, 2.1, 10)
 xlabel = 'Stress anisotropy coefficient'
 ylabel = '$\mathrm{x_0}$ [µm]'
 

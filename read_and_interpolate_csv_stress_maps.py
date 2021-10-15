@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import griddata, Rbf
 from scipy.spatial import Delaunay
+from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
 
 
@@ -157,19 +158,20 @@ def interpolate_simulation_maps_rbf(directory, filename, x, y, data_key1, data_k
     return data1_all, data2_all
 
 
-def analyze_FEM_data(FEM_data):
+def analyze_FEM_data(FEM_data, pixelsize):
     for key in FEM_data:
-        center = int(FEM_data[key]["sigma_avg_normal"].shape[0] / 2)
+        activation_front = int(FEM_data[key]["sigma_avg_normal"].shape[0] / 2) - int(10 * pixelsize)        # activation front ist 10 micron left of center
+        mirror_front = int(FEM_data[key]["sigma_avg_normal"].shape[0] / 2) + int(10 * pixelsize)
         FEM_data[key]["sigma_avg_normal"] = (FEM_data[key]["sigma_xx"] + FEM_data[key]["sigma_yy"]) / 2
         FEM_data[key]["sigma_avg_normal_average"] = np.nanmean(FEM_data[key]["sigma_avg_normal"], axis=(0, 1))
-        FEM_data[key]["sigma_avg_normal_average_left"] = np.nanmean(FEM_data[key]["sigma_avg_normal"][:, 0:center], axis=(0, 1))
-        FEM_data[key]["sigma_avg_normal_average_right"] = np.nanmean(FEM_data[key]["sigma_avg_normal"][:, center:-1], axis=(0, 1))
+        FEM_data[key]["sigma_avg_normal_average_left"] = np.nanmean(FEM_data[key]["sigma_avg_normal"][:, 0:activation_front], axis=(0, 1))
+        FEM_data[key]["sigma_avg_normal_average_right"] = np.nanmean(FEM_data[key]["sigma_avg_normal"][:, activation_front:-1], axis=(0, 1))
 
         FEM_data[key]["relsigma_avg_normal_average"] = FEM_data[key]["sigma_avg_normal_average"] / FEM_data[key]["sigma_avg_normal_average"][10]
         FEM_data[key]["relsigma_avg_normal_average_left"] = FEM_data[key]["sigma_avg_normal_average_left"] / FEM_data[key]["sigma_avg_normal_average"][10]
         FEM_data[key]["relsigma_avg_normal_average_right"] = FEM_data[key]["sigma_avg_normal_average_right"] / FEM_data[key]["sigma_avg_normal_average"][10]
 
-        FEM_data[key]["coupling"] = FEM_data[key]["relsigma_avg_normal_average_left"][32] * FEM_data[key]["relsigma_avg_normal_average_right"][32]
+        # FEM_data[key]["coupling"] = FEM_data[key]["relsigma_avg_normal_average_left"][32] * FEM_data[key]["relsigma_avg_normal_average_right"][32]
 
         FEM_data[key]["sigma_xx_x_profile"] = np.nanmean(FEM_data[key]["sigma_xx"], axis=0)
         FEM_data[key]["sigma_yy_x_profile"] = np.nanmean(FEM_data[key]["sigma_yy"], axis=0)
@@ -179,15 +181,32 @@ def analyze_FEM_data(FEM_data):
                                                                                                     20]
         FEM_data[key]["sigma_yy_x_profile_increase"] = FEM_data[key]["sigma_yy_x_profile"][:, 32] - FEM_data[key]["sigma_yy_x_profile"][:,
                                                                                                     20]
-        FEM_data[key]["sigma_normal_x_profile_increase"] = FEM_data[key]["sigma_avg_normal_x_profile"][:, 32] - FEM_data[key][
-                                                                                                                    "sigma_avg_normal_x_profile"][
-                                                                                                                :, 20]
+        FEM_data[key]["sigma_normal_x_profile_increase"] = FEM_data[key]["sigma_avg_normal_x_profile"][:, 32] - FEM_data[key]["sigma_avg_normal_x_profile"][:, 20]
+
+        FEM_data[key]["xx_stress_increase_ratio"] = np.nansum(FEM_data[key]["sigma_xx_x_profile_increase"][mirror_front:-1]) / \
+                                                    (np.abs(np.nansum(FEM_data[key]["sigma_xx_x_profile_increase"][0:activation_front])) +
+                                                     np.abs(np.nansum(FEM_data[key]["sigma_xx_x_profile_increase"][mirror_front:-1])))
+
+        FEM_data[key]["yy_stress_increase_ratio"] = np.nansum(FEM_data[key]["sigma_yy_x_profile_increase"][mirror_front:-1]) / \
+                                                    (np.abs(np.nansum(FEM_data[key]["sigma_yy_x_profile_increase"][0:activation_front])) +
+                                                     np.abs(np.nansum(FEM_data[key]["sigma_yy_x_profile_increase"][mirror_front:-1])))
+
+        # # find maximum and/or minimun in stress increaye curves
+        # y = FEM_data[key]["sigma_normal_x_profile_increase"]
+        # max_left, _ = find_peaks(y[0:10])
+        # # right is sometimes minimum and sometimes maximum, so I look for both
+        # max_right, _ = find_peaks(y[40:50])
+        # min_right, _ = find_peaks(-y[40:50])
+        # min_right = min_right + 40
+        # max_right = max_right + 40
+        # peaks_pos = np.concatenate((max_left, min_right, max_right))
+        # peaks = y[peaks_pos]
 
     return FEM_data
 
 
 if __name__ == "__main__":
-    directory = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FEM_simulations/singlets/"
+    directory = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FEM_simulations/doublets/"
     filename = "stress_feedbacks_"
     x_key = ":0"
     y_key = ":1"
@@ -259,7 +278,7 @@ if __name__ == "__main__":
         FEM_data = pickle.load(
             open("C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FEM_simulations/FEM_doublets.dat", "rb"))
 
-    FEM_data = analyze_FEM_data(FEM_data)
+    FEM_data = analyze_FEM_data(FEM_data, pixelsize)
 
     with open("C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FEM_simulations/FEM_doublets.dat", 'wb') as outfile:
         pickle.dump(FEM_data, outfile, protocol=pickle.HIGHEST_PROTOCOL)

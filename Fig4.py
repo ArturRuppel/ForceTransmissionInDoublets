@@ -38,8 +38,6 @@ singlet_simulation = pickle.load(open(folder + "_contour_simulations/CM_singlet_
 doublet_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_doublets.dat", "rb"))
 singlet_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_singlets.dat", "rb"))
 
-feedbacks = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-
 # define some colors for the plots
 colors_parent = ["#026473", "#E3CC69", "#77C8A6", "#D96248"]
 
@@ -74,7 +72,7 @@ def filter_data_main(data, threshold, title):
     return data
 
 
-threshold = 0.005
+threshold = 0.0075
 
 AR1to1d_fullstim_long = filter_data_main(AR1to1d_fullstim_long, threshold, "AR1to1d_fullstim_long")
 AR1to1d_fullstim_short = filter_data_main(AR1to1d_fullstim_short, threshold, "AR1to1d_fullstim_short")
@@ -129,8 +127,9 @@ df_singlet = pd.DataFrame(concatenated_data_singlet)
 
 # prepare data first
 key = "feedback0.0"
-sigma_xx_doublet_sim = (doublet_FEM_simulation[key]["sigma_xx"][:, :, 32] - doublet_FEM_simulation[key]["sigma_xx"][:, :,
-                                                                            20]) * 1e3  # convert to mN/m
+sigma_xx_doublet_sim = (doublet_FEM_simulation[key]["sigma_xx"][:, :, 32] - doublet_FEM_simulation[key]["sigma_xx"][:, :, 20]) * 1e3  # convert to mN/m
+sigma_xx_singlet_sim = (singlet_FEM_simulation[key]["sigma_xx"][:, :, 32] - doublet_FEM_simulation[key]["sigma_xx"][:, :, 20]) * 1e3  # convert to mN/m
+
 sigma_xx_1to1d_diff = np.nanmean(
     AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 32, :] - AR1to1d_halfstim["MSM_data"]["sigma_xx"][:, :, 20, :], axis=2)
 
@@ -400,58 +399,68 @@ fig.savefig(figfolder + "B2.svg", dpi=300, bbox_inches="tight")
 plt.show()
 
 
-# %% plot figure Ctest, coupling
+# %% plot figure C1, xx-coupling
 def find_x_position_of_point_on_array(x_list, y_list, y_point):
     f = interp1d(y_list, x_list, kind="linear")
     return f(y_point)
 
 
 # make some calculations on the simulated data first
-sigma_ratio_all_doublet = []
-sigma_ratio_all_singlet = []
+xx_stress_increase_ratio_sim = []
 
-feedbacks_d = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+feedbacks = [-1.0, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
-for fb in feedbacks_d:
-    sigma_ratio_all_doublet.append(doublet_FEM_simulation["feedback" + str(fb)]["coupling"])
-
-feedbacks_s = [-1.0, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-
-for fb in feedbacks_s:
-    sigma_ratio_all_singlet.append(singlet_FEM_simulation["feedback" + str(fb)]["coupling"])
+for fb in feedbacks:
+    xx_stress_increase_ratio_sim.append(singlet_FEM_simulation["feedback" + str(fb)]["xx_stress_increase_ratio"])
 
 fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
 
-ax.plot(feedbacks_d, sigma_ratio_all_doublet, color=colors_parent[1])
-ax.plot(feedbacks_s, sigma_ratio_all_singlet, color=colors_parent[2])
+ax.plot(feedbacks, xx_stress_increase_ratio_sim, color="gray", linestyle='--')
 
 # add data points
-sigma_map_doublet = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_avg_normal"], axis=3)
-sigma_baseline = np.nanmean(sigma_map_doublet[:, :, 0:20])
-sigma_opto_left = np.nanmean(sigma_map_doublet[:, 0:46, 30:33])
-sigma_opto_right = np.nanmean(sigma_map_doublet[:, 46:-1, 30:33])
+sigma_xx_x_profile_increase_d = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1)
+sigma_xx_x_profile_increase_d_sem = np.nanstd(AR1to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1) / np.sqrt(
+    np.shape(AR1to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"])[1])
+sigma_xx_x_profile_increase_s = np.nanmean(AR1to1s_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1)
+sigma_xx_x_profile_increase_s_sem = np.nanstd(AR1to1s_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1) / np.sqrt(
+    np.shape(AR1to1s_halfstim["MSM_data"]["sigma_xx_x_profile_increase"])[1])
+
+activation_front = int(sigma_xx_x_profile_increase_d.shape[0] / 2) - int(10 * pixelsize)  # activation front ist 10 micron left of center
+mirror_front = int(sigma_xx_x_profile_increase_d.shape[0] / 2) + int(10 * pixelsize)
+
+SI_xx_left_d = np.nansum(sigma_xx_x_profile_increase_d[0:activation_front])
+SI_xx_right_d = np.nansum(sigma_xx_x_profile_increase_d[mirror_front:-1])
+SI_xx_right_d_max = np.nansum(sigma_xx_x_profile_increase_d[mirror_front:-1] + sigma_xx_x_profile_increase_d_sem[mirror_front:-1])
+SI_xx_right_d_min = np.nansum(sigma_xx_x_profile_increase_d[mirror_front:-1] - sigma_xx_x_profile_increase_d_sem[mirror_front:-1])
+
+SI_xx_left_s = np.nansum(sigma_xx_x_profile_increase_s[0:activation_front])
+SI_xx_right_s = np.nansum(sigma_xx_x_profile_increase_s[mirror_front:-1])
+SI_xx_right_s_max = np.nansum(sigma_xx_x_profile_increase_s[mirror_front:-1] + sigma_xx_x_profile_increase_s_sem[mirror_front:-1])
+SI_xx_right_s_min = np.nansum(sigma_xx_x_profile_increase_s[mirror_front:-1] - sigma_xx_x_profile_increase_s_sem[mirror_front:-1])
+
+xx_stress_increase_ratio_d = (SI_xx_right_d) / (np.abs(SI_xx_right_d) + np.abs(SI_xx_left_d))
+xx_stress_increase_ratio_d_err = 0.5 * (SI_xx_right_d_max - SI_xx_right_d_min) / (np.abs(SI_xx_right_d) + np.abs(SI_xx_left_d))
+xx_stress_increase_ratio_s = (SI_xx_right_s) / (np.abs(SI_xx_right_s) + np.abs(SI_xx_left_s))
+xx_stress_increase_ratio_s_err = 0.5 * (SI_xx_right_s_max - SI_xx_right_s_min) / (np.abs(SI_xx_right_s) + np.abs(SI_xx_left_s))
 
 color = colors_parent[1]
-y_median = (sigma_opto_left * sigma_opto_right) / (sigma_baseline ** 2)
+
 y_error = 0
-# x = find_x_position_of_point_on_array(feedbacks_d, sigma_ratio_all_doublet, y_median)
-x = 0
+x = find_x_position_of_point_on_array(feedbacks, xx_stress_increase_ratio_sim, xx_stress_increase_ratio_d)
+
 # x_CI = find_x_position_of_point_on_line(feedbacks, doublet_sigma_asymmetry_coefficient, y_median - y_CI) - x
-ax.errorbar(x, y_median, yerr=y_error, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
+ax.errorbar(x, xx_stress_increase_ratio_d, yerr=xx_stress_increase_ratio_d_err, mfc="w", color=color, marker="s", ms=4, linewidth=0.5,
+            ls="none",
             markeredgewidth=0.5)
 
-sigma_map_singlet = np.nanmean(AR1to1s_halfstim["MSM_data"]["sigma_avg_normal"], axis=3)
-sigma_baseline = np.nanmean(sigma_map_singlet[:, :, 0:20])
-sigma_opto_left = np.nanmean(sigma_map_singlet[:, 0:37, 30:33])
-sigma_opto_right = np.nanmean(sigma_map_singlet[:, 37:-1, 30:33])
-
 color = colors_parent[2]
-y_median = (sigma_opto_left * sigma_opto_right) / (sigma_baseline ** 2)
+
 # y_error = stats_singlet["CI"]["AR1to1s_hs"]
-# x = find_x_position_of_point_on_array(feedbacks_s, sigma_ratio_all_singlet, y_median)
-x = -1
+x = find_x_position_of_point_on_array(feedbacks, xx_stress_increase_ratio_sim, xx_stress_increase_ratio_s)
+# x = -1
 # x_CI = find_x_position_of_point_on_line(feedbacks, singlet_sigma_asymmetry_coefficient, y_median - y_CI) - x
-ax.errorbar(x, y_median, yerr=y_error, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
+ax.errorbar(x, xx_stress_increase_ratio_s, yerr=xx_stress_increase_ratio_s_err, mfc="w", color=color, marker="s", ms=4, linewidth=0.5,
+            ls="none",
             markeredgewidth=0.5)
 
 # provide info on tick parameters
@@ -459,167 +468,86 @@ ax.minorticks_on()
 ax.tick_params(direction="in", which="minor", length=3, bottom=True, top=False, left=True, right=True)
 ax.tick_params(direction="in", which="major", length=6, bottom=True, top=False, left=True, right=True)
 
-plt.xlabel("stress coupling coefficient")
-plt.ylabel("RSI product")
-plt.title("Stress coupling")
-plt.savefig(figfolder + "Ctest.png", dpi=300, bbox_inches="tight")
-plt.savefig(figfolder + "Ctest", dpi=300, bbox_inches="tight")
-plt.show()
-
-
-# %% plot figure C1, asymmetry coefficient theory vs exp
-def find_x_position_of_point_on_array(x_list, y_list, y_point):
-    f = interp1d(y_list, x_list, kind="linear")
-    return f(y_point)
-
-
-# make some calculations on the simulated data first
-sigma_ratio_all_doublet = []
-sigma_ratio_all_singlet = []
-
-feedbacks_d = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-
-for fb in feedbacks_d:
-    sigma = doublet_FEM_simulation["feedback" + str(fb)]["sigma_xx_x_profile_increase"]
-    sigma_BL = np.nanmean(doublet_FEM_simulation["feedback" + str(fb)]["sigma_xx_x_profile"])
-    SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
-    SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
-    sigma_ratio = SI_right * SI_left / (sigma_BL ** 2)
-    sigma_ratio_all_doublet.append(sigma_ratio)
-
-feedbacks_s = [-1.0, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-
-for fb in feedbacks_s:
-    sigma = singlet_FEM_simulation["feedback" + str(fb)]["sigma_xx_x_profile_increase"]
-    sigma_BL = np.nanmean(singlet_FEM_simulation["feedback" + str(fb)]["sigma_xx_x_profile"])
-    SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
-    SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
-    sigma_ratio = SI_right * SI_left / (sigma_BL ** 2)
-    sigma_ratio_all_singlet.append(sigma_ratio)
-
-fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
-
-# ax.plot(feedbacks_s, sigma_ratio_all_singlet, color="grey")
-# ax.plot(feedbacks_s, sigma_asymmetry_coefficient_all_singlet, color="grey")
-ax.plot(feedbacks_d, sigma_ratio_all_doublet, color=colors_parent[1])
-ax.plot(feedbacks_s, sigma_ratio_all_singlet, color=colors_parent[2])
-
-# add data points
-color = colors_parent[1]
-sigma = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1)  # convert to nN
-sigma_BL = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_xx_baseline"])
-SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
-SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
-# y_mean = SI_right / (SI_left + SI_right)
-y_mean = SI_right * SI_left / (sigma_BL ** 2)
-y_error = 0.1
-# x = find_x_position_of_point_on_array(feedbacks_s, sigma_ratio_all_singlet, y_mean)
-x = 0.45
-# x_CI = find_x_position_of_point_on_line(feedbacks, doublet_sigma_asymmetry_coefficient, y_median - y_CI) - x
-ax.errorbar(x, y_mean, yerr=y_error, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
-            markeredgewidth=0.5)
-
-color = colors_parent[2]
-sigma = np.nanmean(AR1to1s_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1)  # convert to nN
-sigma_BL = np.nanmean(AR1to1s_halfstim["MSM_data"]["sigma_xx_baseline"])
-SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
-SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
-# y_mean = SI_right / (SI_left + SI_right)
-y_mean = SI_right * SI_left / (sigma_BL ** 2)
-
-y_error = 0.1
-# x = find_x_position_of_point_on_array(feedbacks_s, sigma_ratio_all_singlet, y_mean)
-x = -1
-# x_CI = find_x_position_of_point_on_line(feedbacks, singlet_sigma_asymmetry_coefficient, y_median - y_CI) - x
-ax.errorbar(x, y_mean, yerr=y_error, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
-            markeredgewidth=0.5)
-
-# provide info on tick parameters
-ax.minorticks_on()
-ax.tick_params(direction="in", which="minor", length=3, bottom=True, top=False, left=True, right=True)
-ax.tick_params(direction="in", which="major", length=6, bottom=True, top=False, left=True, right=True)
-
-plt.xlabel("stress coupling coefficient")
-plt.ylabel("sigma_nonactivated / (|sigma_activated| + |sigma_nonactivated|")
-plt.title("xx-Stress coupling")
-plt.savefig(figfolder + "C2.png", dpi=300, bbox_inches="tight")
-plt.savefig(figfolder + "C2", dpi=300, bbox_inches="tight")
-plt.show()
-
-
-# %% plot figure C2, asymmetry coefficient theory vs exp
-def find_x_position_of_point_on_array(x_list, y_list, y_point):
-    f = interp1d(y_list, x_list, kind="linear")
-    return f(y_point)
-
-
-# make some calculations on the simulated data first
-sigma_ratio_all_doublet = []
-sigma_ratio_all_singlet = []
-
-feedbacks_d = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-
-for fb in feedbacks_d:
-    sigma = doublet_FEM_simulation["feedback" + str(fb)]["sigma_xx_x_profile_increase"]
-    SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
-    SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
-    sigma_ratio = (1 + SI_right) / (1 + SI_left)
-    sigma_ratio_all_doublet.append(sigma_ratio)
-
-feedbacks_s = [-1.0, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-
-for fb in feedbacks_s:
-    sigma = singlet_FEM_simulation["feedback" + str(fb)]["sigma_xx_x_profile_increase"]
-    SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
-    SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
-    sigma_ratio = (1 + SI_right) / (1 + SI_left)
-    sigma_ratio_all_singlet.append(sigma_ratio)
-
-fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
-
-ax.plot(feedbacks_s, sigma_ratio_all_singlet, color="grey")
-# ax.plot(feedbacks_s, sigma_asymmetry_coefficient_all_singlet, color="grey")
-# ax.plot(feedbacks_d, sigma_ratio_all_doublet, color=colors_parent[1])
-# ax.plot(feedbacks_s, sigma_asymmetry_coefficient_all_singlet, color=colors_parent[2])
-
-# add data points
-color = colors_parent[1]
-sigma = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1)  # convert to nN
-SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
-SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
-# y_mean = SI_right / (SI_left + SI_right)
-y_mean = (1 + SI_right) / (1 + SI_left)
-y_error = 0.1
-# x = find_x_position_of_point_on_array(feedbacks_s, sigma_ratio_all_singlet, y_mean)
-x = 0.45
-# x_CI = find_x_position_of_point_on_line(feedbacks, doublet_sigma_asymmetry_coefficient, y_median - y_CI) - x
-# ax.errorbar(x, y_mean, yerr=y_error, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
-#             markeredgewidth=0.5)
-
-color = colors_parent[2]
-sigma = np.nanmean(AR1to1s_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1)  # convert to nN
-SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
-SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
-# y_mean = SI_right / (SI_left + SI_right)
-y_mean = SI_right / (np.abs(SI_left) + np.abs(SI_right))
-
-y_error = 0.1
-# x = find_x_position_of_point_on_array(feedbacks_s, sigma_ratio_all_singlet, y_mean)
-x = 0.35
-# x_CI = find_x_position_of_point_on_line(feedbacks, singlet_sigma_asymmetry_coefficient, y_median - y_CI) - x
-# ax.errorbar(x, y_mean, yerr=y_error, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
-#             markeredgewidth=0.5)
-
-# provide info on tick parameters
-ax.minorticks_on()
-ax.tick_params(direction="in", which="minor", length=3, bottom=True, top=False, left=True, right=True)
-ax.tick_params(direction="in", which="major", length=6, bottom=True, top=False, left=True, right=True)
-
-plt.xlabel("stress coupling coefficient")
-plt.ylabel("sigma_nonactivated / (|sigma_activated| + |sigma_nonactivated|")
+plt.xlabel("Stress coupling coefficient")
+plt.ylabel("Normalized stress peak of non-activated area")
 plt.title("xx-Stress coupling")
 plt.savefig(figfolder + "C1.png", dpi=300, bbox_inches="tight")
-plt.savefig(figfolder + "C1", dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + "C1.svg", dpi=300, bbox_inches="tight")
+plt.show()
+
+
+# %% plot figure C2, yy-coupling
+def find_x_position_of_point_on_array(x_list, y_list, y_point):
+    f = interp1d(y_list, x_list, kind="linear")
+    return f(y_point)
+
+
+# make some calculations on the simulated data first
+yy_stress_increase_ratio_sim = []
+
+feedbacks = [-1.0, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+
+for fb in feedbacks:
+    yy_stress_increase_ratio_sim.append(singlet_FEM_simulation["feedback" + str(fb)]["yy_stress_increase_ratio"])
+
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
+
+ax.plot(feedbacks, yy_stress_increase_ratio_sim, color="gray", linestyle='--')
+
+# add data points
+sigma_yy_x_profile_increase_d = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_yy_x_profile_increase"], axis=1)
+sigma_yy_x_profile_increase_d_sem = np.nanstd(AR1to1d_halfstim["MSM_data"]["sigma_yy_x_profile_increase"], axis=1) / np.sqrt(
+    np.shape(AR1to1d_halfstim["MSM_data"]["sigma_yy_x_profile_increase"])[1])
+sigma_yy_x_profile_increase_s = np.nanmean(AR1to1s_halfstim["MSM_data"]["sigma_yy_x_profile_increase"], axis=1)
+sigma_yy_x_profile_increase_s_sem = np.nanstd(AR1to1s_halfstim["MSM_data"]["sigma_yy_x_profile_increase"], axis=1) / np.sqrt(
+    np.shape(AR1to1s_halfstim["MSM_data"]["sigma_yy_x_profile_increase"])[1])
+
+activation_front = int(sigma_yy_x_profile_increase_d.shape[0] / 2) - int(10 * pixelsize)  # activation front ist 10 micron left of center
+mirror_front = int(sigma_yy_x_profile_increase_d.shape[0] / 2) + int(10 * pixelsize)
+
+SI_yy_left_d = np.nansum(sigma_yy_x_profile_increase_d[0:activation_front])
+SI_yy_right_d = np.nansum(sigma_yy_x_profile_increase_d[mirror_front:-1])
+SI_yy_right_d_max = np.nansum(sigma_yy_x_profile_increase_d[mirror_front:-1] + sigma_yy_x_profile_increase_d_sem[mirror_front:-1])
+SI_yy_right_d_min = np.nansum(sigma_yy_x_profile_increase_d[mirror_front:-1] - sigma_yy_x_profile_increase_d_sem[mirror_front:-1])
+
+SI_yy_left_s = np.nansum(sigma_yy_x_profile_increase_s[0:activation_front])
+SI_yy_right_s = np.nansum(sigma_yy_x_profile_increase_s[mirror_front:-1])
+SI_yy_right_s_max = np.nansum(sigma_yy_x_profile_increase_s[mirror_front:-1] + sigma_yy_x_profile_increase_s_sem[mirror_front:-1])
+SI_yy_right_s_min = np.nansum(sigma_yy_x_profile_increase_s[mirror_front:-1] - sigma_yy_x_profile_increase_s_sem[mirror_front:-1])
+
+yy_stress_increase_ratio_d = (SI_yy_right_d) / (np.abs(SI_yy_right_d) + np.abs(SI_yy_left_d))
+yy_stress_increase_ratio_d_err = 0.5 * (SI_yy_right_d_max - SI_yy_right_d_min) / (np.abs(SI_yy_right_d) + np.abs(SI_yy_left_d))
+yy_stress_increase_ratio_s = (SI_yy_right_s) / (np.abs(SI_yy_right_s) + np.abs(SI_yy_left_s))
+yy_stress_increase_ratio_s_err = 0.5 * (SI_yy_right_s_max - SI_yy_right_s_min) / (np.abs(SI_yy_right_s) + np.abs(SI_yy_left_s))
+
+color = colors_parent[1]
+
+x = find_x_position_of_point_on_array(feedbacks, yy_stress_increase_ratio_sim, yy_stress_increase_ratio_d)
+
+ax.errorbar(x, yy_stress_increase_ratio_d, yerr=yy_stress_increase_ratio_d_err, mfc="w", color=color, marker="s", ms=4, linewidth=0.5,
+            ls="none",
+            markeredgewidth=0.5)
+
+color = colors_parent[2]
+
+x = find_x_position_of_point_on_array(feedbacks, yy_stress_increase_ratio_sim, yy_stress_increase_ratio_s)
+# x = -1.3
+# x_CI = find_x_position_of_point_on_line(feedbacks, singlet_sigma_asymmetry_coefficient, y_median - y_CI) - x
+ax.errorbar(x, yy_stress_increase_ratio_s, yerr=yy_stress_increase_ratio_s_err, mfc="w", color=color, marker="s", ms=4, linewidth=0.5,
+            ls="none",
+            markeredgewidth=0.5)
+
+# provide info on tick parameters
+ax.minorticks_on()
+ax.tick_params(direction="in", which="minor", length=3, bottom=True, top=False, left=True, right=True)
+ax.tick_params(direction="in", which="major", length=6, bottom=True, top=False, left=True, right=True)
+
+plt.xlabel("Stress coupling coefficient")
+plt.ylabel("Normalized stress peak of non-activated area")
+plt.title("yy-Stress coupling")
+
+plt.savefig(figfolder + "C2.png", dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + "C2.svg", dpi=300, bbox_inches="tight")
 plt.show()
 
 # %% plot figure D, contour strain measurement
@@ -627,7 +555,7 @@ plt.show()
 pixelsize = 0.864  # in µm
 initial_pixelsize = 0.108  # in µm
 # concatenate TFM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
-doublet_example = 3
+doublet_example = 2
 
 # get data for one example
 actin_image_path = folder + "AR1to1_doublets_full_stim_long/actin_images/cell" + str(doublet_example) + "frame32.png"
@@ -729,6 +657,8 @@ title = "global activation"
 y = AR1to1d_fullstim_long["shape_data"]["contour_strain"]
 y = y[::2, :]
 
+feedbacks = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+
 for fb in feedbacks:
     y_sim = doublet_simulation["EA300"]["FB" + str(fb)]["epsilon_yy"]
     x_sim = np.linspace(-17.5, 17.5, y_sim.shape[0])
@@ -796,73 +726,91 @@ plt.show()
 # %% plot figure F, contour strain after photoactivation
 
 # make some calculations on the simulated data first
-epsilon_asymmetry_coefficient_all = []
-# singlet_epsilon_asymmetry_coefficient = []
+strain_ratio_d_sim = []
+strain_ratio_s_sim = []
+
 
 for fb in feedbacks:
-    epsilon = doublet_simulation["EA50"]["FB" + str(fb)]["epsilon_yy"]
-    rel_epsilon = epsilon / np.nansum(np.abs(epsilon), axis=0)
-    epsilon_asymmetry_curve = (rel_epsilon - np.flipud(rel_epsilon))
-    epsilon_asymmetry_coefficient = -np.nansum(epsilon_asymmetry_curve[0:int(epsilon_asymmetry_curve.shape[0] / 2)], axis=0)
-    epsilon_asymmetry_coefficient_all.append(epsilon_asymmetry_coefficient)
+    epsilon = doublet_simulation["EA300"]["FB" + str(fb)]["epsilon_yy"]
+    activation_front = int(epsilon.shape[0] / 2 - 10 / 35 * epsilon.shape[0])       # activation front is 10 micron away from center and the whole array spans 35 micron
+    mirror_front = int(epsilon.shape[0] / 2 + 10 / 35 * epsilon.shape[0])
+    epsilon_ratio = - np.nansum(epsilon[mirror_front:-1]) / \
+                                                (np.abs(np.nansum(epsilon[0:activation_front])) + np.abs(np.nansum(epsilon[mirror_front:-1])))
 
+    strain_ratio_d_sim.append(epsilon_ratio)
 
-# for fb in feedbacks:
-#     epsilon = singlet_simulation["EA50"]["FB" + str(fb)]["epsilon_yy"]
-#     # rel_epsilon = epsilon / np.nansum(epsilon)
-#     # epsilon_asymmetry_curve = (rel_epsilon - np.flipud(rel_epsilon)) / 2
-#     # epsilon_asymmetry_coefficient = np.nansum(np.abs(epsilon_asymmetry_curve), axis=0)
-#     # singlet_epsilon_asymmetry_coefficient.append(epsilon_asymmetry_coefficient)
-#     rel_epsilon = epsilon / np.nansum(np.abs(epsilon), axis=0)
-#     epsilon_asymmetry_curve = (rel_epsilon - np.flipud(rel_epsilon))
-#     epsilon_asymmetry_coefficient = -np.nansum(epsilon_asymmetry_curve[0:int(epsilon_asymmetry_curve.shape[0] / 2)], axis=0)
-#     singlet_epsilon_asymmetry_coefficient.append(epsilon_asymmetry_coefficient)
+for fb in feedbacks:
+    epsilon = singlet_simulation["EA300"]["FB" + str(fb)]["epsilon_yy"]
+    activation_front = int(epsilon.shape[0] / 2 - 10 / 35 * epsilon.shape[0])       # activation front is 10 micron away from center and the whole array spans 35 micron
+    mirror_front = int(epsilon.shape[0] / 2 + 10 / 35 * epsilon.shape[0])
+    epsilon_ratio = - np.nansum(epsilon[mirror_front:-1]) / \
+                                                (np.abs(np.nansum(epsilon[0:activation_front])) + np.abs(np.nansum(epsilon[mirror_front:-1])))
 
-# def find_nearest(array, value):
-#     array = np.asarray(array)
-#     idx = (np.abs(array - value)).argmin()
-#     return array[idx]
+    strain_ratio_s_sim.append(epsilon_ratio)
+
 
 def find_x_position_of_point_on_array(x_list, y_list, y_point):
     f = interp1d(y_list, x_list, kind="cubic")
     return f(y_point)
 
 
-stats_doublet = calculate_median_and_CI(df_doublet, "ASC")
-stats_singlet = calculate_median_and_CI(df_singlet, "ASC")
 
 fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
 
-ax.plot(feedbacks, epsilon_asymmetry_coefficient_all, color="grey")
-# ax.plot(feedbacks, singlet_epsilon_asymmetry_coefficient, color=colors_parent[2])
+ax.plot(feedbacks, strain_ratio_s_sim, color='gray')
 
 # add data points
-color = colors_parent[1]
-y_median = stats_doublet["median"]["AR1to1d_hs"]
-y_CI = stats_doublet["CI"]["AR1to1d_hs"]
-x = find_x_position_of_point_on_array(feedbacks, epsilon_asymmetry_coefficient_all, y_median)
-# x = 0.45
-# x_CI = find_x_position_of_point_on_line(feedbacks, doublet_epsilon_asymmetry_coefficient, y_median - y_CI) - x
-ax.errorbar(x, y_median, yerr=y_CI, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
+contour_strain_d = np.nanmean(AR1to1d_halfstim["shape_data"]["contour_strain"], axis=1)
+contour_strain_d_sem = np.nanstd(AR1to1d_halfstim["shape_data"]["contour_strain"], axis=1) / np.sqrt(
+    np.shape(AR1to1d_halfstim["shape_data"]["contour_strain"])[1])
+contour_strain_s = np.nanmean(AR1to1s_halfstim["shape_data"]["contour_strain"], axis=1)
+contour_strain_s_sem = np.nanstd(AR1to1s_halfstim["shape_data"]["contour_strain"], axis=1) / np.sqrt(
+    np.shape(AR1to1s_halfstim["shape_data"]["contour_strain"])[1])
+
+activation_front = int(contour_strain_d.shape[0] / 2 - 10 / 35 * contour_strain_d.shape[0]) # activation front ist 10 micron left of center
+mirror_front = int(contour_strain_d.shape[0] / 2 + 10 / 35 * contour_strain_d.shape[0])
+
+strain_left_d = np.nansum(contour_strain_d[0:activation_front])
+strain_right_d = np.nansum(contour_strain_d[mirror_front:-1])
+strain_right_d_max = np.nansum(contour_strain_d[mirror_front:-1] + contour_strain_d_sem[mirror_front:-1])
+strain_right_d_min = np.nansum(contour_strain_d[mirror_front:-1] - contour_strain_d_sem[mirror_front:-1])
+
+strain_left_s = np.nansum(contour_strain_s[0:activation_front])
+strain_right_s = np.nansum(contour_strain_s[mirror_front:-1])
+strain_right_s_max = np.nansum(contour_strain_s[mirror_front:-1] + contour_strain_s_sem[mirror_front:-1])
+strain_right_s_min = np.nansum(contour_strain_s[mirror_front:-1] - contour_strain_s_sem[mirror_front:-1])
+
+strain_ratio_d = - (strain_right_d) / (np.abs(strain_right_d) + np.abs(strain_left_d))
+strain_ratio_d_err = 0.5 * (strain_right_d_max - strain_right_d_min) / (np.abs(strain_right_d) + np.abs(strain_left_d))
+strain_ratio_s = - (strain_right_s) / (np.abs(strain_right_s) + np.abs(strain_left_s))
+strain_ratio_s_err = 0.5 * (strain_right_s_max - strain_right_s_min) / (np.abs(strain_right_s) + np.abs(strain_left_s))
+
+
+x = find_x_position_of_point_on_array(feedbacks, strain_ratio_d_sim, strain_ratio_d)
+ax.errorbar(x, strain_ratio_d, yerr=strain_ratio_d_err, mfc="w", color=colors_parent[1], marker="s", ms=4, linewidth=0.5, ls="none",
             markeredgewidth=0.5)
 
-color = colors_parent[2]
-y_median = stats_singlet["median"]["AR1to1s_hs"]
-y_CI = stats_singlet["CI"]["AR1to1s_hs"]
-x = find_x_position_of_point_on_array(feedbacks, epsilon_asymmetry_coefficient_all, y_median)
+x = find_x_position_of_point_on_array(feedbacks, strain_ratio_s_sim, strain_ratio_s)
+ax.errorbar(x, strain_ratio_s, yerr=strain_ratio_s_err, mfc="w", color=colors_parent[2], marker="s", ms=4, linewidth=0.5, ls="none",
+            markeredgewidth=0.5)
+
+# color = colors_parent[2]
+# y_median = stats_singlet["median"]["AR1to1s_hs"]
+# y_CI = stats_singlet["CI"]["AR1to1s_hs"]
+# x = find_x_position_of_point_on_array(feedbacks, epsilon_asymmetry_coefficient_all, y_median)
 # x = 0.35
 # x_CI = find_x_position_of_point_on_line(feedbacks, singlet_epsilon_asymmetry_coefficient, y_median - y_CI) - x
-ax.errorbar(x, y_median, yerr=y_CI, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
-            markeredgewidth=0.5)
+# ax.errorbar(x, y_median, yerr=y_CI, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
+#             markeredgewidth=0.5)
 
 # provide info on tick parameters
 ax.minorticks_on()
 ax.tick_params(direction="in", which="minor", length=3, bottom=True, top=False, left=True, right=True)
 ax.tick_params(direction="in", which="major", length=6, bottom=True, top=False, left=True, right=True)
 
-plt.xlabel("feedback")
-plt.ylabel("ASC")
-plt.title("Asymmetry coefficient")
+plt.xlabel("Contour coupling coefficient")
+plt.ylabel("Normalized strain peak of non-activated area")
+plt.title("Contour coupling")
 plt.savefig(figfolder + "F.png", dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + "F.svg", dpi=300, bbox_inches="tight")
 plt.show()
@@ -1053,3 +1001,159 @@ plt.text(-1.15, 0.378, "Cell width at x=0 $\mathrm{\mu}$m \n        after recove
 
 plt.savefig(figfolder + "SA.png", dpi=300, bbox_inches="tight")
 plt.show()
+
+# %% plot figure C1, asymmetry coefficient theory vs exp
+# def find_x_position_of_point_on_array(x_list, y_list, y_point):
+#     f = interp1d(y_list, x_list, kind="linear")
+#     return f(y_point)
+#
+#
+# # make some calculations on the simulated data first
+# sigma_ratio_all_doublet = []
+# sigma_ratio_all_singlet = []
+#
+# feedbacks_d = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+#
+# for fb in feedbacks_d:
+#     sigma = doublet_FEM_simulation["feedback" + str(fb)]["sigma_xx_x_profile_increase"]
+#     sigma_BL = np.nanmean(doublet_FEM_simulation["feedback" + str(fb)]["sigma_xx_x_profile"])
+#     SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
+#     SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
+#     sigma_ratio = SI_right * SI_left / (sigma_BL ** 2)
+#     sigma_ratio_all_doublet.append(sigma_ratio)
+#
+# feedbacks_s = [-1.0, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+#
+# for fb in feedbacks_s:
+#     sigma = singlet_FEM_simulation["feedback" + str(fb)]["sigma_xx_x_profile_increase"]
+#     sigma_BL = np.nanmean(singlet_FEM_simulation["feedback" + str(fb)]["sigma_xx_x_profile"])
+#     SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
+#     SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
+#     sigma_ratio = SI_right * SI_left / (sigma_BL ** 2)
+#     sigma_ratio_all_singlet.append(sigma_ratio)
+#
+# fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
+#
+# # ax.plot(feedbacks_s, sigma_ratio_all_singlet, color="grey")
+# # ax.plot(feedbacks_s, sigma_asymmetry_coefficient_all_singlet, color="grey")
+# # ax.plot(feedbacks_d, sigma_ratio_all_doublet, color=colors_parent[1])
+#
+# ax.plot(feedbacks_s, sigma_ratio_all_singlet, color=colors_parent[2])
+#
+# # add data points
+# color = colors_parent[1]
+# sigma = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1)  # convert to nN
+# sigma_BL = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_xx_baseline"])
+# SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
+# SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
+# # y_mean = SI_right / (SI_left + SI_right)
+# y_mean = SI_right * SI_left / (sigma_BL ** 2)
+# y_error = 0.1
+# # x = find_x_position_of_point_on_array(feedbacks_s, sigma_ratio_all_singlet, y_mean)
+# x = 0.45
+# # x_CI = find_x_position_of_point_on_line(feedbacks, doublet_sigma_asymmetry_coefficient, y_median - y_CI) - x
+# ax.errorbar(x, y_mean, yerr=y_error, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
+#             markeredgewidth=0.5)
+#
+# color = colors_parent[2]
+# sigma = np.nanmean(AR1to1s_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1)  # convert to nN
+# sigma_BL = np.nanmean(AR1to1s_halfstim["MSM_data"]["sigma_xx_baseline"])
+# SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
+# SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
+# # y_mean = SI_right / (SI_left + SI_right)
+# y_mean = SI_right * SI_left / (sigma_BL ** 2)
+#
+# y_error = 0.1
+# # x = find_x_position_of_point_on_array(feedbacks_s, sigma_ratio_all_singlet, y_mean)
+# x = -1
+# # x_CI = find_x_position_of_point_on_line(feedbacks, singlet_sigma_asymmetry_coefficient, y_median - y_CI) - x
+# ax.errorbar(x, y_mean, yerr=y_error, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
+#             markeredgewidth=0.5)
+#
+# # provide info on tick parameters
+# ax.minorticks_on()
+# ax.tick_params(direction="in", which="minor", length=3, bottom=True, top=False, left=True, right=True)
+# ax.tick_params(direction="in", which="major", length=6, bottom=True, top=False, left=True, right=True)
+#
+# plt.xlabel("stress coupling coefficient")
+# plt.ylabel("sigma_nonactivated / (|sigma_activated| + |sigma_nonactivated|")
+# plt.title("xx-Stress coupling")
+# plt.savefig(figfolder + "C2.png", dpi=300, bbox_inches="tight")
+# plt.savefig(figfolder + "C2", dpi=300, bbox_inches="tight")
+# plt.show()
+#
+#
+# # %% plot figure C2, asymmetry coefficient theory vs exp
+# def find_x_position_of_point_on_array(x_list, y_list, y_point):
+#     f = interp1d(y_list, x_list, kind="linear")
+#     return f(y_point)
+#
+#
+# # make some calculations on the simulated data first
+# sigma_ratio_all_doublet = []
+# sigma_ratio_all_singlet = []
+#
+# feedbacks_d = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+#
+# for fb in feedbacks_d:
+#     sigma = doublet_FEM_simulation["feedback" + str(fb)]["sigma_xx_x_profile_increase"]
+#     SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
+#     SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
+#     sigma_ratio = (1 + SI_right) / (1 + SI_left)
+#     sigma_ratio_all_doublet.append(sigma_ratio)
+#
+# feedbacks_s = [-1.0, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+#
+# for fb in feedbacks_s:
+#     sigma = singlet_FEM_simulation["feedback" + str(fb)]["sigma_xx_x_profile_increase"]
+#     SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
+#     SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
+#     sigma_ratio = (1 + SI_right) / (1 + SI_left)
+#     sigma_ratio_all_singlet.append(sigma_ratio)
+#
+# fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
+#
+# ax.plot(feedbacks_s, sigma_ratio_all_singlet, color="grey")
+# # ax.plot(feedbacks_s, sigma_asymmetry_coefficient_all_singlet, color="grey")
+# # ax.plot(feedbacks_d, sigma_ratio_all_doublet, color=colors_parent[1])
+# # ax.plot(feedbacks_s, sigma_asymmetry_coefficient_all_singlet, color=colors_parent[2])
+#
+# # add data points
+# color = colors_parent[1]
+# sigma = np.nanmean(AR1to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1)  # convert to nN
+# SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
+# SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
+# # y_mean = SI_right / (SI_left + SI_right)
+# y_mean = (1 + SI_right) / (1 + SI_left)
+# y_error = 0.1
+# # x = find_x_position_of_point_on_array(feedbacks_s, sigma_ratio_all_singlet, y_mean)
+# x = 0.45
+# # x_CI = find_x_position_of_point_on_line(feedbacks, doublet_sigma_asymmetry_coefficient, y_median - y_CI) - x
+# # ax.errorbar(x, y_mean, yerr=y_error, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
+# #             markeredgewidth=0.5)
+#
+# color = colors_parent[2]
+# sigma = np.nanmean(AR1to1s_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1)  # convert to nN
+# SI_left = np.nansum(sigma[0:int(sigma.shape[0] / 2)])
+# SI_right = np.nansum(sigma[int(sigma.shape[0] / 2):-1])
+# # y_mean = SI_right / (SI_left + SI_right)
+# y_mean = SI_right / (np.abs(SI_left) + np.abs(SI_right))
+#
+# y_error = 0.1
+# # x = find_x_position_of_point_on_array(feedbacks_s, sigma_ratio_all_singlet, y_mean)
+# x = 0.35
+# # x_CI = find_x_position_of_point_on_line(feedbacks, singlet_sigma_asymmetry_coefficient, y_median - y_CI) - x
+# # ax.errorbar(x, y_mean, yerr=y_error, mfc="w", color=color, marker="s", ms=4, linewidth=0.5, ls="none",
+# #             markeredgewidth=0.5)
+#
+# # provide info on tick parameters
+# ax.minorticks_on()
+# ax.tick_params(direction="in", which="minor", length=3, bottom=True, top=False, left=True, right=True)
+# ax.tick_params(direction="in", which="major", length=6, bottom=True, top=False, left=True, right=True)
+#
+# plt.xlabel("stress coupling coefficient")
+# plt.ylabel("sigma_nonactivated / (|sigma_activated| + |sigma_nonactivated|")
+# plt.title("xx-Stress coupling")
+# plt.savefig(figfolder + "C1.png", dpi=300, bbox_inches="tight")
+# plt.savefig(figfolder + "C1", dpi=300, bbox_inches="tight")
+# plt.show()
