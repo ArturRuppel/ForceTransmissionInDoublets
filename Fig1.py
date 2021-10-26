@@ -428,8 +428,8 @@ ymin = -1                               # minimum value on y-axis
 ymax = 1                                # maximum value on y-axis
 yticks = np.arange(-1, 1.1, 0.5)        # define where to put major ticks on y-axis
 stat_annotation_offset = 0.03           # vertical offset of statistical annotation
-ylabel = 'AIC'                          # which label to put on y-axis
-title = 'Anisotropy coefficient'        # title of plot
+ylabel = 'SAC'                          # which label to put on y-axis
+title = 'Stress anisotropy \n coefficient' # title of plot
 ylabeloffset = -5                      # adjusts distance of ylabel to the plot
 
 # make plots

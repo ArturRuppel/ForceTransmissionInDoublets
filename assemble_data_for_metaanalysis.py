@@ -11,8 +11,11 @@ import scipy.io
 from scipy import ndimage
 from skimage import transform, io
 from skimage.draw import polygon
-from skimage.morphology import closing, disk
+from skimage.morphology import closing, disk, dilation, erosion
 import matplotlib
+import matplotlib.image as mpimg
+
+
 
 
 def load_fibertracking_data(folder, fibertrackingshape, stressmapshape, noCells):
@@ -216,6 +219,73 @@ def save_actin_images_as_png(folder_old, folder_new, title, noCells, stressmapsh
             imagepath = savepath + "/cell" + str(cell) + "frame" + str(frame) + ".png"
             matplotlib.image.imsave(imagepath, image[:, :, frame], cmap="gray")
 
+def calculate_actin_intensities(folder_old, noFrames, noCells):
+    actin_intensities = np.zeros((noFrames, noCells))
+    actin_intensities_left = np.zeros((noFrames, noCells))
+    actin_intensities_right = np.zeros((noFrames, noCells))
+
+    for cell in range(noCells):
+        print('Load actin images: cell' + str(cell))
+        if cell < 9:
+            foldercellpath = folder_old + "/cell0" + str(cell + 1)
+        else:
+            foldercellpath = folder_old + "/cell" + str(cell + 1)
+
+        # read stack of actin images
+        image = io.imread(foldercellpath + '/actin_ec.tif')
+
+        # move t-axis to the last index
+        image = np.moveaxis(image, 0, -1)
+
+        # crop out a 92*8 by 92*8 window around the center
+        image = image[132:868, 132:868, :]
+
+        t_end = image.shape[2]
+
+        # load fibertracks to make mask
+        fibertracks_mat = scipy.io.loadmat(foldercellpath + "/fibertracking.mat")
+
+        Xtop = fibertracks_mat['Xtop']
+        Xright = fibertracks_mat['Xright']
+        Xbottom = fibertracks_mat['Xbottom']
+        Xleft = fibertracks_mat['Xleft']
+
+        Ytop = fibertracks_mat['Ytop']
+        Yright = fibertracks_mat['Yright']
+        Ybottom = fibertracks_mat['Ybottom']
+        Yleft = fibertracks_mat['Yleft']
+
+        t = 0
+        # a little messy way of getting masks from fibertracks
+        img1 = np.zeros((1000, 1000), dtype=bool)
+        c = np.concatenate((Xtop[:, t], Xright[:, t], Xbottom[:, 0], Xleft[:, t]))
+        r = np.concatenate((Ytop[:, t], Yright[:, t], Ybottom[:, t], Yleft[:, t]))
+        rr, cc = polygon(r, c)
+        img1[rr, cc] = 1
+
+        img2 = np.zeros((1000, 1000), dtype=bool)
+        c = np.flip(np.concatenate((Xtop[:, t], Xright[:, t], Xbottom[:, t], Xleft[:, t])), axis=0)
+        r = np.flip(np.concatenate((Ytop[:, t], Yright[:, t], Ybottom[:, t], Yleft[:, t])), axis=0)
+        rr, cc = polygon(r, c)
+        img2[rr, cc] = 1
+        img2 = np.flip(img2, axis=0)
+
+        mask = np.logical_or(img1, img2)
+        footprint = disk(20)
+
+        # crop a 92*8 by 92*8 window around center
+        mask_cropped = closing(mask[132:868, 132:868], footprint)
+
+        mask_dilated = erosion(mask_cropped, footprint)
+
+        image[~mask_dilated] = 0
+        center = int(image.shape[1] / 2)
+        actin_intensities[:, cell] = np.nansum(image, axis=(0, 1))
+        actin_intensities_left[:, cell] = np.nansum(image[:, 0:center, :], axis=(0, 1))
+        actin_intensities_right[:, cell] = np.nansum(image[:, center:-1, :], axis=(0, 1))
+
+    return actin_intensities, actin_intensities_left, actin_intensities_right
+
 
 def main(folder_old, folder_new, title, noCells, noFrames):
     stressmappixelsize = 0.864 * 10 ** -6  # in meter
@@ -225,11 +295,12 @@ def main(folder_old, folder_new, title, noCells, noFrames):
     print('Data loading of ' + title + ' started!')
     # Xtop, Xright, Xbottom, Xleft, Ytop, Yright, Ybottom, Yleft, mask = \
     #     load_fibertracking_data(folder_old, fibertrackingshape, stressmapshape, noCells)
-    sigma_xx, sigma_yy, sigma_xy, sigma_yx, Tx, Ty, Dx, Dy, actin_images = load_MSM_and_TFM_data_and_actin_images(folder_old, noCells,
-                                                                                                                  stressmapshape,
-                                                                                                                  stressmappixelsize)
+    # sigma_xx, sigma_yy, sigma_xy, sigma_yx, Tx, Ty, Dx, Dy, actin_images = load_MSM_and_TFM_data_and_actin_images(folder_old, noCells,
+    #                                                                                                               stressmapshape,
+    #                                                                                                               stressmappixelsize)
     # actin_angles = load_actin_angle_data(folder_old)
     # actin_intensity_left, actin_intensity_right = load_actin_intensity_data(folder_old)
+    actin_intensity, actin_intensity_left, actin_intensity_right = calculate_actin_intensities(folder_old, noFrames, noCells)
     # actin_images = load_actin_images(folder_old, stressmapshape, noCells)
     # save_actin_images_as_png(folder_old, folder_new, title, noCells, stressmapshape, stressmappixelsize)
     # np.save(folder_new + title + "/Xtop.npy", Xtop)
@@ -248,15 +319,20 @@ def main(folder_old, folder_new, title, noCells, noFrames):
     # np.save(folder_new + title + "/Dy.npy", Dy)
     # np.save(folder_new + title + "/Tx.npy", Tx)
     # np.save(folder_new + title + "/Ty.npy", Ty)
-    np.save(folder_new + title + "/sigma_xx.npy", sigma_xx)
-    np.save(folder_new + title + "/sigma_yy.npy", sigma_yy)
-    np.save(folder_new + title + "/sigma_xy.npy", sigma_xy)
-    np.save(folder_new + title + "/sigma_yx.npy", sigma_yx)
+    # np.save(folder_new + title + "/sigma_xx.npy", sigma_xx)
+    # np.save(folder_new + title + "/sigma_yy.npy", sigma_yy)
+    # np.save(folder_new + title + "/sigma_xy.npy", sigma_xy)
+    # np.save(folder_new + title + "/sigma_yx.npy", sigma_yx)
     #
     # np.save(folder_new + title + "/actin_angles.npy", actin_angles)
     #
-    # np.save(folder_new + title + "/actin_intensity_left.npy", actin_intensity_left)
-    # np.save(folder_new + title + "/actin_intensity_right.npy", actin_intensity_right)
+    # import matplotlib.pyplot as plt
+    # plt.plot(np.nanmean(actin_intensity, axis=1))
+    # plt.show()
+
+    np.save(folder_new + title + "/actin_intensity.npy", actin_intensity)
+    np.save(folder_new + title + "/actin_intensity_left.npy", actin_intensity_left)
+    np.save(folder_new + title + "/actin_intensity_right.npy", actin_intensity_right)
     #
     # np.save(folder_new + title + "/actin_images.npy", actin_images)
 

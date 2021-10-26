@@ -7,6 +7,10 @@ Created on Thu Jul  1 09:33:36 2021
 import os
 import pickle
 import numpy as np
+import matplotlib.image as mpimg
+
+def rgb2gray(rgb):
+    return np.dot(rgb[..., :3], [0.2989, 0.5870, 0.1140])
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from lmfit import minimize, Parameters, Model
@@ -40,6 +44,8 @@ def analyse_tfm_data(folder, stressmappixelsize):
 
     # normalize strain energy by first substracting the baseline for each cell and then dividing by the average baseline
     relEs = (Es - np.nanmean(Es[0:20], axis=0)) / np.nanmean(Es[0:20], axis=(0, 1))
+    relEs_left = (Es_left - np.nanmean(Es_left[0:20], axis=0)) / np.nanmean(Es_left[0:20], axis=(0, 1))
+    relEs_right = (Es_right - np.nanmean(Es_right[0:20], axis=0)) / np.nanmean(Es_right[0:20], axis=(0, 1))
 
     # calculate total force in x- and y-direction
     Fx = np.nansum(abs(Tx), axis=(0, 1)) * (stressmappixelsize ** 2)
@@ -103,6 +109,8 @@ def analyse_tfm_data(folder, stressmappixelsize):
 
     # calculate relative energy increase
     REI = relEs[32, :] - relEs[20, :]
+    REI_left = relEs_left[32, :] - relEs_left[20, :]
+    REI_right = relEs_right[32, :] - relEs_right[20, :]
 
     # calculate corner averages
     Fx_topleft = np.zeros((t_end, cell_end))
@@ -168,7 +176,8 @@ def analyse_tfm_data(folder, stressmappixelsize):
             "Fy_topleft": Fy_topleft, "Fy_topright": Fy_topright, "Fy_bottomright": Fy_bottomright,
             "Fy_bottomleft": Fy_bottomleft,
             "Es": Es, "Es_left": Es_left, "Es_right": Es_right, "Es_baseline": Es_baseline,
-            "relEs": relEs, "REI": REI,
+            "relEs": relEs, "relEs_left": relEs_left, "relEs_right": relEs_right,
+            "REI": REI, "REI_left": REI_left, "REI_right": REI_right,
             "Fx": Fx, "Fy": Fy, "force_angle": force_angle, "force_angle_baseline": force_angle_baseline,
             "F_cellcell": F_cellcell}
 
@@ -187,17 +196,6 @@ def analyse_msm_data(folder):
     sigma_yy[sigma_yy == 0] = 'nan'
     sigma_xy[sigma_xy == 0] = 'nan'
     sigma_yx[sigma_yx == 0] = 'nan'
-
-    # from scipy import ndimage
-    # for cell in np.arange(sigma_xx.shape[3]):
-    #     for x in np.arange(sigma_xx.shape[0]):
-    #         # lol[x,:,:,cell] = ndimage.median_filter(sigma_xx[x,:,:,cell], size=20)
-    #         sigma_xx[x,:,:,cell] = ndimage.median_filter(sigma_xx[x, :, :, cell], size=20)
-    #         # lol = ndimage.median_filter(sigma_xx[x,:,:,cell], size=3)
-    #         # plt.imshow(sigma_xx[x,:,:,cell])
-    #         # plt.show()
-    #         # plt.imshow(lol)
-    #         # plt.show()
 
     # calculate normal stress
     sigma_max = (sigma_xx + sigma_yy) / 2 + np.sqrt(((sigma_xx - sigma_yy) / 2) ** 2 + sigma_xy ** 2)
@@ -460,24 +458,28 @@ def analyse_shape_data(folder, stressmappixelsize):
 
     actin_intensity_left = np.load(folder + "/actin_intensity_left.npy")
     actin_intensity_right = np.load(folder + "/actin_intensity_right.npy")
+    actin_intensity = actin_intensity_left + actin_intensity_right
 
     # normalize actin intensities by first substracting the baseline for each cell and then dividing by the average baseline
     relactin_intensity_left = (actin_intensity_left - np.nanmean(actin_intensity_left[0:20, :], axis=0)) / np.nanmean(
         actin_intensity_left[0:20, :], axis=(0, 1))
     relactin_intensity_right = (actin_intensity_right - np.nanmean(actin_intensity_right[0:20, :], axis=0)) / np.nanmean(
         actin_intensity_right[0:20, :], axis=(0, 1))
+    relactin_intensity = (actin_intensity - np.nanmean(actin_intensity[0:20, :], axis=0)) / np.nanmean(
+        actin_intensity[0:20, :], axis=(0, 1))
 
     RAI_left = relactin_intensity_left[32, :] - relactin_intensity_left[20, :]
     RAI_right = relactin_intensity_right[32, :] - relactin_intensity_right[20, :]
+    RAI = relactin_intensity[32, :] - relactin_intensity[20, :]
 
     data = {"Xtop": Xtop, "Xbottom": Xbottom, "Ytop": Ytop, "Ybottom": Ybottom,
             "masks": masks, "cell_width_center_baseline": W_center_baseline, "cell_width_center": W_center, "relcell_width_center": relW_center, "relcell_width_center_end": relW_center_end,
             "contour_strain": epsilon, "ASC": epsilon_asymmetry_coefficient,
             "spreadingsize": spreadingsize, "spreadingsize_baseline": spreadingsize_baseline,
             "actin_angles": actin_angles,
-            "actin_intensity_left": actin_intensity_left, "actin_intensity_right": actin_intensity_right,
-            "relactin_intensity_left": relactin_intensity_left, "relactin_intensity_right": relactin_intensity_right,
-            "RAI_left": RAI_left, "RAI_right": RAI_right}
+            "actin_intensity": actin_intensity, "actin_intensity_left": actin_intensity_left, "actin_intensity_right": actin_intensity_right,
+            "relactin_intensity": relactin_intensity, "relactin_intensity_left": relactin_intensity_left, "relactin_intensity_right": relactin_intensity_right,
+            "RAI": RAI, "RAI_left": RAI_left, "RAI_right": RAI_right}
 
     return data
 

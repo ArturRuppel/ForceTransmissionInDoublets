@@ -562,7 +562,7 @@ for fb in feedbacks:
 
 
 # for fb in feedbacks:
-#     epsilon = singlet_simulation["EA50"]["FB" + str(fb)]["epsilon_yy"]
+#     epsilon = singlet_CM_simulation["EA50"]["FB" + str(fb)]["epsilon_yy"]
 #     # rel_epsilon = epsilon / np.nansum(epsilon)
 #     # epsilon_asymmetry_curve = (rel_epsilon - np.flipud(rel_epsilon)) / 2
 #     # epsilon_asymmetry_coefficient = np.nansum(np.abs(epsilon_asymmetry_curve), axis=0)

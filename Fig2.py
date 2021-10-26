@@ -354,7 +354,65 @@ axes[2].axis('off')
 fig.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
 fig.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
 plt.show()
-# %% plot figure 2D, line tension and force of adherent fiber
+
+# %% plot figure 2D, Correlation plots of sigma_MSM and sigma_CM
+
+# define plot parameters that are valid for the whole figure
+# ******************************************************************************************************************************************
+colors = [colors_parent[1], colors_parent[2]]  # defines colors for scatterplot
+fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(4.5, 2))  # create figure instance
+plt.subplots_adjust(wspace=0.3, hspace=0.3)  # adjust space in between plots
+
+# Set up plot parameters for first panel
+#######################################################################################################
+x = 'sigma_xx_baseline'
+y = 'sigma_x_baseline'
+hue = 'keys'
+ax = axes[0]
+xmin = 0
+xmax = 20
+ymin = 0
+ymax = 20
+xticks = np.arange(0, 20.1, 5)
+yticks = np.arange(0, 20.1, 5)
+xlabel = '$\mathrm{\sigma_{x, MSM}}$'
+ylabel = '$\mathrm{\sigma_{x, CM}}$'
+
+corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
+
+
+# annotate pearson R and p-value
+plt.text(0.6 * xmax, 0.075 * ymax, 'R = ' + str(round(corr, 2)))
+
+# Set up plot parameters for second panel
+#######################################################################################################
+x = 'sigma_yy_baseline'
+y = 'sigma_y_baseline'
+hue = 'keys'
+ax = axes[1]
+xmin = 0
+xmax = 10
+ymin = 0
+ymax = 10
+xticks = np.arange(0, 10.1, 5)
+yticks = np.arange(0, 10.1, 5)
+xlabel = '$\mathrm{\sigma_{y, MSM}}$'
+ylabel = '$\mathrm{\sigma_{y, CM}}$'
+
+corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
+
+
+# annotate pearson R and p-value
+plt.text(0.6 * xmax, 0.075 * ymax, 'R = ' + str(round(corr, 2)))
+
+plt.suptitle('MSM stresses vs. CM surface tensions')
+
+plt.savefig(figfolder + 'D.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'D.svg', dpi=300, bbox_inches="tight")
+plt.show()
+
+
+# %% plot figure 2E, line tension and force of adherent fiber
 
 # define plot parameters that are valid for the whole figure
 # ******************************************************************************************************************************************
@@ -398,66 +456,7 @@ title = 'Force of adherent fiber'  # title of plot
 make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 # # save plot to file
-plt.savefig(figfolder + 'D.png', dpi=300, bbox_inches="tight")
-plt.savefig(figfolder + 'D.svg', dpi=300, bbox_inches="tight")
-plt.show()
-
-# %% plot figure 2E, Correlation plots of sigma_MSM and sigma_CM
-
-# define plot parameters that are valid for the whole figure
-# ******************************************************************************************************************************************
-colors = [colors_parent[1], colors_parent[2]]  # defines colors for scatterplot
-fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(4.5, 2))  # create figure instance
-plt.subplots_adjust(wspace=0.3, hspace=0.3)  # adjust space in between plots
-
-# Set up plot parameters for first panel
-#######################################################################################################
-x = 'sigma_xx_baseline'
-y = 'sigma_x_baseline'
-hue = 'keys'
-ax = axes[0]
-xmin = 0
-xmax = 20
-ymin = 0
-ymax = 20
-xticks = np.arange(0, 20.1, 5)
-yticks = np.arange(0, 20.1, 5)
-xlabel = '$\mathrm{\sigma_{x, MSM}}$'
-ylabel = '$\mathrm{\sigma_{x, CM}}$'
-
-corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
-
-# add line with slope 1 for visualisation
-ax.plot([xmin, xmax], [ymin, ymax], linewidth=0.5, linestyle=':', color='grey')
-
-# annotate pearson R and p-value
-plt.text(0.6 * xmax, 0.075 * ymax, 'R = ' + str(round(corr, 2)))
-
-# Set up plot parameters for second panel
-#######################################################################################################
-x = 'sigma_yy_baseline'
-y = 'sigma_y_baseline'
-hue = 'keys'
-ax = axes[1]
-xmin = 0
-xmax = 10
-ymin = 0
-ymax = 10
-xticks = np.arange(0, 10.1, 5)
-yticks = np.arange(0, 10.1, 5)
-xlabel = '$\mathrm{\sigma_{y, MSM}}$'
-ylabel = '$\mathrm{\sigma_{y, CM}}$'
-
-corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
-
-# add line with slope 1 for visualisation
-ax.plot([xmin, xmax], [ymin, ymax], linewidth=0.5, linestyle=':', color='grey')
-
-# annotate pearson R and p-value
-plt.text(0.6 * xmax, 0.075 * ymax, 'R = ' + str(round(corr, 2)))
-
-plt.suptitle('MSM stresses vs. CM surface tensions')
-
 plt.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'E.svg', dpi=300, bbox_inches="tight")
 plt.show()
+
