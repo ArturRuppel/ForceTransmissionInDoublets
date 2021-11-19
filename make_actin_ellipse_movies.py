@@ -65,6 +65,71 @@ def plot_actin_image_forces_ellipses_tracking_tangents(actin_image, x, y, Tx, Ty
     ax.axis('off')
 
     return sm
+
+def plot_actin_image_forces_ellipses_tracking_tangents_with_scalebar(actin_image, x, y, Tx, Ty, T, a_top, b_top, a_bottom, b_bottom,
+                                                       tx_topleft, ty_topleft, tx_topright, ty_topright, tx_bottomleft, ty_bottomleft,
+                                                       tx_bottomright, ty_bottomright,
+                                                       xc_top, yc_top, xc_bottom, yc_bottom, x_tracking_top, y_tracking_top,
+                                                       x_tracking_bottom, y_tracking_bottom,
+                                                       xc_topleft, yc_topleft, xc_topright, yc_topright, xc_bottomleft, yc_bottomleft,
+                                                       xc_bottomright, yc_bottomright, ax, extent, pixelsize, frame):
+    norm = mpl.colors.Normalize()
+    norm.autoscale([0, 2])
+    colormap = mpl.cm.turbo
+    sm = mpl.cm.ScalarMappable(cmap=colormap, norm=norm)
+    sm.set_array([])
+
+    # plot actin image
+    ax.imshow(actin_image, cmap=plt.get_cmap("Greys"), interpolation="bilinear", extent=extent, aspect=(1))
+
+    # plot forces
+    ax.quiver(x, y, Tx, Ty, angles='xy', scale_units='xy', scale=0.2, color=colormap(norm(T)))
+
+    # plot ellipses
+    t = np.linspace(0, 2 * np.pi, 100)
+    ax.plot(xc_top + a_top * np.cos(t), yc_top + b_top * np.sin(t), color=colors_parent[2], linewidth=2)
+    t = np.linspace(0, 2 * np.pi, 100)
+    ax.plot(xc_bottom + a_bottom * np.cos(t), yc_bottom + b_bottom * np.sin(t), color=colors_parent[2], linewidth=2)
+
+    # plot tracking data
+    ax.plot(x_tracking_top[::2], y_tracking_top[::2],
+             color=colors_parent[0], marker='o', markerfacecolor='none', markersize=4, markeredgewidth=1, linestyle='none')
+    ax.plot(x_tracking_bottom[::2], y_tracking_bottom[::2],
+             color=colors_parent[0], marker='o', markerfacecolor='none', markersize=4, markeredgewidth=1, linestyle='none')
+
+    # plot tangents
+    ax.plot([xc_topleft, xc_topleft + 150 * tx_topleft], [yc_topleft, yc_topleft + 150 * ty_topleft],
+            color='white', linewidth=2, linestyle=':')
+    ax.plot([xc_topright, xc_topright + 150 * tx_topright], [yc_topright, yc_topright + 150 * ty_topright],
+            color='white', linewidth=2, linestyle=':')
+    ax.plot([xc_bottomleft, xc_bottomleft + 150 * tx_bottomleft], [yc_bottomleft, yc_bottomleft + 150 * ty_bottomleft],
+            color='white', linewidth=2, linestyle=':')
+    ax.plot([xc_bottomright, xc_bottomright + 150 * tx_bottomright], [yc_bottomright, yc_bottomright + 150 * ty_bottomright],
+            color='white', linewidth=2, linestyle=':')
+
+    ax.set_xlim([-0.1 * extent[1], 1.1 * extent[1]])
+    ax.set_ylim([-0.1 * extent[3], 1.1 * extent[3]])
+
+    # ax.axis('off')
+
+    x_end = extent[1]
+
+    # add time label
+    xpos = x_end / 30
+    ypos = x_end - x_end / 12
+
+    if frame < 10:
+        plt.text(xpos, ypos, "00:0" + str(frame) + "min", color="black")
+    else:
+        plt.text(xpos, ypos, "00:" + str(frame) + "min", color="black")
+
+    # draw a bar of 10 micron width
+    plt.text(xpos, 2 * xpos, "10 µm", color="black")
+    rect = mpl.patches.Rectangle((xpos, xpos / 10), 10 / pixelsize, 1 / pixelsize, edgecolor='black', facecolor="black")
+    ax.add_patch(rect)
+
+    return sm
+
 def make_actin_ellipse_plots(data_TFM, data_CM, cell, cell_image, frame,  pixelsize, initial_pixelsize, title):
     Tx = data_TFM["TFM_data"]["Tx"][:, :, frame, cell]
     Ty = data_TFM["TFM_data"]["Ty"][:, :, frame, cell]
@@ -115,8 +180,8 @@ def make_actin_ellipse_plots(data_TFM, data_CM, cell, cell_image, frame,  pixels
     T = np.sqrt(Tx ** 2 + Ty ** 2)
 
     # crop force maps and actin images
-    crop_start = 14
-    crop_end = 78
+    crop_start = 4
+    crop_end = 88
 
     Tx_crop = Tx[crop_start:crop_end, crop_start:crop_end] * 1e-3
     Ty_crop = Ty[crop_start:crop_end, crop_start:crop_end] * 1e-3
@@ -169,15 +234,15 @@ def make_actin_ellipse_plots(data_TFM, data_CM, cell, cell_image, frame,  pixels
     Ty = Ty_crop[::n, ::n].flatten()
     T = T_crop[::n, ::n].flatten()
 
-    fig, ax = plt.subplots(figsize=(3, 3))
+    fig, ax = plt.subplots(figsize=(3.7, 3))
 
-    sm=plot_actin_image_forces_ellipses_tracking_tangents(actin_image_crop, x, y, Tx, Ty, T, a_top, b_top, a_bottom, b_bottom,
+    sm=plot_actin_image_forces_ellipses_tracking_tangents_with_scalebar(actin_image_crop, x, y, Tx, Ty, T, a_top, b_top, a_bottom, b_bottom,
                                                        tx_topleft, ty_topleft, tx_topright, ty_topright, tx_bottomleft, ty_bottomleft,
                                                        tx_bottomright, ty_bottomright,
                                                        xc_top, yc_top, xc_bottom, yc_bottom, x_tracking_top, y_tracking_top, x_tracking_bottom,
                                                        y_tracking_bottom,
                                                        xc_topleft, yc_topleft, xc_topright, yc_topright, xc_bottomleft, yc_bottomleft,
-                                                       xc_bottomright, yc_bottomright, ax, extent)
+                                                       xc_bottomright, yc_bottomright, ax, extent, pixelsize, frame)
 
     cbar = plt.colorbar(sm, ax=ax)
     cbar.ax.set_title(axtitle)
@@ -210,14 +275,17 @@ def main(folder, title, datafile):
             make_actin_ellipse_plots(data_TFM, data_CM, cell, cell_image, frame, pixelsize, initial_pixelsize, title)
 
         # make movies out of images
-        inputfile = folder + title + "/actin_images/_ellipses_cell" + str(cell) + "frame%01d.png"
-
-        outputfile = folder + title + "/actin_images/_ellipses_cell" + str(cell) + ".mp4"
-        os.system("ffmpeg -r 10 -i " + inputfile + " -vcodec mpeg4 -y " + outputfile)
+        # inputfile = folder + title + "/actin_images/_ellipses_cell" + str(cell) + "frame%01d.png"
+        #
+        # outputfile = folder + title + "/actin_images/_ellipses_cell" + str(cell) + ".mp4"
+        # os.system("ffmpeg -r 10 -i " + inputfile + " -vcodec mpeg4 -y " + outputfile)
 
         image_files = []
         for frame in range(frame_end):
             image_files.append(folder + title + "/actin_images/_ellipses_cell" + str(cell) + "frame" + str(frame) + ".png")
+
+        clip = moviepy.video.io.ImageSequenceClip.ImageSequenceClip(image_files, fps=20)
+        clip.write_gif(folder + title + "/actin_images/_ellipses_cell" + str(cell) + ".gif", fps=20)
 
         for img in image_files:
             os.remove(img)
@@ -227,10 +295,10 @@ def main(folder, title, datafile):
 if __name__ == "__main__":
     folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
 
-    main(folder, "AR1to1_doublets_full_stim_long", "AR1to1d_fullstim_long")
-    main(folder, "AR1to1_singlets_full_stim_long", "AR1to1s_fullstim_long")
-    main(folder, "AR1to1_doublets_full_stim_short", "AR1to1d_fullstim_short")
-    main(folder, "AR1to1_singlets_full_stim_short", "AR1to1s_fullstim_short")
+    # main(folder, "AR1to1_doublets_full_stim_long", "AR1to1d_fullstim_long")
+    # main(folder, "AR1to1_singlets_full_stim_long", "AR1to1s_fullstim_long")
+    # main(folder, "AR1to1_doublets_full_stim_short", "AR1to1d_fullstim_short")
+    # main(folder, "AR1to1_singlets_full_stim_short", "AR1to1s_fullstim_short")
     main(folder, "AR1to2_doublets_half_stim", "AR1to2d_halfstim")
     main(folder, "AR1to1_doublets_half_stim", "AR1to1d_halfstim")
     main(folder, "AR1to1_singlets_half_stim", "AR1to1s_halfstim")

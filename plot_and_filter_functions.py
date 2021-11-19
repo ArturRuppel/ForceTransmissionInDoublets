@@ -190,7 +190,7 @@ def make_box_and_swarmplots(x, y, df, ax, ymin, ymax, yticks, xticklabels, ylabe
 
 
 def plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors,
-                             titleoffset=3.5, optolinewidth=0.1, xlabeloffset=1, ylabeloffset=1, xmax=False):
+                             titleoffset=3.5, optolinewidth=0.1, xlabeloffset=1, ylabeloffset=1, xmin=False, xmax=False):
     y_mean = np.nanmean(y, axis=1)
     y_std = np.nanstd(y, axis=1)
     y_sem = y_std / np.sqrt(np.shape(y)[1])
@@ -214,11 +214,18 @@ def plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, t
 
     # set limits
     ax.set_ylim(ymin=ymin, ymax=ymax)
-    ax.set_xlim(xmin=min(x))
+
+    if xmax == False:
+        ax.set_xlim(xmin=min(x) + 1e-1)
+    else:
+        ax.set_xlim(xmin=xmin + 1e-1)
+
     if xmax == False:
         ax.set_xlim(xmax=max(x) + 1e-1)
     else:
         ax.set_xlim(xmax=xmax + 1e-1)
+
+
     try:
         # add anotations for opto pulses
         for i in np.arange(10):

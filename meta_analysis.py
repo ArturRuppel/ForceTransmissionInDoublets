@@ -456,6 +456,8 @@ def analyse_shape_data(folder, stressmappixelsize):
     # load average actin angles
     actin_angles = np.load(folder + "/actin_angles.npy").squeeze(axis=0)
 
+    actin_anisotropy_coefficient = (np.cos(np.deg2rad(actin_angles)) - np.sin(np.deg2rad(actin_angles))) / (np.cos(np.deg2rad(actin_angles)) + np.sin(np.deg2rad(actin_angles)))
+
     actin_intensity_left = np.load(folder + "/actin_intensity_left.npy")
     actin_intensity_right = np.load(folder + "/actin_intensity_right.npy")
     actin_intensity = actin_intensity_left + actin_intensity_right
@@ -476,7 +478,7 @@ def analyse_shape_data(folder, stressmappixelsize):
             "masks": masks, "cell_width_center_baseline": W_center_baseline, "cell_width_center": W_center, "relcell_width_center": relW_center, "relcell_width_center_end": relW_center_end,
             "contour_strain": epsilon, "ASC": epsilon_asymmetry_coefficient,
             "spreadingsize": spreadingsize, "spreadingsize_baseline": spreadingsize_baseline,
-            "actin_angles": actin_angles,
+            "actin_angles": actin_angles, "actin_anisotropy_coefficient": actin_anisotropy_coefficient,
             "actin_intensity": actin_intensity, "actin_intensity_left": actin_intensity_left, "actin_intensity_right": actin_intensity_right,
             "relactin_intensity": relactin_intensity, "relactin_intensity_left": relactin_intensity_left, "relactin_intensity_right": relactin_intensity_right,
             "RAI": RAI, "RAI_left": RAI_left, "RAI_right": RAI_right}

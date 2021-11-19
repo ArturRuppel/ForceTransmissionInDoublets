@@ -334,26 +334,31 @@ yy_stress_increase_ratio_d_err = (SI_yy_right_d_err * SI_yy_left_d + SI_yy_left_
 
 
 x = find_x_position_of_point_on_array(feedbacks, xx_stress_increase_ratio_sim, xx_stress_increase_ratio_d)
-xlo = find_x_position_of_point_on_array(feedbacks, xx_stress_increase_ratio_sim, xx_stress_increase_ratio_d - xx_stress_increase_ratio_d_err)
-xhi = find_x_position_of_point_on_array(feedbacks, xx_stress_increase_ratio_sim, xx_stress_increase_ratio_d + xx_stress_increase_ratio_d_err)
-x_err = np.zeros((2, 1))
-x_err[0] = xlo - x
-x_err[1] = xhi - x
+# xlo = find_x_position_of_point_on_array(feedbacks, xx_stress_increase_ratio_sim, xx_stress_increase_ratio_d - xx_stress_increase_ratio_d_err)
+# xhi = find_x_position_of_point_on_array(feedbacks, xx_stress_increase_ratio_sim, xx_stress_increase_ratio_d + xx_stress_increase_ratio_d_err)
+# x_err = np.zeros((2, 1))
+# x_err[0] = xlo - x
+# x_err[1] = xhi - x
 
-axes[0].errorbar(x, xx_stress_increase_ratio_d, xerr=x_err, yerr=xx_stress_increase_ratio_d_err, mfc="w", color=color, marker="s", ms=3, linewidth=0.5,
+axes[0].errorbar(x, xx_stress_increase_ratio_d, yerr=xx_stress_increase_ratio_d_err, mfc="w", color=color, marker="s", ms=5, linewidth=0.5,
             ls="none",
             markeredgewidth=0.5)
 
 x = find_x_position_of_point_on_array(feedbacks, yy_stress_increase_ratio_sim, yy_stress_increase_ratio_d)
-xlo = find_x_position_of_point_on_array(feedbacks, yy_stress_increase_ratio_sim, yy_stress_increase_ratio_d - yy_stress_increase_ratio_d_err)
-xhi = find_x_position_of_point_on_array(feedbacks, yy_stress_increase_ratio_sim, yy_stress_increase_ratio_d + yy_stress_increase_ratio_d_err)
-x_err = np.zeros((2, 1))
-x_err[0] = xlo - x
-x_err[1] = xhi - x
+# xlo = find_x_position_of_point_on_array(feedbacks, yy_stress_increase_ratio_sim, yy_stress_increase_ratio_d - yy_stress_increase_ratio_d_err)
+# xhi = find_x_position_of_point_on_array(feedbacks, yy_stress_increase_ratio_sim, yy_stress_increase_ratio_d + yy_stress_increase_ratio_d_err)
+# x_err = np.zeros((2, 1))
+# x_err[0] = xlo - x
+# x_err[1] = xhi - x
 
-axes[1].errorbar(x, yy_stress_increase_ratio_d, xerr=x_err, yerr=yy_stress_increase_ratio_d_err, mfc="w", color=color, marker="s", ms=3, linewidth=0.5,
+axes[1].errorbar(x, yy_stress_increase_ratio_d, yerr=yy_stress_increase_ratio_d_err, mfc="w", color=color, marker="s", ms=5, linewidth=0.5,
             ls="none",
             markeredgewidth=0.5)
+
+# set labels and titles
+axes[1].set_xlabel(xlabel="Degree of active coupling")
+axes[0].set_title(label="$\mathrm{\sigma _ {xx}}$")
+axes[1].set_title(label="$\mathrm{\sigma _ {yy}}$")
 
 # provide info on tick parameters
 for ax in axes.flat:
@@ -361,7 +366,6 @@ for ax in axes.flat:
     ax.tick_params(direction="in", which="minor", length=3, bottom=True, top=False, left=True, right=True)
     ax.tick_params(direction="in", which="major", length=6, bottom=True, top=False, left=True, right=True)
     ax.xaxis.set_ticks(xticks)
-    ax.set_xlabel(xlabel="Degree of active coupling")
     ax.axvline(x=0, ymin=0, ymax=1, linewidth=0.5, color="grey", linestyle="--")
 
 # plt.ylabel("Normalized xx-stress increase of \n non-activated area")
@@ -510,7 +514,7 @@ plt.savefig(figfolder + "E.png", dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + "E.svg", dpi=300, bbox_inches="tight")
 plt.show()
 
-# %% plot figure F, contour strain after photoactivation
+# %% plot figure F, active coupling of contour
 
 # make some calculations on the simulated data first
 strain_ratio_d_sim = []
@@ -556,7 +560,7 @@ strain_ratio_d_err = (strain_right_d_err * strain_left_d + strain_left_d_err * s
 
 
 x = find_x_position_of_point_on_array(feedbacks, strain_ratio_d_sim, strain_ratio_d)
-ax.errorbar(x, strain_ratio_d, yerr=strain_ratio_d_err, mfc="w", color=colors_parent[1], marker="s", ms=3, linewidth=0.5, ls="none",
+ax.errorbar(x, strain_ratio_d, yerr=strain_ratio_d_err, mfc="w", color=colors_parent[1], marker="s", ms=5, linewidth=0.5, ls="none",
             markeredgewidth=0.5)
 
 ax.axvline(x=0, ymin=0, ymax=1, linewidth=0.5, color="grey", linestyle="--")
