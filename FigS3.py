@@ -308,7 +308,7 @@ plt.text(0.24, 0.455, 'n=' + str(n_s_fullstim), transform=plt.figure(1).transFig
 
 # draw pattern
 for ax in axes.flat:
-    draw_pattern(ax)
+    draw_pattern_1to1(ax)
 
 fig.savefig(figfolder + 'A.png', dpi=300, bbox_inches="tight")
 fig.savefig(figfolder + 'A.svg', dpi=300, bbox_inches="tight")
@@ -387,7 +387,7 @@ plt.text(0.24, 0.455, 'n=' + str(n_d_fullstim), transform=plt.figure(1).transFig
 
 # draw pattern
 for ax in axes.flat:
-    draw_pattern(ax)
+    draw_pattern_1to1(ax)
 
 # save figure
 fig.savefig(figfolder + 'B.png', dpi=300, bbox_inches="tight")
@@ -548,7 +548,7 @@ plt.figure(1).text(0.24, 0.46, "n=" + str(n_s_fullstim))
 
 # draw pattern
 for ax in axes.flat:
-    draw_pattern(ax)
+    draw_pattern_1to1(ax)
 
 # save figure
 fig.savefig(figfolder + 'D.png', dpi=300, bbox_inches="tight")

@@ -169,7 +169,7 @@ cbar.ax.set_title(axtitle)
 
 # draw pattern
 for ax in axes.flat:
-    draw_pattern(ax)
+    draw_pattern_1to1(ax)
 
 # save figure
 fig.savefig(figfolder + "A.png", dpi=300, bbox_inches="tight")

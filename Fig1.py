@@ -175,7 +175,7 @@ plt.text(0.55, 0.83, 'n=' + str(n_doublets), transform=plt.figure(1).transFigure
 
 # draw pattern
 for ax in axes.flat:
-    draw_pattern(ax, color="grey")
+    draw_pattern_1to1(ax, color="grey")
 
 fig.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
 fig.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
@@ -257,7 +257,7 @@ plt.text(0.55, 0.83, 'n=' + str(n_doublets), transform=plt.figure(1).transFigure
 
 # draw pattern
 for ax in axes.flat:
-    draw_pattern(ax, color="grey")
+    draw_pattern_1to1(ax, color="grey")
 
 # save figure
 fig.savefig(figfolder + 'D1.png', dpi=300, bbox_inches="tight")
@@ -338,7 +338,7 @@ plt.text(0.55, 0.83, 'n=' + str(n_doublets), transform=plt.figure(1).transFigure
 
 # draw pattern
 for ax in axes.flat:
-    draw_pattern(ax, color="grey")
+    draw_pattern_1to1(ax, color="grey")
 
 # save figure
 fig.savefig(figfolder + 'D2.png', dpi=300, bbox_inches="tight")

@@ -215,24 +215,25 @@ def analyze_FEM_data(FEM_data, pixelsize):
 
 
 if __name__ == "__main__":
-    directory = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FEM_simulations/2to1/"
-    filename = "stress_feedbacks_"
-    x_key = ":0"
-    y_key = ":1"
+    directory = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FEM_simulations/tissues_up/"
+    filename = "stresses_feedbacks_"
+    x_key = ":1"
+    y_key = ":0"
     FEM_data = {}  # initialize dictionary
-    x_start = -22.5  # left most x-value in micron
-    x_end = 22.5  # right most x-value in micron
-    y_start = -22.5  # left most y-value in micron
-    y_end = 22.5  # right most y-value in micron
-    pixelsize = 0.864  # desired final pixelsize in micron per pixel
+    x_start = -20  # left most x-value in micron
+    x_end = 20  # right most x-value in micron
+    y_start = -75  # left most y-value in micron
+    y_end = 75 # right most y-value in micron
+    pixelsize = 1.296  # desired final pixelsize in micron per pixel
     no_frames = 60
-    grid_x, grid_y = np.mgrid[x_start:x_end:(x_end - x_start) / pixelsize * 1j, y_start:y_end:(y_end - y_start) / pixelsize * 1j]
+    grid_y, grid_x = np.mgrid[y_start:y_end:(y_end - y_start) / pixelsize * 1j, x_start:x_end:(x_end - x_start) / pixelsize * 1j]
+    # grid_x, grid_y = np.mgrid[y_start:y_end:(y_end -y_start) / pixelsize * 1j, x_start:x_end:(x_end - x_start) / pixelsize * 1j]
     shortcut = False
 
     if shortcut == False:
         # feedbacks = [1.0]
-        # feedbacks = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        feedbacks = [-1.0, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        feedbacks = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        # feedbacks = [-1.0, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
         for feedback in feedbacks:
             print("Reading data from feedback: " + str(feedback))
@@ -285,11 +286,11 @@ if __name__ == "__main__":
             FEM_data["feedback" + str(feedback)] = temp_dict
     elif shortcut == True:
         FEM_data = pickle.load(
-            open("C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FEM_simulations/FEM_2to1.dat", "rb"))
+            open("C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FEM_simulations/FEM_tissues_up.dat", "rb"))
 
     FEM_data = analyze_FEM_data(FEM_data, pixelsize)
 
-    with open("C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FEM_simulations/FEM_2to1.dat", 'wb') as outfile:
+    with open("C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FEM_simulations/FEM_tissues_up.dat", 'wb') as outfile:
         pickle.dump(FEM_data, outfile, protocol=pickle.HIGHEST_PROTOCOL)
     # sigma_avg_norm_diff = (sigma_xx_as + sigma_yy_as) / 2 - (sigma_xx_bs + sigma_yy_bs) / 2
 

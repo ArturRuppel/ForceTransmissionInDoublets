@@ -11,10 +11,10 @@ import scipy.stats as st
 
 plt.rcParams['font.size'] = 8
 # plt.rcParams.update({"text.usetex": True})
-mpl.rcParams['mathtext.fontset'] = 'custom'
-mpl.rcParams['mathtext.rm'] = 'Bitstream Vera Sans'
-mpl.rcParams['mathtext.it'] = 'Bitstream Vera Sans:italic'
-mpl.rcParams['mathtext.bf'] = 'Bitstream Vera Sans:bold'
+# mpl.rcParams['mathtext.fontset'] = 'custom'
+# mpl.rcParams['mathtext.rm'] = 'Bitstream Vera Sans'
+# mpl.rcParams['mathtext.it'] = 'Bitstream Vera Sans:italic'
+# mpl.rcParams['mathtext.bf'] = 'Bitstream Vera Sans:bold'
 
 def plot_forcemaps(ax, forcemap_x, forcemap_y, pixelsize, pmax, pmin, n=2, scale=10):
     x_end = np.shape(forcemap_x)[1]  # create x- and y-axis for plotting maps
@@ -53,12 +53,67 @@ def plot_stressmaps(ax, stressmap, pixelsize, pmax, pmin, cmap="turbo"):
 
     return im
 
-def draw_pattern(ax, color="grey"):
+def draw_pattern_1to2(ax, color="grey"):
+    # draw pattern over the TFM maps
+    # define coordinates of pattern in undeformed coordinate system
+    # coord = [[-22.5, -22.5], [22.5, -22.5], [22.5, 22.5], [-22.5, 22.5]]
+    coords = [[-33.5, 17], [-26.5, 17], [-26.5, 3.5], [26.5, 3.5], [26.5, 17], [33.5, 17],
+              [33.5, -17], [26.5, -17], [26.5, -3.5], [-26.5, -3.5], [-26.5, -17], [-33.5, -17]]
+    coords.append(coords[0])  # repeat the first point to create a 'closed loop'
+    coords_warped = []
+
+    # deform by 0.5 micron, which is the approximate deformation in the corners induced by the cells
+    for coord in coords:
+        coord_warped = []
+        if coord[0] > 0:
+            coord_warped.append(coord[0] - 0.5)
+        elif coord[0] < 0:
+            coord_warped.append(coord[0] + 0.5)
+        if coord[1] > 0:
+            coord_warped.append(coord[1] - 0.5)
+        elif coord[1] < 0:
+            coord_warped.append(coord[1] + 0.5)
+
+        coords_warped.append(coord_warped)
+
+    xs, ys = zip(*coords_warped)  # create lists of x and y values
+
+    ax.plot(xs, ys, color=color, linestyle="dashed", alpha=0.5)
+
+
+def draw_pattern_1to1(ax, color="grey"):
     # draw pattern over the TFM maps
     # define coordinates of pattern in undeformed coordinate system
     # coord = [[-22.5, -22.5], [22.5, -22.5], [22.5, 22.5], [-22.5, 22.5]]
     coords = [[-23.5, 23.5], [-16.5, 23.5], [-16.5, 3.5], [16.5, 3.5], [16.5, 23.5], [23.5, 23.5],
-              [23.5, -23.5], [23.5, -23.5], [16.5, -23.5], [16.5, -3.5], [-16.5, -3.5], [-16.5, -23.5], [-23.5, -23.5]]
+              [23.5, -23.5], [16.5, -23.5], [16.5, -3.5], [-16.5, -3.5], [-16.5, -23.5], [-23.5, -23.5]]
+    coords.append(coords[0])  # repeat the first point to create a 'closed loop'
+    coords_warped = []
+
+    # deform by 0.5 micron, which is the approximate deformation in the corners induced by the cells
+    for coord in coords:
+        coord_warped = []
+        if coord[0] > 0:
+            coord_warped.append(coord[0] - 0.5)
+        elif coord[0] < 0:
+            coord_warped.append(coord[0] + 0.5)
+        if coord[1] > 0:
+            coord_warped.append(coord[1] - 0.5)
+        elif coord[1] < 0:
+            coord_warped.append(coord[1] + 0.5)
+
+        coords_warped.append(coord_warped)
+
+    xs, ys = zip(*coords_warped)  # create lists of x and y values
+
+    ax.plot(xs, ys, color=color, linestyle="dashed", alpha=0.5)
+
+def draw_pattern_2to1(ax, color="grey"):
+    # draw pattern over the TFM maps
+    # define coordinates of pattern in undeformed coordinate system
+    # coord = [[-22.5, -22.5], [22.5, -22.5], [22.5, 22.5], [-22.5, 22.5]]
+    coords = [[-17, 33.5], [-10, 33.5], [-10, 3.5], [10, 3.5], [10, 33.5], [17, 33.5],
+              [17, -33.5], [10, -33.5], [10, -3.5], [-10, -3.5], [-10, -33.5], [-17, -33.5]]
     coords.append(coords[0])  # repeat the first point to create a 'closed loop'
     coords_warped = []
 

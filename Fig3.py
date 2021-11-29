@@ -327,7 +327,7 @@ plt.figure(1).text(0.24, 0.46, "n=" + str(n_s_halfstim))
 
 # draw pattern
 for ax in axes.flat:
-    draw_pattern(ax)
+    draw_pattern_1to1(ax)
 
 # save figure
 fig.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
@@ -481,7 +481,7 @@ plt.text(-5, 20, "n=" + str(n_s_halfstim))
 
 # draw pattern
 for ax in axes.flat:
-    draw_pattern(ax)
+    draw_pattern_1to1(ax)
 
 # save figure
 fig.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")

@@ -127,6 +127,10 @@ im = plot_forcemaps(axes[0], Tx_1to2d_average_crop, Ty_1to2d_average_crop, pixel
 plot_forcemaps(axes[1], Tx_1to1d_average_crop, Ty_1to1d_average_crop, pixelsize, pmax, pmin)
 plot_forcemaps(axes[2], Tx_2to1d_average_crop, Ty_2to1d_average_crop, pixelsize, pmax, pmin)
 
+# draw pattern
+draw_pattern_1to2(axes[0])
+draw_pattern_1to1(axes[1])
+draw_pattern_2to1(axes[2])
 
 # adjust space in between plots
 plt.subplots_adjust(wspace=0, hspace=0)
@@ -217,6 +221,14 @@ for ax in axes.flat:
     ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
     ax.set_aspect(ratio_default * aspectratio)
 
+# draw pattern
+draw_pattern_1to2(axes[0, 0])
+draw_pattern_1to2(axes[0, 1])
+draw_pattern_1to1(axes[1, 0])
+draw_pattern_1to1(axes[1, 1])
+draw_pattern_2to1(axes[2, 0])
+draw_pattern_2to1(axes[2, 1])
+
 # add colorbar
 cbar = fig.colorbar(im, ax=axes.ravel().tolist())
 cbar.ax.set_title('mN/m')
@@ -277,7 +289,7 @@ plt.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
-# %% plot figure 2C, Stress anisotropy coefficient boxplot
+# %% plot figure 5C_alt, Stress anisotropy coefficient boxplot
 
 # define plot parameters that are valid for the whole figure
 # ******************************************************************************************************************************************
@@ -546,6 +558,14 @@ for ax in axes.flat:
     ratio_default = (ax.get_xlim()[1] - ax.get_xlim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
     ax.set_aspect(ratio_default * aspectratio)
 
+# draw pattern
+draw_pattern_1to2(axes[0, 0])
+draw_pattern_1to2(axes[0, 1])
+draw_pattern_1to1(axes[1, 0])
+draw_pattern_1to1(axes[1, 1])
+draw_pattern_2to1(axes[2, 0])
+draw_pattern_2to1(axes[2, 1])
+
 # add colorbar
 cbar = fig.colorbar(im, ax=axes.ravel().tolist())
 cbar.ax.set_title('mN/m')
@@ -569,7 +589,6 @@ plt.show()
 
 
 # %% prepare data for figure 5E
-
 
 # set up global plot parameters
 # ******************************************************************************************************************************************
@@ -641,6 +660,15 @@ y = y[::2, :]
 
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False, titleoffset=20)
+
+for ax in axes.flat:
+    # add line at y=0 for visualisation
+    ax.plot([x[0], x[-1]], [0, 0], linewidth=0.5, linestyle=":", color="grey")
+
+    # add line at x=-10 to show opto stimulation border
+    ax.axvline(x=-10, ymin=0.0, ymax=1, linewidth=0.5, color="cyan")
+
+
 
 plt.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'E.svg', dpi=300, bbox_inches="tight")
