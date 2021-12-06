@@ -142,6 +142,8 @@ def analyse_msm_data(folder):
     # calculate stress profile along x-axis. 
     # I cut out the borders by multiplying with masks that describes the cell contour exactly to mitigate boundary effects
     sigma_normal_x_profile = np.nanmean(sigma_normal * masks, axis=0)
+    sigma_xx_x_profile = np.nanmean(sigma_xx * masks, axis=0)
+    sigma_yy_x_profile = np.nanmean(sigma_yy * masks, axis=0)
 
     x_end = np.shape(sigma_xx)[1]
     x_half = np.rint(x_end / 2).astype(int)
@@ -203,9 +205,13 @@ def analyse_msm_data(folder):
 
     # calculate relative stress profile along x-axis after photoactivation
     sigma_normal_x_profile_increase = (sigma_normal_x_profile[:, 32, :] - sigma_normal_x_profile[:, 20, :])
+    sigma_xx_x_profile_increase = (sigma_xx_x_profile[:, 32, :] - sigma_xx_x_profile[:, 20, :])
+    sigma_yy_x_profile_increase = (sigma_yy_x_profile[:, 32, :] - sigma_yy_x_profile[:, 20, :])
 
     # replace 0 with NaN to not mess up smoothing
     sigma_normal_x_profile_increase[sigma_normal_x_profile_increase == 0] = 'nan'
+    sigma_xx_x_profile_increase[sigma_xx_x_profile_increase == 0] = 'nan'
+    sigma_yy_x_profile_increase[sigma_yy_x_profile_increase == 0] = 'nan'
 
     # find position at which stress attenuates through sigmoid fit
     def find_stress_attenuation_position(stresscurve):
@@ -245,6 +251,8 @@ def analyse_msm_data(folder):
             "RSI_yy": RSI_yy, "RSI_yy_left": RSI_yy_left, "RSI_yy_right": RSI_yy_right,
             "RSI_normal": RSI_normal, "RSI_normal_left": RSI_normal_left, "RSI_normal_right": RSI_normal_right,
             "sigma_normal_x_profile_increase": sigma_normal_x_profile_increase,
+            "sigma_xx_x_profile_increase": sigma_xx_x_profile_increase,
+            "sigma_yy_x_profile_increase": sigma_yy_x_profile_increase,
             "attenuation_length": attenuation_length, "attenuation_position": attenuation_position}
     return data
 
@@ -271,27 +279,18 @@ if __name__ == "__main__":
     folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
 
     # These functions perform a series of analyses and assemble a dictionary of dictionaries containing all the data that was used for plotting
-    tissues_20micron_full_stim = main_meta_analysis(folder, "tissues_20micron_full_stim", 60)
-    tissues_20micron_lefthalf_stim = main_meta_analysis(folder, "tissues_20micron_lefthalf_stim", 60)
-    tissues_20micron_tophalf_stim = main_meta_analysis(folder, "tissues_20micron_tophalf_stim", 60)
-    tissues_40micron_full_stim = main_meta_analysis(folder, "tissues_40micron_full_stim", 60)
-    tissues_40micron_lefthalf_stim = main_meta_analysis(folder, "tissues_40micron_lefthalf_stim", 60)
-    tissues_40micron_tophalf_stim = main_meta_analysis(folder, "tissues_40micron_tophalf_stim", 60)
+    # tissues_40micron_full_stim = main_meta_analysis(folder, "tissues_40micron_full_stim", 60)
+    tissues_lefthalf_stim = main_meta_analysis(folder, "tissues_40micron_lefthalf_stim", 60)
+    tissues_tophalf_stim = main_meta_analysis(folder, "tissues_40micron_tophalf_stim", 60)
 
     # save dictionaries to a file using pickle
     if not os.path.exists(folder + "analysed_data"):
         os.mkdir(folder + "analysed_data")
 
-    with open(folder + "analysed_data/tissues_20micron_full_stim.dat", 'wb') as outfile:
-        pickle.dump(tissues_20micron_full_stim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
-    with open(folder + "analysed_data/tissues_20micron_lefthalf_stim.dat", 'wb') as outfile:
-        pickle.dump(tissues_20micron_lefthalf_stim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
-    with open(folder + "analysed_data/tissues_20micron_tophalf_stim.dat", 'wb') as outfile:
-        pickle.dump(tissues_20micron_tophalf_stim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
-    with open(folder + "analysed_data/tissues_40micron_full_stim.dat", 'wb') as outfile:
-        pickle.dump(tissues_40micron_full_stim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+    # with open(folder + "analysed_data/tissues_40micron_full_stim.dat", 'wb') as outfile:
+    #     pickle.dump(tissues_40micron_full_stim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
     with open(folder + "analysed_data/tissues_40micron_lefthalf_stim.dat", 'wb') as outfile:
-        pickle.dump(tissues_40micron_lefthalf_stim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(tissues_lefthalf_stim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
     with open(folder + "analysed_data/tissues_40micron_tophalf_stim.dat", 'wb') as outfile:
-        pickle.dump(tissues_40micron_tophalf_stim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(tissues_tophalf_stim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
 

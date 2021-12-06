@@ -234,7 +234,7 @@ cbar = fig.colorbar(im, ax=axes.ravel().tolist())
 cbar.ax.set_title('mN/m')
 
 # add title
-# plt.suptitle('Cell stresses', y=0.97, x=0.43, size=10)
+plt.suptitle('Cell stresses', y=0.97, x=0.43, size=10)
 plt.text(-80, 195, '$\mathrm{\sigma _ {xx}}$', size=10)
 plt.text(-7, 195, '$\mathrm{\sigma _ {yy}}$', size=10)
 
@@ -334,8 +334,6 @@ def filter_data_main(data, threshold, title):
     # move axis of variable to the last position for consistency
     filterdata = np.moveaxis(filterdata, 0, -1)
 
-    # maximal allowed slope for linear fit of baseline
-
     baselinefilter = create_baseline_filter(filterdata, threshold)
 
     # remove cells with unstable baselines
@@ -348,7 +346,7 @@ def filter_data_main(data, threshold, title):
 
     return data
 
-
+# maximal allowed slope for linear fit of baseline
 threshold = 0.0075
 
 AR1to2d_halfstim = filter_data_main(AR1to2d_halfstim, threshold, "AR1to2d_halfstim")

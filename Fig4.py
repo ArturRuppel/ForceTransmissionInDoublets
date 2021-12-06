@@ -40,7 +40,8 @@ if not os.path.exists(figfolder):
     os.mkdir(figfolder)
 
 
-# %% filter data to make sure that the baselines are stable
+# %% filter data to remove cells that have an unstable baseline
+
 def filter_data_main(data, threshold, title):
     # concatenate data on which it will be determined which cells will be filtered
     filterdata = np.stack(
@@ -50,8 +51,6 @@ def filter_data_main(data, threshold, title):
 
     # move axis of variable to the last position for consistency
     filterdata = np.moveaxis(filterdata, 0, -1)
-
-    # maximal allowed slope for linear fit of baseline
 
     baselinefilter = create_baseline_filter(filterdata, threshold)
 
@@ -65,7 +64,7 @@ def filter_data_main(data, threshold, title):
 
     return data
 
-
+# maximal allowed slope for linear fit of baseline
 threshold = 0.0075
 
 AR1to1d_fullstim_long = filter_data_main(AR1to1d_fullstim_long, threshold, "AR1to1d_fullstim_long")
