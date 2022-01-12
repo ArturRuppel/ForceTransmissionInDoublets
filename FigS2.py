@@ -23,19 +23,19 @@ def rgb2gray(rgb):
 colors_parent = ['#026473', '#E3CC69', '#77C8A6', '#D96248']
 colors_parent_dark = ['#01353D', '#564910', '#235741', '#A93B23']
 
-figfolder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FigureS3/"
+figfolder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FigureS2/"
 if not os.path.exists(figfolder):
     os.mkdir(figfolder)
 
 # %% load data for plotting
 folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
 
-AR1to1d_halfstim = pickle.load(open(folder + "analysed_data/AR1to1d_halfstim.dat", "rb"))
-AR1to1s_halfstim = pickle.load(open(folder + "analysed_data/AR1to1s_halfstim.dat", "rb"))
+AR1to1d_fullstim_long = pickle.load(open(folder + "analysed_data/AR1to1d_fullstim_long.dat", "rb"))
+AR1to1s_fullstim_long = pickle.load(open(folder + "analysed_data/AR1to1s_fullstim_long.dat", "rb"))
 
 # normalize simulated strain energy curve
-sim_Es_1to1dfs = np.load(folder + "_FEM_simulations/strain_energy_doublets/strain_energy_halfstim_ar1to1d_0.0.npz")["energy"]
-sim_Es_1to1sfs = np.load(folder + "_FEM_simulations/strain_energy_singlets/strain_energy_halfstim_ar1to1s_0.0.npz")["energy"]
+sim_Es_1to1dfs = np.load(folder + "_FEM_simulations/strain_energy_doublets/strain_energy_halfstim_ar1to1d_1.0.npz")["energy"]
+sim_Es_1to1sfs = np.load(folder + "_FEM_simulations/strain_energy_singlets/strain_energy_halfstim_ar1to1s_1.0.npz")["energy"]
 
 sim_relEs_1to1dfs = sim_Es_1to1dfs / np.nanmean(sim_Es_1to1dfs[0:20]) - 1
 sim_relEs_1to1sfs = sim_Es_1to1sfs / np.nanmean(sim_Es_1to1sfs[0:20]) - 1
@@ -74,19 +74,19 @@ def filter_data_main(data, threshold, title, withactin=False):
 
 threshold = 0.005
 
-AR1to1d_halfstim = filter_data_main(AR1to1d_halfstim, threshold, "AR1to1d_halfstim")
-AR1to1s_halfstim = filter_data_main(AR1to1s_halfstim, threshold, "AR1to1s_halfstim")
+AR1to1d_fullstim_long = filter_data_main(AR1to1d_fullstim_long, threshold, "AR1to1d_fullstim_long")
+AR1to1s_fullstim_long = filter_data_main(AR1to1s_fullstim_long, threshold, "AR1to1s_fullstim_long")
 
-n_d_fullstim = AR1to1d_halfstim["TFM_data"]["Tx"].shape[3]
-n_s_fullstim = AR1to1s_halfstim["TFM_data"]["Tx"].shape[3]
+n_d_fullstim = AR1to1d_fullstim_long["TFM_data"]["Tx"].shape[3]
+n_s_fullstim = AR1to1s_fullstim_long["TFM_data"]["Tx"].shape[3]
 
 # %% plot figure 2SA
 
 # prepare data
-Tx_1to1d_fs = AR1to1d_halfstim["TFM_data"]["Tx"]
-Ty_1to1d_fs = AR1to1d_halfstim["TFM_data"]["Ty"]
-Tx_1to1s_fs = AR1to1s_halfstim["TFM_data"]["Tx"]
-Ty_1to1s_fs = AR1to1s_halfstim["TFM_data"]["Ty"]
+Tx_1to1d_fs = AR1to1d_fullstim_long["TFM_data"]["Tx"]
+Ty_1to1d_fs = AR1to1d_fullstim_long["TFM_data"]["Ty"]
+Tx_1to1s_fs = AR1to1s_fullstim_long["TFM_data"]["Tx"]
+Ty_1to1s_fs = AR1to1s_fullstim_long["TFM_data"]["Ty"]
 
 # calculate amplitudes
 T_1to1d_fs = np.sqrt(Tx_1to1d_fs ** 2 + Ty_1to1d_fs ** 2)
@@ -114,11 +114,11 @@ Ty_1to1s_fs_diff_crop = Ty_1to1s_fs_diff[crop_start:crop_end, crop_start:crop_en
 T_1to1s_fs_diff_crop = T_1to1s_fs_diff[crop_start:crop_end, crop_start:crop_end] * 1e-3
 
 # prepare simulated maps
-Tx_1to1d_fs_sim = doublet_FEM_simulation["feedback0.0"]["t_x"]
-Ty_1to1d_fs_sim = doublet_FEM_simulation["feedback0.0"]["t_y"]
+Tx_1to1d_fs_sim = doublet_FEM_simulation["feedback1.0"]["t_x"]
+Ty_1to1d_fs_sim = doublet_FEM_simulation["feedback1.0"]["t_y"]
 
-Tx_1to1s_fs_sim = singlet_FEM_simulation["feedback0.0"]["t_x"]
-Ty_1to1s_fs_sim = singlet_FEM_simulation["feedback0.0"]["t_y"]
+Tx_1to1s_fs_sim = singlet_FEM_simulation["feedback1.0"]["t_x"]
+Ty_1to1s_fs_sim = singlet_FEM_simulation["feedback1.0"]["t_y"]
 
 # calculate amplitudes
 T_1to1d_fs_sim = np.sqrt(Tx_1to1d_fs_sim ** 2 + Ty_1to1d_fs_sim ** 2)
@@ -191,8 +191,8 @@ plt.show()
 # %% plot figure 2SB, xx-stress maps
 
 # prepare data first
-sigma_xx_1to1d = AR1to1d_halfstim["MSM_data"]["sigma_xx"]
-sigma_xx_1to1s = AR1to1s_halfstim["MSM_data"]["sigma_xx"]
+sigma_xx_1to1d = AR1to1d_fullstim_long["MSM_data"]["sigma_xx"]
+sigma_xx_1to1s = AR1to1s_fullstim_long["MSM_data"]["sigma_xx"]
 # concatenate MSM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
 Tx_1to1d_fs_diff = np.nanmean(Tx_1to1d_fs[:, :, 32, :] - Tx_1to1d_fs[:, :, 20, :], axis=2)
 
@@ -200,8 +200,8 @@ sigma_xx_1to1d_diff = np.nanmean(sigma_xx_1to1d[:, :, 32, :] - sigma_xx_1to1d[:,
 sigma_xx_1to1s_diff = np.nanmean(sigma_xx_1to1s[:, :, 32, :] - sigma_xx_1to1s[:, :, 20, :], axis=2)
 
 # load simulation data
-sigma_xx_sim_d = (doublet_FEM_simulation["feedback0.0"]["sigma_xx"][:, :, 32] - doublet_FEM_simulation["feedback0.0"]["sigma_xx"][:, :, 20]) * 1e3
-sigma_xx_sim_s = (singlet_FEM_simulation["feedback0.0"]["sigma_xx"][:, :, 32] - singlet_FEM_simulation["feedback0.0"]["sigma_xx"][:, :, 20]) * 1e3
+sigma_xx_sim_d = (doublet_FEM_simulation["feedback1.0"]["sigma_xx"][:, :, 32] - doublet_FEM_simulation["feedback1.0"]["sigma_xx"][:, :, 20]) * 1e3
+sigma_xx_sim_s = (singlet_FEM_simulation["feedback1.0"]["sigma_xx"][:, :, 32] - singlet_FEM_simulation["feedback1.0"]["sigma_xx"][:, :, 20]) * 1e3
 
 # convert NaN to 0 to have black background
 sigma_xx_1to1d_diff[np.isnan(sigma_xx_1to1d_diff)] = 0
@@ -289,13 +289,13 @@ ax = axes[0]
 color = colors_parent[1]
 ylabel = None
 title = '$\mathrm{\Delta \sigma _{xx}(x)}$ [mN/m]'
-y = AR1to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"] * 1e3  # convert to nN
+y = AR1to1d_fullstim_long["MSM_data"]["sigma_xx_x_profile_increase"] * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False, xmin=-40, xmax=40)
 
-y_sim = doublet_FEM_simulation["feedback0.0"]["sigma_xx_x_profile_increase"]* 1e3
+y_sim = doublet_FEM_simulation["feedback1.0"]["sigma_xx_x_profile_increase"]* 1e3
 x_sim = np.linspace(-22.5, 22.5, y_sim.shape[0])
 ax.plot(x_sim, y_sim, color=color)
 
@@ -305,13 +305,13 @@ ax = axes[1]
 color = colors_parent[2]
 ylabel = None
 title = None
-y = AR1to1s_halfstim["MSM_data"]["sigma_xx_x_profile_increase"] * 1e3  # convert to nN
+y = AR1to1s_fullstim_long["MSM_data"]["sigma_xx_x_profile_increase"] * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False, xmin=-40, xmax=40)
 
-y_sim = singlet_FEM_simulation["feedback0.0"]["sigma_xx_x_profile_increase"] * 1e3
+y_sim = singlet_FEM_simulation["feedback1.0"]["sigma_xx_x_profile_increase"] * 1e3
 x_sim = np.linspace(-22.5, 22.5, y_sim.shape[0])
 ax.plot(x_sim, y_sim, color=color)
 
@@ -348,7 +348,7 @@ ax = axes[0]
 color = colors_parent[1]
 ylabel = 'doublet'
 title = 'Relative strain \n energy'
-y = AR1to1d_halfstim["TFM_data"]["Es"]
+y = AR1to1d_fullstim_long["TFM_data"]["Es"]
 y = (y - np.nanmean(y[0:20], axis=0)) / np.nanmean(y[0:20], axis=(0, 1))  # normalize
 y = y[::2, :]
 
@@ -363,7 +363,7 @@ ax = axes[1]
 color = colors_parent[2]
 ylabel = 'singlet'
 title = None
-y = AR1to1s_halfstim["TFM_data"]["Es"]
+y = AR1to1s_fullstim_long["TFM_data"]["Es"]
 y = (y - np.nanmean(y[0:20], axis=0)) / np.nanmean(y[0:20], axis=(0, 1))  # normalize
 y = y[::2, :]
 
@@ -383,8 +383,8 @@ plt.show()
 # %% plot figure 2SE, yy-stress maps
 
 # prepare data first
-sigma_yy_1to1d = AR1to1d_halfstim["MSM_data"]["sigma_yy"]
-sigma_yy_1to1s = AR1to1s_halfstim["MSM_data"]["sigma_yy"]
+sigma_yy_1to1d = AR1to1d_fullstim_long["MSM_data"]["sigma_yy"]
+sigma_yy_1to1s = AR1to1s_fullstim_long["MSM_data"]["sigma_yy"]
 # concatenate MSM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
 Tx_1to1d_fs_diff = np.nanmean(Tx_1to1d_fs[:, :, 32, :] - Tx_1to1d_fs[:, :, 20, :], axis=2)
 
@@ -392,8 +392,8 @@ sigma_yy_1to1d_diff = np.nanmean(sigma_yy_1to1d[:, :, 32, :] - sigma_yy_1to1d[:,
 sigma_yy_1to1s_diff = np.nanmean(sigma_yy_1to1s[:, :, 32, :] - sigma_yy_1to1s[:, :, 20, :], axis=2)
 
 # load simulation data
-sigma_yy_sim_d = (doublet_FEM_simulation["feedback0.0"]["sigma_yy"][:, :, 32] - doublet_FEM_simulation["feedback0.0"]["sigma_yy"][:, :, 20]) * 1e3
-sigma_yy_sim_s = (singlet_FEM_simulation["feedback0.0"]["sigma_yy"][:, :, 32] - singlet_FEM_simulation["feedback0.0"]["sigma_yy"][:, :, 20]) * 1e3
+sigma_yy_sim_d = (doublet_FEM_simulation["feedback1.0"]["sigma_yy"][:, :, 32] - doublet_FEM_simulation["feedback1.0"]["sigma_yy"][:, :, 20]) * 1e3
+sigma_yy_sim_s = (singlet_FEM_simulation["feedback1.0"]["sigma_yy"][:, :, 32] - singlet_FEM_simulation["feedback1.0"]["sigma_yy"][:, :, 20]) * 1e3
 
 # convert NaN to 0 to have black background
 sigma_yy_1to1d_diff[np.isnan(sigma_yy_1to1d_diff)] = 0
@@ -481,13 +481,13 @@ ax = axes[0]
 color = colors_parent[1]
 ylabel = None
 title = '$\mathrm{\Delta \sigma _{yy}(x)}$ [mN/m]'
-y = AR1to1d_halfstim["MSM_data"]["sigma_yy_x_profile_increase"] * 1e3  # convert to nN
+y = AR1to1d_fullstim_long["MSM_data"]["sigma_yy_x_profile_increase"] * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False, xmin=-40, xmax=40)
 
-y_sim = doublet_FEM_simulation["feedback0.0"]["sigma_yy_x_profile_increase"]* 1e3
+y_sim = doublet_FEM_simulation["feedback1.0"]["sigma_yy_x_profile_increase"]* 1e3
 x_sim = np.linspace(-22.5, 22.5, y_sim.shape[0])
 ax.plot(x_sim, y_sim, color=color)
 
@@ -497,13 +497,13 @@ ax = axes[1]
 color = colors_parent[2]
 ylabel = None
 title = None
-y = AR1to1s_halfstim["MSM_data"]["sigma_yy_x_profile_increase"] * 1e3  # convert to nN
+y = AR1to1s_fullstim_long["MSM_data"]["sigma_yy_x_profile_increase"] * 1e3  # convert to nN
 y = y[::2, :]
 
 # make plots
 plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False, xmin=-40, xmax=40)
 
-y_sim = singlet_FEM_simulation["feedback0.0"]["sigma_yy_x_profile_increase"] * 1e3
+y_sim = singlet_FEM_simulation["feedback1.0"]["sigma_yy_x_profile_increase"] * 1e3
 x_sim = np.linspace(-22.5, 22.5, y_sim.shape[0])
 ax.plot(x_sim, y_sim, color=color)
 

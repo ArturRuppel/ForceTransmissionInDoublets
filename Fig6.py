@@ -8,21 +8,24 @@ Created on Wed Jul  7 21:56:01 2021
 import os
 import pickle
 import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
 from scipy.stats import zscore
 from plot_and_filter_functions import *
 from scipy.interpolate import interp1d
 
 
 mpl.rcParams['font.size'] = 8
+stressmappixelsize = 1.296 * 1e-6  # in meter
 
 # %% load data for plotting
 folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
 
-tissues_tophalf_stim = pickle.load(open(folder + "analysed_data/tissues_tophalf_stim.dat", "rb"))
-tissues_lefthalf_stim = pickle.load(open(folder + "analysed_data/tissues_lefthalf_stim.dat", "rb"))
+tissues_lefthalf_stim = pickle.load(open(folder + "analysed_data/tissues_40micron_lefthalf_stim.dat", "rb"))
+tissues_tophalf_stim = pickle.load(open(folder + "analysed_data/tissues_40micron_tophalf_stim.dat", "rb"))
 
-tissues_tophalf_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_tissues_up.dat", "rb"))
-tissues_lefthalf_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_tissues_side.dat", "rb"))
+tissues_lefthalf_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_tissues_lefthalf.dat", "rb"))
+tissues_tophalf_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_tissues_tophalf.dat", "rb"))
 
 
 # define some colors for the plots
@@ -30,9 +33,9 @@ colors_parent = ['#026473', '#E3CC69', '#77C8A6', '#D96248']
 colors_parent_dark = ['#01353D', '#564910', '#235741', '#A93B23']
 
 figfolder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_figure6/"
+
 if not os.path.exists(figfolder):
     os.mkdir(figfolder)
-
 
 
 # %% prepare dataframe for boxplots
@@ -195,7 +198,8 @@ fig.savefig(figfolder + 'B.png', dpi=300, bbox_inches="tight")
 fig.savefig(figfolder + 'B.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
-# # %% plot figure 5C correlation plot of stress anisotropy and actin anisotropy
+
+ # %% plot figure 5C correlation plot of stress anisotropy and actin anisotropy
 #
 # # set up global plot parameters
 # # ******************************************************************************************************************************************
@@ -232,6 +236,119 @@ plt.show()
 # plt.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
 # plt.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
 # plt.show()
+def circular_hist(ax, x, bins=16, density=True, offset=0, gaps=True):
+    """
+    Produce a circular histogram of angles on ax.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes._subplots.PolarAxesSubplot
+        axis instance created with subplot_kw=dict(projection='polar').
+
+    x : array
+        Angles to plot, expected in units of radians.
+
+    bins : int, optional
+        Defines the number of equal-width bins in the range. The default is 16.
+
+    density : bool, optional
+        If True plot frequency proportional to area. If False plot frequency
+        proportional to radius. The default is True.
+
+    offset : float, optional
+        Sets the offset for the location of the 0 direction in units of
+        radians. The default is 0.
+
+    gaps : bool, optional
+        Whether to allow gaps between bins. When gaps = False the bins are
+        forced to partition the entire [-pi, pi] range. The default is True.
+
+    Returns
+    -------
+    n : array or list of arrays
+        The number of values in each bin.
+
+    bins : array
+        The edges of the bins.
+
+    patches : `.BarContainer` or list of a single `.Polygon`
+        Container of individual artists used to create the histogram
+        or list of such containers if there are multiple input datasets.
+    """
+    # Wrap angles to [-pi, pi)
+    x = (x+np.pi) % (2*np.pi) - np.pi
+
+    # Force bins to partition entire circle
+    if not gaps:
+        bins = np.linspace(-np.pi, np.pi, num=bins+1)
+
+    # Bin data and record counts
+    n, bins = np.histogram(x, bins=bins)
+
+    # Compute width of each bin
+    widths = np.diff(bins)
+
+    # By default plot frequency proportional to area
+    if density:
+        # Area to assign each bin
+        area = n / x.size
+        # Calculate corresponding bin radius
+        radius = (area/np.pi) ** .5
+    # Otherwise plot frequency proportional to radius
+    else:
+        radius = n
+
+    # Plot data on ax
+    patches = ax.bar(bins[:-1], radius, zorder=1, align='edge', width=widths,
+                     edgecolor='C0', fill=False, linewidth=1)
+
+    # Set the direction of the zero angle
+    ax.set_theta_offset(offset)
+
+    # Remove ylabels for area plots (they are mostly obstructive)
+    if density:
+        ax.set_yticks([])
+
+    return n, bins, patches
+
+# angles0 = np.random.normal(loc=0, scale=1, size=10000)
+# angles1 = np.random.uniform(0, 2*np.pi, size=1000)
+force_angles2= tissues_tophalf_stim["TFM_data"]["force_angles_weighted"] #Angles des forces sommées sur toute l'image pondérés par l'intensité
+fx_top = tissues_tophalf_stim["TFM_data"]["Tx"]* (stressmappixelsize ** 2) #vecteurs forces par pixel 
+fy_top = tissues_tophalf_stim["TFM_data"]["Ty"]* (stressmappixelsize ** 2)
+fx_left = tissues_lefthalf_stim["TFM_data"]["Tx"]* (stressmappixelsize ** 2) #vecteurs forces par pixel 
+fy_left = tissues_lefthalf_stim["TFM_data"]["Ty"]* (stressmappixelsize ** 2)
+fx_all = np.concatenate((fx_top, fx_left),axis=3)
+fy_all = np.concatenate((fy_top, fy_left),axis=3)
+
+f_norm=np.sqrt(fy_all[40:80,:,0:20,:]**2 + fx_all[40:80,:,0:20,:]**2)
+f_norm_mean = np.nanmean(f_norm[:,:,0:20,:], axis=2)
+weight_factors=np.rint(f_norm_mean*(1/np.min(f_norm_mean)))
+weight_factors_list=np.reshape(weight_factors,(40*120*107,1))
+force_angles1=np.arctan(np.divide(np.abs(fy_all[40:80,:,0:20,:]), np.abs(fx_all[40:80,:,0:20,:]))) #*np.linalg.norm([fy_all[i,i,:,:],fx_all[i,i,:,:]])
+force_angles_mean = np.nanmean(force_angles1[:,:,0:20,:], axis=2)
+force_angles_mean_list=np.reshape(force_angles_mean,(40*120*107,1))
+
+force_angle_final=[]
+for i in range (0, len(force_angles_mean_list)):
+    force_angle_final.extend([round(float(force_angles_mean_list[i]),3)]*int(weight_factors_list[i]))
+ 
+actin_angles = tissues_tophalf_stim["shape_data"]["actin_angles"]*np.pi/180    
+# actin_angles = list(np.round_(tissues_tophalf_stim["shape_data"]["actin_angles"]*np.pi/180,3))
+# b = actin_angles.extend([ x + np.pi/2 for x in list(np.negative(actin_angles))])
+# c=b.extend(actin_angles+np.pi)
+# d=c.extend(actin_angles+np.pi/2)
+
+# Construct figure and axis to plot on
+fig, axes = plt.subplots(1, 2, subplot_kw=dict(projection='polar'))
+
+# Visualise by area of bins
+circular_hist(axes[0], actin_angles)
+# Visualise by radius of bins
+circular_hist(axes[1], np.asarray(force_angle_final))
+
+plt.show()
+
 # %% filter data to remove cells that have an unstable baseline
 
 def filter_data_main(data, threshold, title):
@@ -250,6 +367,7 @@ def filter_data_main(data, threshold, title):
     # remove cells with unstable baselines
     data["TFM_data"] = apply_filter(data["TFM_data"], baselinefilter)
     data["MSM_data"] = apply_filter(data["MSM_data"], baselinefilter)
+    data["shape_data"] = apply_filter(data["shape_data"], baselinefilter)
 
     new_N = np.sum(baselinefilter)
     print(title + ": " + str(baselinefilter.shape[0] - new_N) + " cells were filtered out")
@@ -257,12 +375,13 @@ def filter_data_main(data, threshold, title):
     return data
 
 # maximal allowed slope for linear fit of baseline
-threshold = 0.1
+threshold = 1
 
 # tissues_full_stim = filter_data_main(tissues_full_stim, "tissues_full_stim")
 tissues_lefthalf_stim = filter_data_main(tissues_lefthalf_stim, threshold, "tissues_lefthalf_stim")
 tissues_tophalf_stim = filter_data_main(tissues_tophalf_stim, threshold, "tissues_tophalf_stim")
 
+# plt.plot(tissues_lefthalf_stim["MSM_data"]["relsigma_xx_left"][:, :])
 # %% prepare dataframe again after filtering
 
 # initialize empty dictionaries
@@ -368,11 +487,11 @@ yy_stress_increase_ratio_lefthalf_err = (SI_yy_right_lefthalf_err * SI_yy_left_l
 
 # concatenate TFM maps from different experiments and calculate average maps over first 20 frames and all cells to get average maps
 sigma_xx_tophalf_stim_diff = \
-    np.nanmean(tissues_tophalf_stim["MSM_data"]["sigma_xx"][:, :, 32, :] -
-               tissues_tophalf_stim["MSM_data"]["sigma_xx"][:, :, 20, :], axis=2) * 1e3  # convert to mN/m
+    np.nanmean(tissues_tophalf_stim["MSM_data"]["sigma_xx"][:, :, 32, 17:-1] -
+               tissues_tophalf_stim["MSM_data"]["sigma_xx"][:, :, 20, 17:-1], axis=2) * 1e3  # convert to mN/m
 sigma_yy_tophalf_stim_diff = \
-    np.nanmean(tissues_tophalf_stim["MSM_data"]["sigma_yy"][:, :, 32, :] -
-               tissues_tophalf_stim["MSM_data"]["sigma_yy"][:, :, 20, :], axis=2) * 1e3  # convert to mN/m
+    np.nanmean(tissues_tophalf_stim["MSM_data"]["sigma_yy"][:, :, 32, 17:-1] -
+               tissues_tophalf_stim["MSM_data"]["sigma_yy"][:, :, 20, 17:-1], axis=2) * 1e3  # convert to mN/m
 
 
 sigma_xx_lefthalf_stim_diff = \
@@ -417,11 +536,11 @@ plt.text(-20, 230, '$\mathrm{\Delta \sigma _ {yy}}$', size=10)
 
 
 # add annotations
-plt.text(0.40, 0.85, 'n=' + str(n_ls), transform=plt.figure(1).transFigure, color='black')
-plt.text(0.40, 0.40, 'n=' + str(n_ts), transform=plt.figure(1).transFigure, color='black')
+plt.text(0.40, 0.85, 'n=' + str(n_ts), transform=plt.figure(1).transFigure, color='black')
+plt.text(0.40, 0.40, 'n=' + str(n_ls), transform=plt.figure(1).transFigure, color='black')
 
 # save figure
-fig.savefig(figfolder + 'D.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'D.png', dpi=300, bbox_inches="tight") ,
 fig.savefig(figfolder + 'D.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
@@ -434,7 +553,7 @@ x = x[::2]  # downsample data for nicer plotting
 xticks = np.arange(-60, 60.1, 30)  # define where the major ticks are gonna be
 xlabel = 'position [µm]'
 ymin = -0.2
-ymax = 1.4
+ymax = 1.0
 yticks = np.arange(ymin, ymax + 0.001, 0.4)
 fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3, 3))  # create figure and axes
 plt.subplots_adjust(wspace=0.4, hspace=0.35)  # adjust space in between plots
@@ -512,7 +631,7 @@ yy_stress_increase_ratio_sim_tophalf = []
 yy_stress_increase_ratio_sim_lefthalf = []
 
 
-feedbacks = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+feedbacks = [-0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
 for fb in feedbacks:
     xx_stress_increase_ratio_sim_tophalf.append(tissues_tophalf_FEM_simulation["feedback" + str(fb)]["xx_stress_increase_ratio"])
@@ -530,6 +649,7 @@ axes[1].plot(feedbacks, yy_stress_increase_ratio_sim_tophalf, color=colors_paren
 axes[1].plot(feedbacks, yy_stress_increase_ratio_sim_lefthalf, color=colors_parent[3])
 
 # add data points
+# x = -0.08
 x = find_x_position_of_point_on_array(feedbacks, xx_stress_increase_ratio_sim_tophalf, xx_stress_increase_ratio_tophalf)
 axes[0].errorbar(x, xx_stress_increase_ratio_tophalf, yerr=xx_stress_increase_ratio_tophalf_err, mfc="w", color=colors_parent[0],
                  marker="v", ms=5, linewidth=0.5, ls="none", markeredgewidth=0.5)
@@ -542,8 +662,8 @@ axes[0].errorbar(x, xx_stress_increase_ratio_lefthalf, yerr=xx_stress_increase_r
 
 
 
-# x = find_x_position_of_point_on_array(feedbacks, yy_stress_increase_ratio_sim_tophalf, yy_stress_increase_ratio_tophalf)
-x = -0.08
+x = find_x_position_of_point_on_array(feedbacks, yy_stress_increase_ratio_sim_tophalf, yy_stress_increase_ratio_tophalf)
+
 
 axes[1].errorbar(x, yy_stress_increase_ratio_tophalf, yerr=yy_stress_increase_ratio_tophalf_err, mfc="w", color=colors_parent[0],
                  marker="v", ms=5, linewidth=0.5, ls="none", markeredgewidth=0.5)
