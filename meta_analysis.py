@@ -520,10 +520,10 @@ if __name__ == "__main__":
     AR2to1dhs = "AR2to1_doublets_half_stim"
 
     # These functions perform a series of analyses and assemble a dictionary of dictionaries containing all the data that was used for plotting
-    AR1to1d_fullstim_long = main_meta_analysis(folder, AR1to1dfsl, 60)
-    AR1to1s_fullstim_long = main_meta_analysis(folder, AR1to1sfsl, 60)
-    AR1to1d_fullstim_short = main_meta_analysis(folder, AR1to1dfss, 50)
-    AR1to1s_fullstim_short = main_meta_analysis(folder, AR1to1sfss, 50)
+    # AR1to1d_fullstim_long = main_meta_analysis(folder, AR1to1dfsl, 60)
+    # AR1to1s_fullstim_long = main_meta_analysis(folder, AR1to1sfsl, 60)
+    # AR1to1d_fullstim_short = main_meta_analysis(folder, AR1to1dfss, 50)
+    # AR1to1s_fullstim_short = main_meta_analysis(folder, AR1to1sfss, 50)
     AR1to2d_halfstim = main_meta_analysis(folder, AR1to2dhs, 60)
     AR1to1d_halfstim = main_meta_analysis(folder, AR1to1dhs, 60)
     AR1to1s_halfstim = main_meta_analysis(folder, AR1to1shs, 60)

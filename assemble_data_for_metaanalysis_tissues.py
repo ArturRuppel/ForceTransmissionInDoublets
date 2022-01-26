@@ -121,9 +121,9 @@ def load_MSM_and_TFM_data_and_actin_images(folder, noCells, stressmapshape, stre
         print('Load TFM data, MSM data and actin images: tissue' + str(cell))
         # assemble paths to load stres smaps
         if cell < 9:
-            foldercellpath = folder + "/tissue0" + str(cell + 1)
+            foldercellpath = folder + "/tissu" + str(cell + 1)
         else:
-            foldercellpath = folder + "/tissue" + str(cell + 1)
+            foldercellpath = folder + "/tissu" + str(cell + 1)
 
         # load masks, stress and displacement maps
         TFM_mat = scipy.io.loadmat(foldercellpath + "/Allresults2.mat")
@@ -143,16 +143,31 @@ def load_MSM_and_TFM_data_and_actin_images(folder, noCells, stressmapshape, stre
         sigma_xx_current = stresstensor[0, y_center - y_half:y_center + y_half, x_center - x_half:x_center + x_half, :]
         sigma_yy_current = stresstensor[1, y_center - y_half:y_center + y_half, x_center - x_half:x_center + x_half, :]
         
-        # tissues that were the top half was stimulated have to be rotated by 90 degrees counterclockwise so that the stimulation zone is equivalent to the lefthalf stimulation
-        if "tophalf" in folder:
-            Tx_current = np.rot90(Tx_current, k=1, axes=(0,1))
-            Ty_current = np.rot90(Ty_current, k=1, axes=(0,1))
-            Dx_current = np.rot90(Dx_current, k=1, axes=(0,1))
-            Dy_current = np.rot90(Dy_current, k=1, axes=(0,1))
-            sigma_xx_current_rot = np.rot90(sigma_yy_current, k=1, axes=(0,1))
-            sigma_yy_current_rot = np.rot90(sigma_xx_current, k=1, axes=(0,1))
-            sigma_xx_current = sigma_xx_current_rot
-            sigma_yy_current = sigma_yy_current_rot
+    #     # tissues that were the top half was stimulated have to be rotated by 90 degrees counterclockwise so that the stimulation zone is equivalent to the lefthalf stimulation
+        # if "upperhalf" in folder:
+        Tx_current_rot = np.flipud(np.rot90(Ty_current, k=1, axes=(0,1)))
+        Ty_current_rot = np.flipud(np.rot90(Tx_current, k=1, axes=(0,1)))
+        Dx_current_rot = np.flipud(np.rot90(Dy_current, k=1, axes=(0,1)))
+        Dy_current_rot = np.flipud(np.rot90(Dx_current, k=1, axes=(0,1)))
+        sigma_xx_current_rot = np.flipud(np.rot90(sigma_yy_current, k=1, axes=(0,1)))
+        sigma_yy_current_rot = np.flipud(np.rot90(sigma_xx_current, k=1, axes=(0,1)))
+
+        Tx_current = Tx_current_rot
+        Ty_current = Ty_current_rot
+        Dx_current = Dx_current_rot
+        Dy_current = Dy_current_rot
+
+        sigma_xx_current = sigma_xx_current_rot
+        sigma_yy_current = sigma_yy_current_rot
+
+        # if "lefthalf" in folder:
+        #     Tx_current = np.rot90(np.rot90(np.rot90(Tx_current, k=1, axes=(0,1))))
+        #     Ty_current = np.rot90(np.rot90(np.rot90(Ty_current, k=1, axes=(0,1))))
+        #     Dx_current = np.rot90(np.rot90(np.rot90(Dx_current, k=1, axes=(0,1))))
+        #     Dy_current = np.rot90(np.rot90(np.rot90(Dy_current, k=1, axes=(0,1))))
+        #     sigma_xx_current_rot = np.rot90(np.rot90(np.rot90(sigma_yy_current, k=1, axes=(0,1))))
+        #     sigma_yy_current_rot = np.rot90(np.rot90(np.rot90(sigma_xx_current, k=1, axes=(0,1))))
+
             
         # store in array
         Tx_all[:, :, :, cell] = Tx_current
@@ -166,12 +181,21 @@ def load_MSM_and_TFM_data_and_actin_images(folder, noCells, stressmapshape, stre
 
 
 # def load_actin_angle_data(folder):
-#     actin_angles = scipy.io.loadmat(folder + "/actin_angles.mat")
-#     actin_angles = actin_angles["angles"]
+#     actin_angles = scipy.io.loadmat(folder + "/angles_all.mat")
+#     actin_angles = actin_angles["angleall"]
 #
 #     return actin_angles
-#
-#
+
+def load_actin_mean_angle_data(folder):
+    actin_angles = scipy.io.loadmat(folder + "/mean_angles.mat") 
+    actin_angles = actin_angles["angles"]
+
+    return actin_angles
+
+
+
+
+
 # def load_actin_intensity_data(folder):
 #     actin_intensities = scipy.io.loadmat(folder + "/actin_intensities.mat")
 #     actin_intensity_left = actin_intensities["intensity_left"]
@@ -213,6 +237,9 @@ def main(folder_old, folder_new, title, noCells, noFrames):
 
     print('Data loading of ' + title + ' started!')
 
+    actin_angles = load_actin_mean_angle_data(folder_old)
+    np.save(folder_new + title + "/actin_angles.npy", actin_angles)
+
     sigma_xx, sigma_yy, Tx, Ty, Dx, Dy = load_MSM_and_TFM_data_and_actin_images(folder_old, noCells, stressmapshape, stressmappixelsize)
 
     if not os.path.exists(folder_new + title):
@@ -231,9 +258,6 @@ def main(folder_old, folder_new, title, noCells, noFrames):
 if __name__ == "__main__":
     folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
 
-    main("C:/Users/Balland\Desktop/_collaborations/Vladimir Misiak/20micron_full_stim", folder, "tissues_20micron_full_stim", 31, 60)
-    main("C:/Users/Balland\Desktop/_collaborations/Vladimir Misiak/20micron_lefthalf_stim", folder, "tissues_20micron_lefthalf_stim", 32, 60)
-    main("C:/Users/Balland\Desktop/_collaborations/Vladimir Misiak/20micron_tophalf_stim", folder, "tissues_20micron_tophalf_stim", 22, 60)
-    main("C:/Users/Balland\Desktop/_collaborations/Vladimir Misiak/40micron_full_stim", folder, "tissues_40micron_full_stim", 15, 60)
-    main("C:/Users/Balland\Desktop/_collaborations/Vladimir Misiak/40micron_lefthalf_stim", folder, "tissues_40micron_lefthalf_stim", 46, 60)
-    main("C:/Users/Balland\Desktop/_collaborations/Vladimir Misiak/40micron_tophalf_stim", folder, "tissues_40micron_tophalf_stim", 13, 60)
+    # main("G:/Données/Analyse opto/40µm - complete stim", folder, "tissues_40micron_full_stim", 15, 60)
+    main("C:/Users/Balland\Desktop/_collaborations/Vladimir Misiak/40micron_lefthalf_stim", folder, "tissues_lefthalf_stim", 60, 60)
+    main("C:/Users/Balland\Desktop/_collaborations/Vladimir Misiak/40micron_tophalf_stim", folder, "tissues_tophalf_stim", 13, 60)

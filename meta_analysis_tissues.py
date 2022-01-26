@@ -6,6 +6,7 @@ Created on Thu Jul  1 09:33:36 2021
 """
 import os
 import pickle
+from numpy import linalg
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -47,6 +48,7 @@ def analyse_tfm_data(folder, stressmappixelsize):
 
     # calculate force angle
     force_angle = np.arctan(np.divide(Fy, Fx)) * 360 / (2 * np.pi)
+    force_angles_weighted=force_angle*np.linalg.norm([Fy,Fx]) # !!! formule fausse, pour pondérer on dois multiplier le nombre d'occurence des angles dans la liste par l'intensité de la force
     force_angle_baseline = np.nanmean(force_angle[0:20, :], axis=0)
 
     # calculate cell-cell force
@@ -118,7 +120,7 @@ def analyse_tfm_data(folder, stressmappixelsize):
             "Fy_bottomleft": Fy_bottomleft,
             "Es": Es, "Es_left": Es_left, "Es_right": Es_right, "Es_baseline": Es_baseline,
             "relEs": relEs, "REI": REI,
-            "Fx": Fx, "Fy": Fy, "force_angle": force_angle, "force_angle_baseline": force_angle_baseline,
+            "Fx": Fx, "Fy": Fy, "force_angle": force_angle, "force_angles_weighted": force_angles_weighted, "force_angle_baseline": force_angle_baseline,
             "F_cellcell": F_cellcell}
 
     return data
@@ -142,9 +144,12 @@ def analyse_msm_data(folder):
     # calculate stress profile along x-axis. 
     # I cut out the borders by multiplying with masks that describes the cell contour exactly to mitigate boundary effects
     sigma_normal_x_profile = np.nanmean(sigma_normal * masks, axis=0)
-    sigma_xx_x_profile = np.nanmean(sigma_xx * masks, axis=0)
-    sigma_yy_x_profile = np.nanmean(sigma_yy * masks, axis=0)
-
+    if "tophalf" in folder:
+        sigma_xx_x_profile = np.nanmean(sigma_xx * masks, axis=0)
+        sigma_yy_x_profile = np.nanmean(sigma_yy * masks, axis=0)
+    else: 
+        sigma_xx_x_profile = np.nanmean(sigma_xx * masks, axis=1)
+        sigma_yy_x_profile = np.nanmean(sigma_yy * masks, axis=1)
     x_end = np.shape(sigma_xx)[1]
     x_half = np.rint(x_end / 2).astype(int)
 
@@ -257,6 +262,18 @@ def analyse_msm_data(folder):
     return data
 
 
+def analyse_shape_data(folder,stressmappixelsize):
+
+    # load average actin angles
+    actin_angles = np.load(folder + "/actin_angles.npy").squeeze()
+
+    actin_anisotropy_coefficient = (np.cos(np.deg2rad(actin_angles)) - np.sin(np.deg2rad(actin_angles))) / (np.cos(np.deg2rad(actin_angles)) + np.sin(np.deg2rad(actin_angles)))
+
+    data = {"actin_angles": actin_angles, "actin_anisotropy_coefficient": actin_anisotropy_coefficient}
+
+    return data
+
+
 def main_meta_analysis(folder, title, noFrames):
     stressmappixelsize = 1.296 * 1e-6  # in meter
 
@@ -267,30 +284,33 @@ def main_meta_analysis(folder, title, noFrames):
 
     # calculate averages over all cells, normalize data to baseline values etc.
     MSM_data = analyse_msm_data(folder)
+    
+    # calculate actin angles and actin anisotropy coefficient
+    shape_data = analyse_shape_data(folder, stressmappixelsize)
 
     print(title + ": done!")
-    alldata = {"TFM_data": TFM_data, "MSM_data": MSM_data}
-
+    alldata = {"TFM_data": TFM_data, "MSM_data": MSM_data, "shape_data": shape_data}
+    # alldata = {"TFM_data": TFM_data, "MSM_data": MSM_data}
+    
     return alldata
-
 
 if __name__ == "__main__":
     # This is the folder where all the input data is stored
     folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
 
     # These functions perform a series of analyses and assemble a dictionary of dictionaries containing all the data that was used for plotting
-    # tissues_40micron_full_stim = main_meta_analysis(folder, "tissues_40micron_full_stim", 60)
-    tissues_lefthalf_stim = main_meta_analysis(folder, "tissues_40micron_lefthalf_stim", 60)
-    tissues_tophalf_stim = main_meta_analysis(folder, "tissues_40micron_tophalf_stim", 60)
+    # tissues_full_stim = main_meta_analysis(folder, "tissues_full_stim", 60)
+    tissues_lefthalf_stim = main_meta_analysis(folder, "tissues_lefthalf_stim", 60)
+    tissues_tophalf_stim = main_meta_analysis(folder, "tissues_tophalf_stim", 60)
 
     # save dictionaries to a file using pickle
     if not os.path.exists(folder + "analysed_data"):
         os.mkdir(folder + "analysed_data")
 
-    # with open(folder + "analysed_data/tissues_40micron_full_stim.dat", 'wb') as outfile:
-    #     pickle.dump(tissues_40micron_full_stim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
-    with open(folder + "analysed_data/tissues_40micron_lefthalf_stim.dat", 'wb') as outfile:
+    # with open(folder + "analysed_data/tissues_full_stim.dat", 'wb') as outfile:
+    #     pickle.dump(tissues_full_stim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(folder + "analysed_data/tissues_lefthalf_stim.dat", 'wb') as outfile:
         pickle.dump(tissues_lefthalf_stim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
-    with open(folder + "analysed_data/tissues_40micron_tophalf_stim.dat", 'wb') as outfile:
+    with open(folder + "analysed_data/tissues_tophalf_stim.dat", 'wb') as outfile:
         pickle.dump(tissues_tophalf_stim, outfile, protocol=pickle.HIGHEST_PROTOCOL)
 
