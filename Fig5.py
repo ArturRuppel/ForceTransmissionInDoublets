@@ -10,7 +10,6 @@ from scipy.stats import zscore
 from plot_and_filter_functions import *
 from scipy.interpolate import interp1d
 
-
 pixelsize = 0.864  # in µm
 # %% load data for plotting
 folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
@@ -21,7 +20,6 @@ AR2to1d_halfstim = pickle.load(open(folder + "analysed_data/AR2to1d_halfstim.dat
 AR1to2_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_1to2.dat", "rb"))
 AR1to1_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_singlets.dat", "rb"))
 AR2to1_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_2to1.dat", "rb"))
-
 
 # define some colors for the plots
 colors_parent = ['#026473', '#E3CC69', '#77C8A6', '#D96248']
@@ -74,7 +72,6 @@ df['spreadingsize_baseline'] *= 1e12  # convert to µm²
 df['sigma_xx_baseline'] *= 1e3  # convert to mN/m
 df['sigma_yy_baseline'] *= 1e3  # convert to mN/m
 
-
 # %% plot figure 5A, force maps
 
 # prepare data first
@@ -119,7 +116,6 @@ pmax = 2  # kPa
 
 #
 fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(2.5, 4))
-
 
 im = plot_forcemaps(axes[0], Tx_1to2d_average_crop, Ty_1to2d_average_crop, pixelsize, pmax, pmin)
 plot_forcemaps(axes[1], Tx_1to1d_average_crop, Ty_1to1d_average_crop, pixelsize, pmax, pmin)
@@ -257,7 +253,6 @@ xticklabels = ['1to2', '1to1', '2to1']  # which labels to put on x-axis
 fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2.5, 2.5))  # create figure and axes
 plt.subplots_adjust(wspace=0.45, hspace=0.45)  # adjust space in between plots
 
-
 ylabeloffset = -7
 xlabeloffset = 0
 colors = [colors_parent[0], colors_parent[1], colors_parent[3]]  # defines colors for scatterplot
@@ -265,14 +260,14 @@ colors = [colors_parent[0], colors_parent[1], colors_parent[3]]  # defines color
 y = 'actin_anisotropy_coefficient'
 x = 'AIC_baseline'
 hue = 'keys'
-ymin = -0.5
-ymax = 0.5
+ymin = -1
+ymax = 1
 xmin = -1
 xmax = 1
-yticks = np.arange(-0.5, 0.6, 0.25)
+yticks = np.arange(-1, 1.1, 0.5)
 xticks = np.arange(-1, 1.1, 0.5)
-ylabel = "Degree of actin anisotropy"  # "'$\mathrm{\sigma_{x, MSM}}$'
-xlabel = "Degree of stress anisotropy"  # '$\mathrm{\sigma_{x, CM}}$'
+ylabel = "Structural polarization (actin)"  # "'$\mathrm{\sigma_{x, MSM}}$'
+xlabel = "Mechanical polarization"  # '$\mathrm{\sigma_{x, CM}}$'
 
 corr, p = make_correlationplotsplots(x, y, hue, df, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
 
@@ -314,11 +309,11 @@ title = 'Stress anisotropy coefficient'  # title of plot
 # make plots
 make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
-
 # # save plot to file
 plt.savefig(figfolder + 'C_alt.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'C_alt.svg', dpi=300, bbox_inches="tight")
 plt.show()
+
 
 # %% filter data to remove cells that have an unstable baseline
 
@@ -343,6 +338,7 @@ def filter_data_main(data, threshold, title):
     print(title + ": " + str(baselinefilter.shape[0] - new_N) + " cells were filtered out")
 
     return data
+
 
 # maximal allowed slope for linear fit of baseline
 threshold = 0.0075
@@ -406,7 +402,7 @@ df['cell_width_center_baseline'] *= stressmappixelsize / 8  # convert from pixel
 # df["attenuation_position"] *= stressmappixelsize  # convert to µm
 # df["attenuation_length"] *= stressmappixelsize  # convert to µm
 
-#%% calculate stress increase ratio of right vs all
+# %% calculate stress increase ratio of right vs all
 sigma_xx_x_profile_increase_1to2 = np.nanmean(AR1to2d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1)
 sigma_xx_x_profile_increase_1to2_sem = np.nanstd(AR1to2d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1) / np.sqrt(
     np.shape(AR1to2d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"])[1])
@@ -418,7 +414,6 @@ sigma_xx_x_profile_increase_1to1_sem = np.nanstd(AR1to1d_halfstim["MSM_data"]["s
 sigma_xx_x_profile_increase_2to1 = np.nanmean(AR2to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1)
 sigma_xx_x_profile_increase_2to1_sem = np.nanstd(AR2to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"], axis=1) / np.sqrt(
     np.shape(AR2to1d_halfstim["MSM_data"]["sigma_xx_x_profile_increase"])[1])
-
 
 sigma_yy_x_profile_increase_1to2 = np.nanmean(AR1to2d_halfstim["MSM_data"]["sigma_yy_x_profile_increase"], axis=1)
 sigma_yy_x_profile_increase_1to2_sem = np.nanstd(AR1to2d_halfstim["MSM_data"]["sigma_yy_x_profile_increase"], axis=1) / np.sqrt(
@@ -450,7 +445,6 @@ SI_xx_right_2to1_err = np.sqrt(np.nansum(sigma_xx_x_profile_increase_2to1_sem[ce
 SI_xx_left_2to1 = np.nansum(sigma_xx_x_profile_increase_2to1[0:center])
 SI_xx_left_2to1_err = np.sqrt(np.nansum(sigma_xx_x_profile_increase_2to1_sem[0:center] ** 2))
 
-
 SI_yy_right_1to2 = np.nansum(sigma_yy_x_profile_increase_1to2[center:-1])
 SI_yy_right_1to2_err = np.sqrt(np.nansum(sigma_yy_x_profile_increase_1to2_sem[center:-1] ** 2))
 SI_yy_left_1to2 = np.nansum(sigma_yy_x_profile_increase_1to2[0:center])
@@ -466,27 +460,30 @@ SI_yy_right_2to1_err = np.sqrt(np.nansum(sigma_yy_x_profile_increase_2to1_sem[ce
 SI_yy_left_2to1 = np.nansum(sigma_yy_x_profile_increase_2to1[0:center])
 SI_yy_left_2to1_err = np.sqrt(np.nansum(sigma_yy_x_profile_increase_2to1_sem[0:center] ** 2))
 
-
 # calculate error with propagation of uncertainty
 xx_stress_increase_ratio_1to2 = SI_xx_right_1to2 / (SI_xx_left_1to2 + SI_xx_right_1to2)
-xx_stress_increase_ratio_1to2_err = (SI_xx_right_1to2_err * SI_xx_left_1to2 + SI_xx_left_1to2_err * SI_xx_right_1to2) / ((SI_xx_left_1to2 + SI_xx_right_1to2) ** 2)
+xx_stress_increase_ratio_1to2_err = (SI_xx_right_1to2_err * SI_xx_left_1to2 + SI_xx_left_1to2_err * SI_xx_right_1to2) / (
+            (SI_xx_left_1to2 + SI_xx_right_1to2) ** 2)
 
 xx_stress_increase_ratio_1to1 = SI_xx_right_1to1 / (SI_xx_left_1to1 + SI_xx_right_1to1)
-xx_stress_increase_ratio_1to1_err = (SI_xx_right_1to1_err * SI_xx_left_1to1 + SI_xx_left_1to1_err * SI_xx_right_1to1) / ((SI_xx_left_1to1 + SI_xx_right_1to1) ** 2)
+xx_stress_increase_ratio_1to1_err = (SI_xx_right_1to1_err * SI_xx_left_1to1 + SI_xx_left_1to1_err * SI_xx_right_1to1) / (
+            (SI_xx_left_1to1 + SI_xx_right_1to1) ** 2)
 
 xx_stress_increase_ratio_2to1 = SI_xx_right_2to1 / (SI_xx_left_2to1 + SI_xx_right_2to1)
-xx_stress_increase_ratio_2to1_err = (SI_xx_right_2to1_err * SI_xx_left_2to1 + SI_xx_left_2to1_err * SI_xx_right_2to1) / ((SI_xx_left_2to1 + SI_xx_right_2to1) ** 2)
-
+xx_stress_increase_ratio_2to1_err = (SI_xx_right_2to1_err * SI_xx_left_2to1 + SI_xx_left_2to1_err * SI_xx_right_2to1) / (
+            (SI_xx_left_2to1 + SI_xx_right_2to1) ** 2)
 
 yy_stress_increase_ratio_1to2 = SI_yy_right_1to2 / (SI_yy_left_1to2 + SI_yy_right_1to2)
-yy_stress_increase_ratio_1to2_err = (SI_yy_right_1to2_err * SI_yy_left_1to2 + SI_yy_left_1to2_err * SI_yy_right_1to2) / ((SI_yy_left_1to2 + SI_yy_right_1to2) ** 2)
+yy_stress_increase_ratio_1to2_err = (SI_yy_right_1to2_err * SI_yy_left_1to2 + SI_yy_left_1to2_err * SI_yy_right_1to2) / (
+            (SI_yy_left_1to2 + SI_yy_right_1to2) ** 2)
 
 yy_stress_increase_ratio_1to1 = SI_yy_right_1to1 / (SI_yy_left_1to1 + SI_yy_right_1to1)
-yy_stress_increase_ratio_1to1_err = (SI_yy_right_1to1_err * SI_yy_left_1to1 + SI_yy_left_1to1_err * SI_yy_right_1to1) / ((SI_yy_left_1to1 + SI_yy_right_1to1) ** 2)
+yy_stress_increase_ratio_1to1_err = (SI_yy_right_1to1_err * SI_yy_left_1to1 + SI_yy_left_1to1_err * SI_yy_right_1to1) / (
+            (SI_yy_left_1to1 + SI_yy_right_1to1) ** 2)
 
 yy_stress_increase_ratio_2to1 = SI_yy_right_2to1 / (SI_yy_left_2to1 + SI_yy_right_2to1)
-yy_stress_increase_ratio_2to1_err = (SI_yy_right_2to1_err * SI_yy_left_2to1 + SI_yy_left_2to1_err * SI_yy_right_2to1) / ((SI_yy_left_2to1 + SI_yy_right_2to1) ** 2)
-
+yy_stress_increase_ratio_2to1_err = (SI_yy_right_2to1_err * SI_yy_left_2to1 + SI_yy_left_2to1_err * SI_yy_right_2to1) / (
+            (SI_yy_left_2to1 + SI_yy_right_2to1) ** 2)
 
 # %% plot figure 5D, stress map differences
 
@@ -543,7 +540,6 @@ plot_stressmaps(axes[0, 1], sigma_yy_1to2d_diff_crop, pixelsize, sigma_max, sigm
 plot_stressmaps(axes[1, 1], sigma_yy_1to1d_diff_crop, pixelsize, sigma_max, sigma_min, cmap="seismic")
 plot_stressmaps(axes[2, 1], sigma_yy_2to1d_diff_crop, pixelsize, sigma_max, sigma_min, cmap="seismic")
 
-
 # adjust space in between plots
 plt.subplots_adjust(wspace=0, hspace=0)
 
@@ -582,7 +578,6 @@ plt.text(0.38, 0.343, 'n=' + str(n_2to1d), transform=plt.figure(1).transFigure, 
 fig.savefig(figfolder + 'D.png', dpi=300, bbox_inches="tight")
 fig.savefig(figfolder + 'D.svg', dpi=300, bbox_inches="tight")
 plt.show()
-
 
 # %% prepare data for figure 5E
 
@@ -664,11 +659,10 @@ for ax in axes.flat:
     # add line at x=-10 to show opto stimulation border
     ax.axvline(x=-10, ymin=0.0, ymax=1, linewidth=0.5, color="cyan")
 
-
-
 plt.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'E.svg', dpi=300, bbox_inches="tight")
 plt.show()
+
 
 # %% plot figure 5F
 
@@ -711,37 +705,41 @@ axes[1].plot(feedbacks, yy_stress_increase_ratio_sim_2to1, color=colors_parent[3
 
 # add data points
 
-# xlo = find_x_position_of_point_on_array(feedbacks, xx_stress_increase_ratio_sim, xx_stress_increase_ratio_d - xx_stress_increase_ratio_d_err)
-# xhi = find_x_position_of_point_on_array(feedbacks, xx_stress_increase_ratio_sim, xx_stress_increase_ratio_d + xx_stress_increase_ratio_d_err)
-# x_err = np.zeros((2, 1))
-# x_err[0] = xlo
-# x_err[1] = xhi
-#
 x = find_x_position_of_point_on_array(feedbacks, xx_stress_increase_ratio_sim_1to2, xx_stress_increase_ratio_1to2)
-x_err = 0
-axes[0].errorbar(x, xx_stress_increase_ratio_1to2, xerr=x_err, yerr=xx_stress_increase_ratio_1to2_err, mfc="w", color=colors_parent[0],
+AC_xx_1to2 = x
+
+axes[0].errorbar(x, xx_stress_increase_ratio_1to2, yerr=xx_stress_increase_ratio_1to2_err, mfc="w", color=colors_parent[0],
                  marker="v", ms=5, linewidth=0.5, ls="none", markeredgewidth=0.5)
 
 x = find_x_position_of_point_on_array(feedbacks, xx_stress_increase_ratio_sim_1to1, xx_stress_increase_ratio_1to1)
-axes[0].errorbar(x, xx_stress_increase_ratio_1to1, xerr=x_err, yerr=xx_stress_increase_ratio_1to1_err, mfc="w", color=colors_parent[1],
+AC_xx_1to1 = x
+
+axes[0].errorbar(x, xx_stress_increase_ratio_1to1, yerr=xx_stress_increase_ratio_1to1_err, mfc="w", color=colors_parent[1],
                  marker="s", ms=5, linewidth=0.5, ls="none", markeredgewidth=0.5)
 
 # x = find_x_position_of_point_on_array(feedbacks, xx_stress_increase_ratio_sim_2to1, xx_stress_increase_ratio_2to1)
-x=1.0
-axes[0].errorbar(x, xx_stress_increase_ratio_2to1, xerr=x_err, yerr=xx_stress_increase_ratio_2to1_err, mfc="w", color=colors_parent[3],
+x = 1.0
+AC_xx_2to1 = x
+
+axes[0].errorbar(x, xx_stress_increase_ratio_2to1, yerr=xx_stress_increase_ratio_2to1_err, mfc="w", color=colors_parent[3],
                  marker="o", ms=5, linewidth=0.5, ls="none", markeredgewidth=0.5)
 #
 
 x = find_x_position_of_point_on_array(feedbacks, yy_stress_increase_ratio_sim_1to2, yy_stress_increase_ratio_1to2)
-x_err = 0
+AC_yy_1to2 = x
+
 axes[1].errorbar(x, yy_stress_increase_ratio_1to2, yerr=yy_stress_increase_ratio_1to2_err, mfc="w", color=colors_parent[0],
                  marker="v", ms=5, linewidth=0.5, ls="none", markeredgewidth=0.5)
 
 x = find_x_position_of_point_on_array(feedbacks, yy_stress_increase_ratio_sim_1to1, yy_stress_increase_ratio_1to1)
+AC_yy_1to1 = x
+
 axes[1].errorbar(x, yy_stress_increase_ratio_1to1, yerr=yy_stress_increase_ratio_1to1_err, mfc="w", color=colors_parent[1],
                  marker="s", ms=5, linewidth=0.5, ls="none", markeredgewidth=0.5)
 
 x = find_x_position_of_point_on_array(feedbacks, yy_stress_increase_ratio_sim_2to1, yy_stress_increase_ratio_2to1)
+AC_yy_2to1 = x
+
 axes[1].errorbar(x, yy_stress_increase_ratio_2to1, yerr=yy_stress_increase_ratio_2to1_err, mfc="w", color=colors_parent[3],
                  marker="o", ms=5, linewidth=0.5, ls="none", markeredgewidth=0.5)
 
@@ -764,66 +762,69 @@ for ax in axes.flat:
 plt.savefig(figfolder + "F.png", dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + "F.svg", dpi=300, bbox_inches="tight")
 plt.show()
+# %% load data for plotting
+MP_1to2 = df["AIC_baseline"][keys == "AR1to2d"].mean()
+MP_1to1 = df["AIC_baseline"][keys == "AR1to1d"].mean()
+MP_2to1 = df["AIC_baseline"][keys == "AR2to1d"].mean()
 
-# %% plot figure S1, contour strain after photoactivation
+SP_1to2 = df["actin_anisotropy_coefficient"][keys == "AR1to2d"].mean()
+SP_1to1 = df["actin_anisotropy_coefficient"][keys == "AR1to1d"].mean()
+SP_2to1 = df["actin_anisotropy_coefficient"][keys == "AR2to1d"].mean()
 
-# set up global plot parameters
-# ******************************************************************************************************************************************
-ymin = -0.05
-ymax = 0
-xticks = np.arange(-15, 15.1, 15)  # define where the major ticks are gonna be
-yticks = np.arange(ymin, ymax + 0.001, 0.01)
-xlabel = "position [µm]"
-fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(4.5, 1.3))  # create figure and axes
-plt.subplots_adjust(wspace=0.5, hspace=0.35)  # adjust space in between plots
-# ******************************************************************************************************************************************
+d = {'condition': ["1to2", "1to1", "2to1"], 'active coupling_x': np.array([AC_xx_1to2, AC_xx_1to1, AC_xx_2to1]),
+     'active coupling_y': np.array([AC_yy_1to2, AC_yy_1to1, AC_yy_2to1]),
+     'mechanical polarization': np.array([MP_1to2, MP_1to1, MP_2to1]),
+     'structural polarization': np.array([SP_1to2, SP_1to1, SP_2to1])}
 
-# Set up plot parameters for first panel
-#######################################################################################################
-ax = axes[0]
-color = colors_parent[0]
-ylabel = None
-title = "Contour strain \n measurement"
-x = np.linspace(-25, 25, 50)
-x = x[::2]  # downsample data for nicer plotting
-y = AR1to2d_halfstim["shape_data"]["contour_strain"]
-y = y[::2, :]
+summarized_data = pd.DataFrame(data=d)
+summarized_data.to_csv("summarized_data.csv", index=False)
+colors = [colors_parent[0], colors_parent[1], colors_parent[3]]
 
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False, xmin=-25, xmax=25)
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3, 2.8))
+plt.subplots_adjust(wspace=0.6, hspace=0.4)  # adjust space in between plots
 
-# Set up plot parameters for first panel
-#######################################################################################################
-ax = axes[1]
-color = colors_parent[1]
-ylabel = None
-title = "Contour strain \n measurement"
-x = np.linspace(-17.5, 17.5, 50)
-x = x[::2]  # downsample data for nicer plotting
-y = AR1to1d_halfstim["shape_data"]["contour_strain"]
-y = y[::2, :]
+sns.scatterplot(data=summarized_data, y="active coupling_x", x="mechanical polarization", hue="condition", style="condition",
+                palette=colors, legend=False, ax=axes[0, 0])
 
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False, xmin=-25, xmax=25)
+sns.scatterplot(data=summarized_data, y="active coupling_y", x="mechanical polarization", hue="condition", style="condition",
+                palette=colors, legend=False, ax=axes[0, 1])
 
-# Set up plot parameters for first panel
-#######################################################################################################
-ax = axes[2]
-color = colors_parent[3]
-ylabel = None
-title = "Contour strain \n measurement"
-x = np.linspace(-12.5, 12.5, 50)
-x = x[::2]  # downsample data for nicer plotting
-y = AR2to1d_halfstim["shape_data"]["contour_strain"]
-y = y[::2, :]
+sns.scatterplot(data=summarized_data, y="active coupling_x", x="structural polarization", hue="condition", style="condition",
+                palette=colors, legend=False, ax=axes[1, 0])
 
-# make plots
-plot_one_value_over_time(x, y, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, color, optolinewidth=False, xmin=-25, xmax=25)
+sns.scatterplot(data=summarized_data, y="active coupling_y", x="structural polarization", hue="condition", style="condition",
+                palette=colors, legend=False, ax=axes[1, 1])
 
+for ax in axes.flat:
+    ax.set_ylim(-1, 1.1)
+    ax.set_xlim(-1, 1.1)
+    ax.minorticks_on()
+    ax.tick_params(direction="in", which="minor", length=3, bottom=True, top=False, left=True, right=True)
+    ax.tick_params(direction="in", which="major", length=6, bottom=True, top=False, left=True, right=True)
+    ax.xaxis.set_ticks(xticks)
+    ax.axvline(x=0, ymin=-1, ymax=1, linewidth=0.5, color="grey", linestyle="--")
+    ax.axhline(y=0, xmin=-1, xmax=1, linewidth=0.5, color="grey", linestyle="--")
 
-plt.savefig(figfolder + "S1.png", dpi=300, bbox_inches="tight")
-plt.savefig(figfolder + "S1.svg", dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'G.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'G.svg', dpi=300, bbox_inches="tight")
 plt.show()
+
+# %%
+# AC_1to2 = (AC_xx_1to2 + AC_yy_1to2) / 2
+# AC_1to1 = (AC_xx_1to1 + AC_yy_1to1) / 2
+# AC_2to1 = (AC_xx_2to1 + AC_yy_2to1) / 2
+#
+# JL_1to2 = np.nanmean(AR1to2d_halfstim["shape_data"]["cell_width_center_baseline"]) * 0.108
+# JL_1to1 = np.nanmean(AR1to1d_halfstim["shape_data"]["cell_width_center_baseline"]) * 0.108
+# JL_2to1 = np.nanmean(AR2to1d_halfstim["shape_data"]["cell_width_center_baseline"]) * 0.108
+#
+# SAIC_1to2 = np.nanmean(AR1to2d_halfstim["MSM_data"]["AIC_baseline"])
+# SAIC_1to1 = np.nanmean(AR1to1d_halfstim["MSM_data"]["AIC_baseline"])
+# SAIC_2to1 = np.nanmean(AR2to1d_halfstim["MSM_data"]["AIC_baseline"])
+#
+# AAIC_1to2 = np.nanmean(AR1to2d_halfstim["shape_data"]["actin_anisotropy_coefficient"])
+# AAIC_1to1 = np.nanmean(AR1to1d_halfstim["shape_data"]["actin_anisotropy_coefficient"])
+# AAIC_2to1 = np.nanmean(AR2to1d_halfstim["shape_data"]["actin_anisotropy_coefficient"])
 
 
 # # %% plot figure 5E boxplots of attenuation length and position

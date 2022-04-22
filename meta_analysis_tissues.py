@@ -265,11 +265,8 @@ def analyse_msm_data(folder):
 def analyse_shape_data(folder,stressmappixelsize):
 
     # load average actin angles
-    actin_angles = np.load(folder + "/actin_angles.npy").squeeze()
-
-    actin_anisotropy_coefficient = (np.cos(np.deg2rad(actin_angles)) - np.sin(np.deg2rad(actin_angles))) / (np.cos(np.deg2rad(actin_angles)) + np.sin(np.deg2rad(actin_angles)))
-
-    data = {"actin_angles": actin_angles, "actin_anisotropy_coefficient": actin_anisotropy_coefficient}
+    actin_anisotropy_coefficient = np.load(folder + "/actin_anisotropy.npy").squeeze(axis=0)
+    data = {"actin_anisotropy_coefficient": actin_anisotropy_coefficient}
 
     return data
 

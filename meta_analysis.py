@@ -454,34 +454,52 @@ def analyse_shape_data(folder, stressmappixelsize):
     spreadingsize_baseline = np.nanmean(spreadingsize[0:20, :], axis=0)
 
     # load average actin angles
-    actin_angles = np.load(folder + "/actin_angles.npy").squeeze(axis=0)
+    actin_anisotropy_coefficient = np.load(folder + "/actin_anisotropy.npy").squeeze(axis=0)
 
-    actin_anisotropy_coefficient = (np.cos(np.deg2rad(actin_angles)) - np.sin(np.deg2rad(actin_angles))) / (np.cos(np.deg2rad(actin_angles)) + np.sin(np.deg2rad(actin_angles)))
+    cortex_intensity_left = np.load(folder + "/cortex_intensity_left.npy")
+    cortex_intensity_right = np.load(folder + "/cortex_intensity_right.npy")
+    cortex_intensity = cortex_intensity_left + cortex_intensity_right
 
-    actin_intensity_left = np.load(folder + "/actin_intensity_left.npy")
-    actin_intensity_right = np.load(folder + "/actin_intensity_right.npy")
-    actin_intensity = actin_intensity_left + actin_intensity_right
+    # normalize cortex intensities by first substracting the baseline for each cell and then dividing by the average baseline
+    relcortex_intensity_left = (cortex_intensity_left - np.nanmean(cortex_intensity_left[0:20, :], axis=0)) / np.nanmean(
+        cortex_intensity_left[0:20, :], axis=(0, 1))
+    relcortex_intensity_right = (cortex_intensity_right - np.nanmean(cortex_intensity_right[0:20, :], axis=0)) / np.nanmean(
+        cortex_intensity_right[0:20, :], axis=(0, 1))
+    relcortex_intensity = (cortex_intensity - np.nanmean(cortex_intensity[0:20, :], axis=0)) / np.nanmean(
+        cortex_intensity[0:20, :], axis=(0, 1))
 
-    # normalize actin intensities by first substracting the baseline for each cell and then dividing by the average baseline
-    relactin_intensity_left = (actin_intensity_left - np.nanmean(actin_intensity_left[0:20, :], axis=0)) / np.nanmean(
-        actin_intensity_left[0:20, :], axis=(0, 1))
-    relactin_intensity_right = (actin_intensity_right - np.nanmean(actin_intensity_right[0:20, :], axis=0)) / np.nanmean(
-        actin_intensity_right[0:20, :], axis=(0, 1))
-    relactin_intensity = (actin_intensity - np.nanmean(actin_intensity[0:20, :], axis=0)) / np.nanmean(
-        actin_intensity[0:20, :], axis=(0, 1))
+    RAI_cortex_left = relcortex_intensity_left[32, :] - relcortex_intensity_left[20, :]
+    RAI_cortex_right = relcortex_intensity_right[32, :] - relcortex_intensity_right[20, :]
+    RAI_cortex = relcortex_intensity[32, :] - relcortex_intensity[20, :]
 
-    RAI_left = relactin_intensity_left[32, :] - relactin_intensity_left[20, :]
-    RAI_right = relactin_intensity_right[32, :] - relactin_intensity_right[20, :]
-    RAI = relactin_intensity[32, :] - relactin_intensity[20, :]
+    SF_intensity_left = np.load(folder + "/SF_intensity_left.npy")
+    SF_intensity_right = np.load(folder + "/SF_intensity_right.npy")
+    SF_intensity = SF_intensity_left + SF_intensity_right
+
+    # normalize SF intensities by first substracting the baseline for each cell and then dividing by the average baseline
+    relSF_intensity_left = (SF_intensity_left - np.nanmean(SF_intensity_left[0:20, :], axis=0)) / np.nanmean(
+        SF_intensity_left[0:20, :], axis=(0, 1))
+    relSF_intensity_right = (SF_intensity_right - np.nanmean(SF_intensity_right[0:20, :], axis=0)) / np.nanmean(
+        SF_intensity_right[0:20, :], axis=(0, 1))
+    relSF_intensity = (SF_intensity - np.nanmean(SF_intensity[0:20, :], axis=0)) / np.nanmean(
+        SF_intensity[0:20, :], axis=(0, 1))
+
+    RAI_SF_left = relSF_intensity_left[32, :] - relSF_intensity_left[20, :]
+    RAI_SF_right = relSF_intensity_right[32, :] - relSF_intensity_right[20, :]
+    RAI_SF = relSF_intensity[32, :] - relSF_intensity[20, :]
+
 
     data = {"Xtop": Xtop, "Xbottom": Xbottom, "Ytop": Ytop, "Ybottom": Ybottom,
             "masks": masks, "cell_width_center_baseline": W_center_baseline, "cell_width_center": W_center, "relcell_width_center": relW_center, "relcell_width_center_end": relW_center_end,
             "contour_strain": epsilon, "ASC": epsilon_asymmetry_coefficient,
             "spreadingsize": spreadingsize, "spreadingsize_baseline": spreadingsize_baseline,
-            "actin_angles": actin_angles, "actin_anisotropy_coefficient": actin_anisotropy_coefficient,
-            "actin_intensity": actin_intensity, "actin_intensity_left": actin_intensity_left, "actin_intensity_right": actin_intensity_right,
-            "relactin_intensity": relactin_intensity, "relactin_intensity_left": relactin_intensity_left, "relactin_intensity_right": relactin_intensity_right,
-            "RAI": RAI, "RAI_left": RAI_left, "RAI_right": RAI_right}
+            "actin_anisotropy_coefficient": actin_anisotropy_coefficient,
+            "cortex_intensity": cortex_intensity, "cortex_intensity_left": cortex_intensity_left, "cortex_intensity_right": cortex_intensity_right,
+            "relcortex_intensity": relcortex_intensity, "relcortex_intensity_left": relcortex_intensity_left, "relcortex_intensity_right": relcortex_intensity_right,
+            "RAI_cortex": RAI_cortex, "RAI_cortex_left": RAI_cortex_left, "RAI_cortex_right": RAI_cortex_right,
+            "SF_intensity": SF_intensity, "SF_intensity_left": SF_intensity_left, "SF_intensity_right": SF_intensity_right,
+            "relSF_intensity": relSF_intensity, "relSF_intensity_left": relSF_intensity_left, "relSF_intensity_right": relSF_intensity_right,
+            "RAI_SF": RAI_SF, "RAI_SF_left": RAI_SF_left, "RAI_SF_right": RAI_SF_right}
 
     return data
 
@@ -520,10 +538,10 @@ if __name__ == "__main__":
     AR2to1dhs = "AR2to1_doublets_half_stim"
 
     # These functions perform a series of analyses and assemble a dictionary of dictionaries containing all the data that was used for plotting
-    # AR1to1d_fullstim_long = main_meta_analysis(folder, AR1to1dfsl, 60)
-    # AR1to1s_fullstim_long = main_meta_analysis(folder, AR1to1sfsl, 60)
-    # AR1to1d_fullstim_short = main_meta_analysis(folder, AR1to1dfss, 50)
-    # AR1to1s_fullstim_short = main_meta_analysis(folder, AR1to1sfss, 50)
+    AR1to1d_fullstim_long = main_meta_analysis(folder, AR1to1dfsl, 60)
+    AR1to1s_fullstim_long = main_meta_analysis(folder, AR1to1sfsl, 60)
+    AR1to1d_fullstim_short = main_meta_analysis(folder, AR1to1dfss, 50)
+    AR1to1s_fullstim_short = main_meta_analysis(folder, AR1to1sfss, 50)
     AR1to2d_halfstim = main_meta_analysis(folder, AR1to2dhs, 60)
     AR1to1d_halfstim = main_meta_analysis(folder, AR1to1dhs, 60)
     AR1to1s_halfstim = main_meta_analysis(folder, AR1to1shs, 60)

@@ -175,8 +175,10 @@ for key1 in AR1to1d_fullstim_long:  # keys are the same for all dictionaries so 
 
 concatenated_data_hs_lr["REI"] = np.concatenate((AR1to1d_halfstim["TFM_data"]["REI_left"], AR1to1d_halfstim["TFM_data"]["REI_right"],
                                                  AR1to1s_halfstim["TFM_data"]["REI_left"], AR1to1s_halfstim["TFM_data"]["REI_right"]))
-concatenated_data_hs_lr["RAI"] = np.concatenate((AR1to1d_halfstim["shape_data"]["RAI_left"], AR1to1d_halfstim["shape_data"]["RAI_right"],
-                                                 AR1to1s_halfstim["shape_data"]["RAI_left"], AR1to1s_halfstim["shape_data"]["RAI_right"]))
+concatenated_data_hs_lr["RAI_cortex"] = np.concatenate((AR1to1d_halfstim["shape_data"]["RAI_cortex_left"], AR1to1d_halfstim["shape_data"]["RAI_cortex_right"],
+                                                 AR1to1s_halfstim["shape_data"]["RAI_cortex_left"], AR1to1s_halfstim["shape_data"]["RAI_cortex_right"]))
+concatenated_data_hs_lr["RAI_SF"] = np.concatenate((AR1to1d_halfstim["shape_data"]["RAI_SF_left"], AR1to1d_halfstim["shape_data"]["RAI_SF_right"],
+                                                 AR1to1s_halfstim["shape_data"]["RAI_SF_left"], AR1to1s_halfstim["shape_data"]["RAI_SF_right"]))
 
 key1 = "TFM_data"
 key2 = "Es_baseline"
@@ -488,7 +490,7 @@ fig.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")
 fig.savefig(figfolder + 'E.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
-# %% plot figure 3F, actin intensity over time
+# %% plot figure 3F, LifeAct intensity, cortex over time
 
 # set up global plot parameters
 # ******************************************************************************************************************************************
@@ -515,9 +517,9 @@ ax3 = fig.add_subplot(gs[:, 1])
 ax = ax1
 colors = [colors_parent[1], colors_parent_dark[1]]
 ylabel = None
-title = 'Relative actin intensity'
-y1 = AR1to1d_halfstim["shape_data"]["relactin_intensity_left"]
-y2 = AR1to1d_halfstim["shape_data"]["relactin_intensity_right"]
+title = 'Relative LifeAct \n intensity, cortex'
+y1 = AR1to1d_halfstim["shape_data"]["relcortex_intensity_left"]
+y2 = AR1to1d_halfstim["shape_data"]["relcortex_intensity_right"]
 y1 = y1[::2, :]
 y2 = y2[::2, :]
 
@@ -532,8 +534,8 @@ ax = ax2
 colors = [colors_parent[2], colors_parent_dark[2]]
 ylabel = None
 title = None
-y1 = AR1to1s_halfstim["shape_data"]["relactin_intensity_left"]
-y2 = AR1to1s_halfstim["shape_data"]["relactin_intensity_right"]
+y1 = AR1to1s_halfstim["shape_data"]["relcortex_intensity_left"]
+y2 = AR1to1s_halfstim["shape_data"]["relcortex_intensity_right"]
 y1 = y1[::2, :]
 y2 = y2[::2, :]
 
@@ -545,7 +547,7 @@ ax.plot([x[0], x[-1]], [0, 0], linewidth=0.5, linestyle=':', color='grey')
 # Set up plot parameters for third panel
 #######################################################################################################
 x = 'keys'  # variable by which to group the data
-y = 'RAI'  # variable that goes on the y-axis
+y = 'RAI_cortex'  # variable that goes on the y-axis
 ax = ax3  # define on which axis the plot goes
 colors = [colors_parent[1], colors_parent_dark[1], colors_parent[2], colors_parent_dark[2]]  # defines colors
 ymin = -0.15  # minimum value on y-axis
@@ -554,7 +556,7 @@ yticks = np.arange(-0.15, 0.151, 0.1)  # define where to put major ticks on y-ax
 
 ylabel = None  # which label to put on y-axis
 title = None  # title of plot
-box_pairs = [('RAI_left', 'RAI_right')]  # which groups to perform statistical test on
+box_pairs = [('RAI_cortex_left', 'RAI_cortex_right')]  # which groups to perform statistical test on
 
 
 # make plots
@@ -567,13 +569,96 @@ ax.plot([1.5, 1.5], [ymin, ymax], linewidth=0.5, linestyle=":", color="grey")
 # # write title for panels 1 to 4
 # # plt.text(-5.7, 2.575947, 'Relative strain energy', fontsize=10)
 # write title for panels 3 and 4
-plt.text(0, 0.16, 'Relative actin \n     increase', fontsize=10)
+plt.text(0, 0.16, 'Relative LifeAct \n increase, cortex', fontsize=10)
 # # save plot to file
 plt.savefig(figfolder + 'F.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'F.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
+# %% plot figure 3G, LifeAct intensity, SF over time
 
+# set up global plot parameters
+# ******************************************************************************************************************************************
+x = np.arange(60)
+x = x[::2]  # downsample data for nicer plotting
+ymin = -0.05
+ymax = 0.075
+xticks = np.arange(0, 61, 20)
+yticks = np.arange(-0.05, 0.0751, 0.05)
+xlabel = 'time [min]'
+xticklabels = ['left', 'right', 'left', 'right']  # which labels to put on x-axis
+fig = plt.figure(figsize=(3.5, 2.8))  # create figure and axes
+
+plt.subplots_adjust(wspace=0.35, hspace=0.35)
+
+gs = fig.add_gridspec(2, 2)
+ax1 = fig.add_subplot(gs[0, 0])
+ax2 = fig.add_subplot(gs[1, 0])
+ax3 = fig.add_subplot(gs[:, 1])
+# ******************************************************************************************************************************************
+
+# Set up plot parameters for first panel
+#######################################################################################################
+ax = ax1
+colors = [colors_parent[1], colors_parent_dark[1]]
+ylabel = None
+title = 'Relative LifeAct \n intensity, SF'
+y1 = AR1to1d_halfstim["shape_data"]["relSF_intensity_left"]
+y2 = AR1to1d_halfstim["shape_data"]["relSF_intensity_right"]
+y1 = y1[::2, :]
+y2 = y2[::2, :]
+
+# make plots
+plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors, titleoffset=5)
+
+ax.plot([x[0], x[-1]], [0, 0], linewidth=0.5, linestyle=':', color='grey')
+
+# Set up plot parameters for second panel
+#######################################################################################################
+ax = ax2
+colors = [colors_parent[2], colors_parent_dark[2]]
+ylabel = None
+title = None
+y1 = AR1to1s_halfstim["shape_data"]["relSF_intensity_left"]
+y2 = AR1to1s_halfstim["shape_data"]["relSF_intensity_right"]
+y1 = y1[::2, :]
+y2 = y2[::2, :]
+
+# make plots
+plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, ylabel, title, ax, colors)
+
+ax.plot([x[0], x[-1]], [0, 0], linewidth=0.5, linestyle=':', color='grey')
+
+# Set up plot parameters for third panel
+#######################################################################################################
+x = 'keys'  # variable by which to group the data
+y = 'RAI_SF'  # variable that goes on the y-axis
+ax = ax3  # define on which axis the plot goes
+colors = [colors_parent[1], colors_parent_dark[1], colors_parent[2], colors_parent_dark[2]]  # defines colors
+ymin = -0.15  # minimum value on y-axis
+ymax = 0.15  # maximum value on y-axis
+yticks = np.arange(-0.15, 0.151, 0.1)  # define where to put major ticks on y-axis
+
+ylabel = None  # which label to put on y-axis
+title = None  # title of plot
+box_pairs = [('RAI_SF_left', 'RAI_SF_right')]  # which groups to perform statistical test on
+
+
+# make plots
+make_box_and_swarmplots(x, y, df_hs_lr, ax, ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+
+# add line at y=0 for visualisation
+ax.plot([-1, 4], [0, 0], linewidth=0.5, linestyle=':', color='grey')
+ax.plot([1.5, 1.5], [ymin, ymax], linewidth=0.5, linestyle=":", color="grey")
+
+# # write title for panels 1 to 4
+# # plt.text(-5.7, 2.575947, 'Relative strain energy', fontsize=10)
+# write title for panels 3 and 4
+plt.text(0, 0.16, 'Relative LifeAct \n increase, SF', fontsize=10)
+# # save plot to file
+plt.savefig(figfolder + 'G.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'G.svg', dpi=300, bbox_inches="tight")
+plt.show()
 
 
 

@@ -177,8 +177,8 @@ plt.text(0.55, 0.83, 'n=' + str(n_doublets), transform=plt.figure(1).transFigure
 for ax in axes.flat:
     draw_pattern_1to1(ax, color="grey")
 
-fig.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
-fig.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'D.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'D.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 # %% plot figure 1D_1, xx-stress maps
@@ -229,7 +229,7 @@ fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3, 2.5))    # create figure 
 plt.subplots_adjust(wspace=0.02, hspace=-0.06)      # adjust space in between plots
 # ******************************************************************************************************************************************
 
-plot_stressmaps(axes[0, 0], sigma_xx_1to1d_example_crop, pixelsize, pmax, pmin)
+im = plot_stressmaps(axes[0, 0], sigma_xx_1to1d_example_crop, pixelsize, pmax, pmin)
 plot_stressmaps(axes[0, 1], sigma_xx_1to1d_average_crop, pixelsize, pmax, pmin)
 plot_stressmaps(axes[1, 0], sigma_xx_1to1s_example_crop, pixelsize, pmax, pmin)
 plot_stressmaps(axes[1, 1], sigma_xx_1to1s_average_crop, pixelsize, pmax, pmin)
@@ -260,8 +260,8 @@ for ax in axes.flat:
     draw_pattern_1to1(ax, color="grey")
 
 # save figure
-fig.savefig(figfolder + 'D1.png', dpi=300, bbox_inches="tight")
-fig.savefig(figfolder + 'D1.svg', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'E1.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'E1.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 #%%%% plot figure 1D_2, yy-stress maps
@@ -310,7 +310,7 @@ plt.subplots_adjust(wspace=0.02, hspace=-0.06)      # adjust space in between pl
 # ******************************************************************************************************************************************
 
 
-plot_stressmaps(axes[0, 0], sigma_yy_1to1d_example_crop, pixelsize, pmax, pmin)
+im = plot_stressmaps(axes[0, 0], sigma_yy_1to1d_example_crop, pixelsize, pmax, pmin)
 plot_stressmaps(axes[0, 1], sigma_yy_1to1d_average_crop, pixelsize, pmax, pmin)
 plot_stressmaps(axes[1, 0], sigma_yy_1to1s_example_crop, pixelsize, pmax, pmin)
 plot_stressmaps(axes[1, 1], sigma_yy_1to1s_average_crop, pixelsize, pmax, pmin)
@@ -341,8 +341,8 @@ for ax in axes.flat:
     draw_pattern_1to1(ax, color="grey")
 
 # save figure
-fig.savefig(figfolder + 'D2.png', dpi=300, bbox_inches="tight")
-fig.savefig(figfolder + 'D2.svg', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'E2.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'E2.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 # %% plot figure 1E boxplots
@@ -428,16 +428,16 @@ ymin = -1                               # minimum value on y-axis
 ymax = 1                                # maximum value on y-axis
 yticks = np.arange(-1, 1.1, 0.5)        # define where to put major ticks on y-axis
 stat_annotation_offset = 0.03           # vertical offset of statistical annotation
-ylabel = 'SAC'                          # which label to put on y-axis
-title = 'Stress anisotropy \n coefficient' # title of plot
+ylabel = 'MP'                          # which label to put on y-axis
+title = 'Mechanical \n polarization'       # title of plot
 ylabeloffset = -5                      # adjusts distance of ylabel to the plot
 
 # make plots
 make_box_and_swarmplots_with_test(x, y, df, ax, ymin, ymax, yticks, stat_annotation_offset, box_pairs, xticklabels, ylabel, title, colors)
 
 # save plot to file
-plt.savefig(figfolder + 'E.png', dpi=300, bbox_inches="tight")
-plt.savefig(figfolder + 'E.svg', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'F.png', dpi=300, bbox_inches="tight")
+plt.savefig(figfolder + 'F.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
 # # %% plot figure 1X, stress maps

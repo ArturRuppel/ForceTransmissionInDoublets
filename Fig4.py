@@ -28,7 +28,7 @@ AR1to1d_fullstim_long = pickle.load(open(folder + "analysed_data/AR1to1d_fullsti
 AR1to1d_fullstim_short = pickle.load(open(folder + "analysed_data/AR1to1d_fullstim_short.dat", "rb"))
 AR1to1d_halfstim = pickle.load(open(folder + "analysed_data/AR1to1d_halfstim.dat", "rb"))
 
-doublet_CM_simulation = pickle.load(open(folder + "_contour_simulations/CM_doublet_simulation.dat", "rb"))
+doublet_CM_simulation = pickle.load(open(folder + "_contour_simulations/CM_1to1_simulation.dat", "rb"))
 doublet_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_doublets.dat", "rb"))
 singlet_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_singlets.dat", "rb"))
 
@@ -572,7 +572,7 @@ ax.tick_params(direction="in", which="minor", length=3, bottom=True, top=False, 
 ax.tick_params(direction="in", which="major", length=6, bottom=True, top=False, left=True, right=True)
 
 plt.xlabel("Degree of active coupling")
-# plt.ylabel("Normalized strain of \n non-activated area")
+plt.ylabel("Normalized response of \n right cell")
 # plt.title("Contour activation ratio")
 plt.savefig(figfolder + "F.png", dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + "F.svg", dpi=300, bbox_inches="tight")

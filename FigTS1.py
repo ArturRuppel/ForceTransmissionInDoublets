@@ -23,7 +23,7 @@ def rgb2gray(rgb):
 colors_parent = ['#026473', '#E3CC69', '#77C8A6', '#D96248']
 colors_parent_dark = ['#01353D', '#564910', '#235741', '#A93B23']
 
-figfolder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FigureS1/"
+figfolder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FigureTS1/"
 if not os.path.exists(figfolder):
     os.mkdir(figfolder)
 

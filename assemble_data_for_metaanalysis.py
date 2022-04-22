@@ -258,10 +258,11 @@ def calculate_actin_intensities(folder_old, noFrames, noCells):
         t = 0
         # a little messy way of getting masks from fibertracks
         img1 = np.zeros((1000, 1000), dtype=bool)
-        c = np.concatenate((Xtop[:, t], Xright[:, t], Xbottom[:, 0], Xleft[:, t]))
+        c = np.concatenate((Xtop[:, t], Xright[:, t], Xbottom[:, t], Xleft[:, t]))
         r = np.concatenate((Ytop[:, t], Yright[:, t], Ybottom[:, t], Yleft[:, t]))
         rr, cc = polygon(r, c)
         img1[rr, cc] = 1
+
 
         img2 = np.zeros((1000, 1000), dtype=bool)
         c = np.flip(np.concatenate((Xtop[:, t], Xright[:, t], Xbottom[:, t], Xleft[:, t])), axis=0)
@@ -276,9 +277,9 @@ def calculate_actin_intensities(folder_old, noFrames, noCells):
         # crop a 92*8 by 92*8 window around center
         mask_cropped = closing(mask[132:868, 132:868], footprint)
 
-        mask_dilated = erosion(mask_cropped, footprint)
+        mask_eroded = erosion(mask_cropped, footprint)
 
-        image[~mask_dilated] = 0
+        image[~mask_eroded] = 0
         center = int(image.shape[1] / 2)
         actin_intensities[:, cell] = np.nansum(image, axis=(0, 1))
         actin_intensities_left[:, cell] = np.nansum(image[:, 0:center, :], axis=(0, 1))
@@ -286,6 +287,87 @@ def calculate_actin_intensities(folder_old, noFrames, noCells):
 
     return actin_intensities, actin_intensities_left, actin_intensities_right
 
+def calculate_stressfiber_intensities(folder_old, noFrames, noCells):
+    SF_intensity = np.zeros((noFrames, noCells))
+    SF_intensity_left = np.zeros((noFrames, noCells))
+    SF_intensity_right = np.zeros((noFrames, noCells))
+
+    cortex_intensity = np.zeros((noFrames, noCells))
+    cortex_intensity_left = np.zeros((noFrames, noCells))
+    cortex_intensity_right = np.zeros((noFrames, noCells))
+
+    for cell in range(noCells):
+        print('Load actin images: cell' + str(cell))
+        if cell < 9:
+            foldercellpath = folder_old + "/cell0" + str(cell + 1)
+        else:
+            foldercellpath = folder_old + "/cell" + str(cell + 1)
+
+        # read stack of actin images
+        image = io.imread(foldercellpath + '/actin_ec.tif')
+
+        # move t-axis to the last index
+        image = np.moveaxis(image, 0, -1)
+
+        # crop out a 92*8 by 92*8 window around the center
+        image = image[132:868, 132:868, :]
+
+        t_end = image.shape[2]
+
+        # load fibertracks to make mask
+        fibertracks_mat = scipy.io.loadmat(foldercellpath + "/fibertracking.mat")
+
+        Xtop = fibertracks_mat['Xtop']
+        Xright = fibertracks_mat['Xright']
+        Xbottom = fibertracks_mat['Xbottom']
+        Xleft = fibertracks_mat['Xleft']
+
+        Ytop = fibertracks_mat['Ytop']
+        Yright = fibertracks_mat['Yright']
+        Ybottom = fibertracks_mat['Ybottom']
+        Yleft = fibertracks_mat['Yleft']
+
+        masks_cortex = np.zeros(image.shape)
+        masks_stressfibers = np.zeros(image.shape)
+        for t in np.arange(t_end):
+            print(t, end=" ")
+            # a little messy way of getting masks from fibertracks
+            mask = np.zeros((1000, 1000), dtype=bool)
+            c = np.concatenate((Xtop[:, t], Xright[:, t], np.flip(Xbottom[:, t]), Xleft[:, t]))
+            r = np.concatenate((Ytop[:, t], Yright[:, t], np.flip(Ybottom[:, t]), Yleft[:, t]))
+            rr, cc = polygon(r, c)
+            mask[rr, cc] = 1
+
+            # crop a 92*8 by 92*8 window around center and close mask
+            mask_cropped = mask[132:868, 132:868]
+
+            # dilate and erode to segment cortex and outer stress fibers
+            footprint = disk(20)
+            mask_eroded = erosion(mask_cropped, footprint)
+            mask_dilated = dilation(mask_cropped, footprint)
+
+            masks_stressfibers[:, :, t] = np.logical_xor(mask_eroded, mask_dilated)
+            masks_cortex[:, :, t] = mask_eroded
+
+        image_stressfibers = image * masks_stressfibers
+        image_cortex = image * masks_cortex
+
+        center = int(image.shape[1] / 2)
+        SF_intensity[:, cell] = np.nansum(image_stressfibers, axis=(0, 1))
+        SF_intensity_left[:, cell] = np.nansum(image_stressfibers[:, 0:center, :], axis=(0, 1))
+        SF_intensity_right[:, cell] = np.nansum(image_stressfibers[:, center:-1, :], axis=(0, 1))
+
+        cortex_intensity[:, cell] = np.nansum(image_cortex, axis=(0, 1))
+        cortex_intensity_left[:, cell] = np.nansum(image_cortex[:, 0:center, :], axis=(0, 1))
+        cortex_intensity_right[:, cell] = np.nansum(image_cortex[:, center:-1, :], axis=(0, 1))
+
+    return cortex_intensity, cortex_intensity_left, cortex_intensity_right, SF_intensity, SF_intensity_left, SF_intensity_right
+
+def load_actin_order_parameter(folder):
+    order_parameter = scipy.io.loadmat(folder + "/order_parameter.mat")
+    order_parameter = order_parameter["order_parameter"]
+
+    return order_parameter
 
 def main(folder_old, folder_new, title, noCells, noFrames):
     stressmappixelsize = 0.864 * 10 ** -6  # in meter
@@ -293,14 +375,20 @@ def main(folder_old, folder_new, title, noCells, noFrames):
     fibertrackingshape = [50, noFrames]
 
     print('Data loading of ' + title + ' started!')
+
     # Xtop, Xright, Xbottom, Xleft, Ytop, Yright, Ybottom, Yleft, mask = \
     #     load_fibertracking_data(folder_old, fibertrackingshape, stressmapshape, noCells)
     # sigma_xx, sigma_yy, sigma_xy, sigma_yx, Tx, Ty, Dx, Dy, actin_images = load_MSM_and_TFM_data_and_actin_images(folder_old, noCells,
     #                                                                                                               stressmapshape,
     #                                                                                                               stressmappixelsize)
+    # actin_order_parameter = load_actin_order_parameter(folder_old)
+    # np.save(folder_new + title + "/actin_anisotropy.npy", actin_order_parameter)
+
     # actin_angles = load_actin_angle_data(folder_old)
     # actin_intensity_left, actin_intensity_right = load_actin_intensity_data(folder_old)
-    actin_intensity, actin_intensity_left, actin_intensity_right = calculate_actin_intensities(folder_old, noFrames, noCells)
+    # actin_intensity, actin_intensity_left, actin_intensity_right = calculate_actin_intensities(folder_old, noFrames, noCells)
+    cortex_intensity, cortex_intensity_left, cortex_intensity_right, SF_intensity, SF_intensity_left, SF_intensity_right = calculate_stressfiber_intensities(folder_old, noFrames, noCells)
+
     # actin_images = load_actin_images(folder_old, stressmapshape, noCells)
     # save_actin_images_as_png(folder_old, folder_new, title, noCells, stressmapshape, stressmappixelsize)
     # np.save(folder_new + title + "/Xtop.npy", Xtop)
@@ -330,9 +418,16 @@ def main(folder_old, folder_new, title, noCells, noFrames):
     # plt.plot(np.nanmean(actin_intensity, axis=1))
     # plt.show()
 
-    np.save(folder_new + title + "/actin_intensity.npy", actin_intensity)
-    np.save(folder_new + title + "/actin_intensity_left.npy", actin_intensity_left)
-    np.save(folder_new + title + "/actin_intensity_right.npy", actin_intensity_right)
+    # np.save(folder_new + title + "/actin_intensity.npy", actin_intensity)
+    # np.save(folder_new + title + "/actin_intensity_left.npy", actin_intensity_left)
+    # np.save(folder_new + title + "/actin_intensity_right.npy", actin_intensity_right)
+
+    np.save(folder_new + title + "/cortex_intensity.npy", cortex_intensity)
+    np.save(folder_new + title + "/cortex_intensity_left.npy", cortex_intensity_left)
+    np.save(folder_new + title + "/cortex_intensity_right.npy", cortex_intensity_right)
+    np.save(folder_new + title + "/SF_intensity.npy", SF_intensity)
+    np.save(folder_new + title + "/SF_intensity_left.npy", SF_intensity_left)
+    np.save(folder_new + title + "/SF_intensity_right.npy", SF_intensity_right)
     #
     # np.save(folder_new + title + "/actin_images.npy", actin_images)
 
@@ -342,11 +437,11 @@ def main(folder_old, folder_new, title, noCells, noFrames):
 if __name__ == "__main__":
     folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
 
-    main("D:/2021_OPTO H2000 stimulate all for 10 minutes/doublets", folder, "AR1to1_doublets_full_stim_long", 42, 60)
-    main("D:/2021_OPTO H2000 stimulate all for 10 minutes/singlets", folder, "AR1to1_singlets_full_stim_long", 17, 60)
-    main("D:/2021_OPTO H2000 stimulate all for 3 minutes/doublets", folder, "AR1to1_doublets_full_stim_short", 35, 50)
-    main("D:/2021_OPTO H2000 stimulate all for 3 minutes/singlets", folder, "AR1to1_singlets_full_stim_short", 14, 50)
-    main("D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_doublets/AR1to2", folder, "AR1to2_doublets_half_stim", 43, 60)
-    main("D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_doublets/AR1to1", folder, "AR1to1_doublets_half_stim", 29, 60)
-    main("D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_singlets", folder, "AR1to1_singlets_half_stim", 41, 60)
+    # main("D:/2021_OPTO H2000 stimulate all for 10 minutes/doublets", folder, "AR1to1_doublets_full_stim_long", 42, 60)
+    # main("D:/2021_OPTO H2000 stimulate all for 10 minutes/singlets", folder, "AR1to1_singlets_full_stim_long", 17, 60)
+    # main("D:/2021_OPTO H2000 stimulate all for 3 minutes/doublets", folder, "AR1to1_doublets_full_stim_short", 35, 50)
+    # main("D:/2021_OPTO H2000 stimulate all for 3 minutes/singlets", folder, "AR1to1_singlets_full_stim_short", 14, 50)
+    # main("D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_doublets/AR1to2", folder, "AR1to2_doublets_half_stim", 43, 60)
+    # main("D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_doublets/AR1to1", folder, "AR1to1_doublets_half_stim", 29, 60)
+    # main("D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_singlets", folder, "AR1to1_singlets_half_stim", 41, 60)
     main("D:/2020_OPTO H2000 stimulate left half doublets and singlets/TFM_doublets/AR2to1", folder, "AR2to1_doublets_half_stim", 18, 60)

@@ -27,6 +27,11 @@ tissues_tophalf_stim = pickle.load(open(folder + "analysed_data/tissues_tophalf_
 tissues_lefthalf_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_tissues_lefthalfstim.dat", "rb"))
 tissues_tophalf_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_tissues_tophalfstim.dat", "rb"))
 
+AR1to2d_halfstim = pickle.load(open(folder + "analysed_data/AR1to2d_halfstim.dat", "rb"))
+AR1to1d_halfstim = pickle.load(open(folder + "analysed_data/AR1to1d_halfstim.dat", "rb"))
+AR1to1s_halfstim = pickle.load(open(folder + "analysed_data/AR1to1s_halfstim.dat", "rb"))
+AR2to1d_halfstim = pickle.load(open(folder + "analysed_data/AR2to1d_halfstim.dat", "rb"))
+
 
 # define some colors for the plots
 colors_parent = ['#026473', '#E3CC69', '#77C8A6', '#D96248']
@@ -81,7 +86,53 @@ df_plot_units = df  # all units here are in SI units
 df_plot_units['Es_baseline'] *= 1e12  # convert to fJ
 df_plot_units['sigma_xx_baseline'] *= 1e3  # convert to mN/m
 df_plot_units['sigma_yy_baseline'] *= 1e3  # convert to mN/m
+# %% prepare dataframe with doublets and singlets for boxplots
 
+# initialize empty dictionaries
+concatenated_data_1to2d = {}
+concatenated_data_1to1d = {}
+concatenated_data_1to1s = {}
+concatenated_data_2to1d = {}
+concatenated_data = {}
+
+# loop over all keys
+for key1 in AR1to1d_halfstim:  # keys are the same for all dictionaries so I'm just taking one example here
+    for key2 in AR1to1d_halfstim[key1]:
+        if AR1to1d_halfstim[key1][key2].ndim == 1:  # only 1D data can be stored in the data frame
+            # concatenate values from different experiments
+            concatenated_data_1to2d[key2] = AR1to2d_halfstim[key1][key2]
+            concatenated_data_1to1d[key2] = AR1to1d_halfstim[key1][key2]
+            concatenated_data_1to1s[key2] = AR1to1s_halfstim[key1][key2]
+            concatenated_data_2to1d[key2] = AR2to1d_halfstim[key1][key2]
+
+            concatenated_data[key2] = np.concatenate(
+                (concatenated_data_1to2d[key2], concatenated_data_1to1d[key2], concatenated_data_1to1s[key2], concatenated_data_2to1d[key2]))
+key2 = 'Es_baseline'
+# get number of elements for both condition
+n_1to2d = concatenated_data_1to2d[key2].shape[0]
+n_1to1d = concatenated_data_1to1d[key2].shape[0]
+n_1to1s = concatenated_data_1to1s[key2].shape[0]
+n_2to1d = concatenated_data_2to1d[key2].shape[0]
+
+# create a list of keys with the same dimensions as the data
+keys1to2d = ['AR1to2d' for i in range(n_1to2d)]
+keys1to1d = ['AR1to1d' for i in range(n_1to1d)]
+keys1to1s = ['AR1to1s' for i in range(n_1to1s)]
+keys2to1d = ['AR2to1d' for i in range(n_2to1d)]
+keys = np.concatenate((keys1to2d, keys1to1d, keys1to1s, keys2to1d))
+
+# add keys to dictionary with concatenated data
+concatenated_data['keys2'] = keys
+
+# Creates DataFrame
+df_2 = pd.DataFrame(concatenated_data)
+
+# convert to more convenient units for plotting
+df['Es_baseline'] *= 1e12  # convert to fJ
+df['sigma_xx_baseline'] *= 1e3  # convert to mN/m
+df['sigma_yy_baseline'] *= 1e3  # convert to mN/m
+
+df_all = pd.concat([df_2, df])
 # %% plot figure 5A, force maps
 
 # prepare data first
@@ -198,40 +249,75 @@ fig.savefig(figfolder + 'B.png', dpi=300, bbox_inches="tight")
 fig.savefig(figfolder + 'B.svg', dpi=300, bbox_inches="tight")
 plt.show()
 
-# %% plot figure 5C, Stress and actin anisotropy coefficient boxplot
+# %% plot figure 5C correlation plot of stress anisotropy and actin anisotropy
 
-# define plot parameters that are valid for the whole figure
+# set up global plot parameters
 # ******************************************************************************************************************************************
-colors = [colors_parent[0], colors_parent[1], colors_parent[3]]  # defines colors
-sns.set_palette(sns.color_palette(colors))  # sets colors
-xticklabels = ['']  # which labels to put on x-axis
-fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(1.2, 2.6))  # create figure instance
-# adjust space in between plots
-plt.subplots_adjust(wspace=0, hspace=0.4)
-# ******************************************************************************************************************************************
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(2.5, 2.5))  # create figure and axes
+plt.subplots_adjust(wspace=0.45, hspace=0.45)  # adjust space in between plots
 
+ylabeloffset = -7
+xlabeloffset = 0
+colors = [colors_parent[0], colors_parent[1], colors_parent[2], colors_parent[3], colors_parent_dark[1]]  # defines colors for scatterplot
 
-# Set up plot parameters for first panel
-#######################################################################################################
-x = 'keys2'  # variable by which to group the data
-y = 'AIC_baseline'  # variable that goes on the y-axis
-ymin = 0  # minimum value on y-axis
-ymax = 1  # maximum value on y-axis
-yticks = np.arange(0, 1.01, 0.5)  # define where to put major ticks on y-axis
-ylabel = None  # which label to put on y-axis
-title = 'Stress anisotropy \n coefficient'  # title of plot
+y = 'actin_anisotropy_coefficient'
+x = 'AIC_baseline'
+hue = 'keys2'
+ymin = -1
+ymax = 1
+xmin = -1
+xmax = 1
+yticks = np.arange(-1, 1.1, 0.5)
+xticks = np.arange(-1, 1.1, 0.5)
+ylabel = "Structural polarization (actin)"  # "'$\mathrm{\sigma_{x, MSM}}$'
+xlabel = "Mechanical polarization"  # '$\mathrm{\sigma_{x, CM}}$'
 
-# make plots
-make_box_and_swarmplots(x, y, df, axes[0], ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+corr, p = make_correlationplotsplots(x, y, hue, df_all, ax, xmin, xmax, ymin, ymax, xticks, yticks, xlabel, ylabel, colors)
 
-title = 'Actin anisotropy \n coefficient'  # title of plot
-y = 'actin_anisotropy_coefficient'  # variable that goes on the y-axis
-make_box_and_swarmplots(x, y, df, axes[1], ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+# add line with slope 1 for visualisation
+# ax.plot([ymin, ymax], [0, 0], linewidth=0.5, linestyle=':', color='grey')
+# ax.plot([45, 45], [xmin, xmax], linewidth=0.5, linestyle=':', color='grey')
 
-# # save plot to file
+plt.text(0.21 * xmax + xmin, 1.05 * ymax, 'R = ' + str(corr))
+# plt.text(0.52 * xmax, 1.1 * ymax, 'p = ' + '{:0.2e}'.format(p))
+
 plt.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
 plt.show()
+# # %% plot figure 5C, Stress and actin anisotropy coefficient boxplot
+#
+# # define plot parameters that are valid for the whole figure
+# # ******************************************************************************************************************************************
+# colors = [colors_parent[0], colors_parent[1], colors_parent[3]]  # defines colors
+# sns.set_palette(sns.color_palette(colors))  # sets colors
+# xticklabels = ['']  # which labels to put on x-axis
+# fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(1.2, 2.6))  # create figure instance
+# # adjust space in between plots
+# plt.subplots_adjust(wspace=0, hspace=0.4)
+# # ******************************************************************************************************************************************
+#
+#
+# # Set up plot parameters for first panel
+# #######################################################################################################
+# x = 'keys2'  # variable by which to group the data
+# y = 'AIC_baseline'  # variable that goes on the y-axis
+# ymin = 0  # minimum value on y-axis
+# ymax = 1  # maximum value on y-axis
+# yticks = np.arange(0, 1.01, 0.5)  # define where to put major ticks on y-axis
+# ylabel = None  # which label to put on y-axis
+# title = 'Mechanical \n polarization'  # title of plot
+#
+# # make plots
+# make_box_and_swarmplots(x, y, df, axes[0], ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+#
+# title = 'Structural \n polarization (actin)'  # title of plot
+# y = 'actin_anisotropy_coefficient'  # variable that goes on the y-axis
+# make_box_and_swarmplots(x, y, df, axes[1], ymin, ymax, yticks, xticklabels, ylabel, title, colors)
+#
+# # # save plot to file
+# plt.savefig(figfolder + 'C.png', dpi=300, bbox_inches="tight")
+# plt.savefig(figfolder + 'C.svg', dpi=300, bbox_inches="tight")
+# plt.show()
 # # %% filter data to remove cells that have an unstable baseline
 #
 # def filter_data_main(data, threshold, title):
@@ -532,11 +618,14 @@ axes[1].plot(feedbacks, yy_stress_increase_ratio_sim_lefthalf, color=colors_pare
 # add data points
 # x=0
 x = find_x_position_of_point_on_array(feedbacks, xx_stress_increase_ratio_sim_tophalf, xx_stress_increase_ratio_tophalf)
+AC_xx_tophalf = x
+
 axes[0].errorbar(x, xx_stress_increase_ratio_tophalf, yerr=xx_stress_increase_ratio_tophalf_err, mfc="w", color=colors_parent[0],
                  marker="v", ms=5, linewidth=0.5, ls="none", markeredgewidth=0.5)
 
 
 x = find_x_position_of_point_on_array(feedbacks, xx_stress_increase_ratio_sim_lefthalf, xx_stress_increase_ratio_lefthalf)
+AC_xx_lefthalf = x
 
 axes[0].errorbar(x, xx_stress_increase_ratio_lefthalf, yerr=xx_stress_increase_ratio_lefthalf_err, mfc="w", color=colors_parent[3],
                  marker="o", ms=5, linewidth=0.5, ls="none", markeredgewidth=0.5)
@@ -544,12 +633,13 @@ axes[0].errorbar(x, xx_stress_increase_ratio_lefthalf, yerr=xx_stress_increase_r
 
 
 x = find_x_position_of_point_on_array(feedbacks, yy_stress_increase_ratio_sim_tophalf, yy_stress_increase_ratio_tophalf)
-# x = -0.08
+AC_yy_tophalf = x
 
 axes[1].errorbar(x, yy_stress_increase_ratio_tophalf, yerr=yy_stress_increase_ratio_tophalf_err, mfc="w", color=colors_parent[0],
                  marker="v", ms=5, linewidth=0.5, ls="none", markeredgewidth=0.5)
 
 x = find_x_position_of_point_on_array(feedbacks, yy_stress_increase_ratio_sim_lefthalf, yy_stress_increase_ratio_lefthalf)
+AC_yy_lefthalf = x
 
 axes[1].errorbar(x, yy_stress_increase_ratio_lefthalf, yerr=yy_stress_increase_ratio_lefthalf_err, mfc="w", color=colors_parent[3],
                  marker="o", ms=5, linewidth=0.5, ls="none", markeredgewidth=0.5)
@@ -570,12 +660,57 @@ for ax in axes.flat:
 
     ax.axvline(x=0, ymin=0, ymax=1, linewidth=0.5, color="grey", linestyle="--")
 
-# plt.ylabel("Normalized xx-stress increase of \n non-activated area")
-# plt.suptitle("Stress coupling", y=0.95)
+
 plt.savefig(figfolder + "F.png", dpi=300, bbox_inches="tight")
 plt.savefig(figfolder + "F.svg", dpi=300, bbox_inches="tight")
 plt.show()
 
+# %%
+summarized_data = pd.read_csv("summarized_data.csv")
+MP_lefthalf = - np.nanmean(tissues_lefthalf_stim["MSM_data"]["AIC_baseline"])
+MP_tophalf = np.nanmean(tissues_tophalf_stim["MSM_data"]["AIC_baseline"])
+
+SP_lefthalf = - np.nanmean(tissues_lefthalf_stim["shape_data"]["actin_anisotropy_coefficient"])
+SP_tophalf = np.nanmean(tissues_tophalf_stim["shape_data"]["actin_anisotropy_coefficient"])
+
+d = {'condition': ["lefthalf", "tophalf"],
+     'active coupling_x': np.array([AC_xx_lefthalf, AC_xx_tophalf]),
+     'active coupling_y': np.array([AC_yy_lefthalf, AC_yy_tophalf]),
+     'mechanical polarization': np.array([MP_lefthalf, MP_tophalf]),
+     'structural polarization': np.array([SP_lefthalf, SP_tophalf])}
+
+summarized_data_tissues = pd.DataFrame(data=d)
+summarized_data = summarized_data.append(summarized_data_tissues)
+colors = [colors_parent[0], colors_parent[1], colors_parent[3], colors_parent_dark[0], colors_parent_dark[1]]
+
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(3, 2.8))
+plt.subplots_adjust(wspace=0.6, hspace=0.4)  # adjust space in between plots
+
+sns.scatterplot(data=summarized_data, y="active coupling_x", x="mechanical polarization", hue="condition", style="condition",
+                palette=colors, legend=False, ax=axes[0, 0])
+
+sns.scatterplot(data=summarized_data, y="active coupling_y", x="mechanical polarization", hue="condition", style="condition",
+                palette=colors, legend=False, ax=axes[0, 1])
+
+sns.scatterplot(data=summarized_data, y="active coupling_x", x="structural polarization", hue="condition", style="condition",
+                palette=colors, legend=False, ax=axes[1, 0])
+
+sns.scatterplot(data=summarized_data, y="active coupling_y", x="structural polarization", hue="condition", style="condition",
+                palette=colors, legend=False, ax=axes[1, 1])
+
+for ax in axes.flat:
+    ax.set_ylim(-1, 1.1)
+    ax.set_xlim(-1, 1.1)
+    ax.minorticks_on()
+    ax.tick_params(direction="in", which="minor", length=3, bottom=True, top=False, left=True, right=True)
+    ax.tick_params(direction="in", which="major", length=6, bottom=True, top=False, left=True, right=True)
+    ax.xaxis.set_ticks(xticks)
+    ax.axvline(x=0, ymin=-1, ymax=1, linewidth=0.5, color="grey", linestyle="--")
+    ax.axhline(y=0, xmin=-1, xmax=1, linewidth=0.5, color="grey", linestyle="--")
+
+fig.savefig(figfolder + 'G.png', dpi=300, bbox_inches="tight")
+fig.savefig(figfolder + 'G.svg', dpi=300, bbox_inches="tight")
+plt.show()
 #  # %% plot figure 5C correlation plot of stress anisotropy and actin anisotropy
 # #
 # # # set up global plot parameters

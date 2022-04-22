@@ -186,11 +186,11 @@ def load_MSM_and_TFM_data_and_actin_images(folder, noCells, stressmapshape, stre
 #
 #     return actin_angles
 
-def load_actin_mean_angle_data(folder):
-    actin_angles = scipy.io.loadmat(folder + "/mean_angles.mat") 
-    actin_angles = actin_angles["angles"]
+def load_actin_order_parameter(folder):
+    order_parameter = scipy.io.loadmat(folder + "/order_parameter.mat")
+    order_parameter = order_parameter["order_parameter"]
 
-    return actin_angles
+    return order_parameter
 
 
 
@@ -237,20 +237,20 @@ def main(folder_old, folder_new, title, noCells, noFrames):
 
     print('Data loading of ' + title + ' started!')
 
-    actin_angles = load_actin_mean_angle_data(folder_old)
-    np.save(folder_new + title + "/actin_angles.npy", actin_angles)
+    actin_order_parameter = load_actin_order_parameter(folder_old)
+    np.save(folder_new + title + "/actin_anisotropy.npy", actin_order_parameter)
 
-    sigma_xx, sigma_yy, Tx, Ty, Dx, Dy = load_MSM_and_TFM_data_and_actin_images(folder_old, noCells, stressmapshape, stressmappixelsize)
-
-    if not os.path.exists(folder_new + title):
-        os.mkdir(folder_new + title)
-
-    np.save(folder_new + title + "/Dx.npy", Dx)
-    np.save(folder_new + title + "/Dy.npy", Dy)
-    np.save(folder_new + title + "/Tx.npy", Tx)
-    np.save(folder_new + title + "/Ty.npy", Ty)
-    np.save(folder_new + title + "/sigma_xx.npy", sigma_xx)
-    np.save(folder_new + title + "/sigma_yy.npy", sigma_yy)
+    # sigma_xx, sigma_yy, Tx, Ty, Dx, Dy = load_MSM_and_TFM_data_and_actin_images(folder_old, noCells, stressmapshape, stressmappixelsize)
+    #
+    # if not os.path.exists(folder_new + title):
+    #     os.mkdir(folder_new + title)
+    #
+    # np.save(folder_new + title + "/Dx.npy", Dx)
+    # np.save(folder_new + title + "/Dy.npy", Dy)
+    # np.save(folder_new + title + "/Tx.npy", Tx)
+    # np.save(folder_new + title + "/Ty.npy", Ty)
+    # np.save(folder_new + title + "/sigma_xx.npy", sigma_xx)
+    # np.save(folder_new + title + "/sigma_yy.npy", sigma_yy)
 
     print('Data loading of ' + title + ' terminated!')
 
