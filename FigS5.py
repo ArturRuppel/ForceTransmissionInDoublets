@@ -10,10 +10,17 @@ from scipy.stats import zscore
 from plot_and_filter_functions import *
 from scipy.interpolate import interp1d
 
+# define some colors for the plots
+colors_parent = ['#026473', '#E3CC69', '#77C8A6', '#D96248']
+
+folder = "C:/Users/aruppel/Documents/_forcetransmission_in_cell_doublets_raw/"
+figfolder = folder + "_FigureS5/"
+if not os.path.exists(figfolder):
+    os.mkdir(figfolder)
+
 
 pixelsize = 0.864  # in µm
 # %% load data for plotting
-folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
 AR1to2d_halfstim = pickle.load(open(folder + "analysed_data/AR1to2d_halfstim.dat", "rb"))
 AR1to1d_halfstim = pickle.load(open(folder + "analysed_data/AR1to1d_halfstim.dat", "rb"))
 AR2to1d_halfstim = pickle.load(open(folder + "analysed_data/AR2to1d_halfstim.dat", "rb"))
@@ -21,25 +28,6 @@ AR2to1d_halfstim = pickle.load(open(folder + "analysed_data/AR2to1d_halfstim.dat
 AR1to2_CM_simulation = pickle.load(open(folder + "_contour_simulations/CM_1to2_simulation.dat", "rb"))
 AR1to1_CM_simulation = pickle.load(open(folder + "_contour_simulations/CM_1to1_simulation.dat", "rb"))
 AR2to1_CM_simulation = pickle.load(open(folder + "_contour_simulations/CM_2to1_simulation.dat", "rb"))
-# tissues_lefthalf_stim = pickle.load(open(folder + "analysed_data/tissues_lefthalf_stim.dat", "rb"))
-# tissues_tophalf_stim = pickle.load(open(folder + "analysed_data/tissues_tophalf_stim.dat", "rb"))
-#
-#
-#
-# AR1to2_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_1to2.dat", "rb"))
-# AR1to1_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_singlets.dat", "rb"))
-# AR2to1_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_2to1.dat", "rb"))
-# tissues_lefthalf_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_tissues_lefthalfstim.dat", "rb"))
-# tissues_tophalf_FEM_simulation = pickle.load(open(folder + "_FEM_simulations/FEM_tissues_tophalfstim.dat", "rb"))
-
-
-# define some colors for the plots
-colors_parent = ['#026473', '#E3CC69', '#77C8A6', '#D96248']
-colors_parent_dark = ['#01353D', '#564910', '#235741', '#A93B23']
-
-figfolder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FigureS5/"
-if not os.path.exists(figfolder):
-    os.mkdir(figfolder)
 
 # %% filter data to remove cells that have an unstable baseline
 
