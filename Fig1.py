@@ -12,14 +12,20 @@ import pandas as pd
 from plot_and_filter_functions import *
 
 
+# define some colors for the plots
+colors_parent = ['#026473', '#E3CC69', '#77C8A6', '#D96248']
+mpl.rcParams['font.size'] = 8
 
 # chose an example for force maps
 doublet_example = 1
 singlet_example = 4
 
-# %% load data for plotting
-
 folder = "C:/Users/aruppel/Documents/_forcetransmission_in_cell_doublets_raw/"
+figfolder = folder + "_Figure1/"
+if not os.path.exists(figfolder):
+    os.mkdir(figfolder)
+    
+# %% load data for plotting   
 AR1to1d_fullstim_long = pickle.load(open(folder + "analysed_data/AR1to1d_fullstim_long.dat", "rb"))
 AR1to1d_fullstim_short = pickle.load(open(folder + "analysed_data/AR1to1d_fullstim_short.dat", "rb"))
 AR1to1d_halfstim = pickle.load(open(folder + "analysed_data/AR1to1d_halfstim.dat", "rb"))
@@ -27,13 +33,6 @@ AR1to1d_halfstim = pickle.load(open(folder + "analysed_data/AR1to1d_halfstim.dat
 AR1to1s_fullstim_long = pickle.load(open(folder + "analysed_data/AR1to1s_fullstim_long.dat", "rb"))
 AR1to1s_fullstim_short = pickle.load(open(folder + "analysed_data/AR1to1s_fullstim_short.dat", "rb"))
 AR1to1s_halfstim = pickle.load(open(folder + "analysed_data/AR1to1s_halfstim.dat", "rb"))
-
-# define some colors for the plots
-colors_parent = ['#026473', '#E3CC69', '#77C8A6', '#D96248']
-
-figfolder = folder + "_Figure1/"
-if not os.path.exists(figfolder):
-    os.mkdir(figfolder)
 
 # %% set up pandas data frame to use with seaborn for box- and swarmplots
 
