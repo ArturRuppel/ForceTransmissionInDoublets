@@ -13,7 +13,7 @@ def rgb2gray(rgb):
     return np.dot(rgb[..., :3], [0.2989, 0.5870, 0.1140])
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from lmfit import minimize, Parameters, Model
+# from lmfit import minimize, Parameters, Model
 
 
 def analyse_tfm_data(folder, stressmappixelsize):
@@ -526,7 +526,7 @@ def main_meta_analysis(folder, title, noFrames):
 
 if __name__ == "__main__":
     # This is the folder where all the input data is stored
-    folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
+    folder = "C:/Users/aruppel/Documents/_forcetransmission_in_cell_doublets_raw/"
 
     AR1to1dfsl = "AR1to1_doublets_full_stim_long"
     AR1to1sfsl = "AR1to1_singlets_full_stim_long"
