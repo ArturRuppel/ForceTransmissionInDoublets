@@ -23,13 +23,12 @@ def rgb2gray(rgb):
 colors_parent = ['#026473', '#E3CC69', '#77C8A6', '#D96248']
 colors_parent_dark = ['#01353D', '#564910', '#235741', '#A93B23']
 
-figfolder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_FigureS4/"
+folder = "C:/Users/aruppel/Documents/_forcetransmission_in_cell_doublets_raw/"
+figfolder = folder + "_FigureS4/"
 if not os.path.exists(figfolder):
     os.mkdir(figfolder)
-
+    
 # %% load data for plotting
-folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
-
 AR1to1d_halfstim = pickle.load(open(folder + "analysed_data/AR1to1d_halfstim.dat", "rb"))
 AR1to1s_halfstim = pickle.load(open(folder + "analysed_data/AR1to1s_halfstim.dat", "rb"))
 
@@ -60,8 +59,6 @@ sim_Es_1to1s_hs_right_fluidization = np.load(folder + "_FEM_simulations/strain_e
 
 sim_relEs_1to1s_hs_left_fluidization = sim_Es_1to1s_hs_left_fluidization / np.nanmean(sim_Es_1to1s_hs_left_fluidization[0:20]) - 1
 sim_relEs_1to1s_hs_right_fluidization = sim_Es_1to1s_hs_right_fluidization / np.nanmean(sim_Es_1to1s_hs_right_fluidization[0:20]) - 1
-
-
 
 
 # %% filter data to make sure that the baselines are stable
