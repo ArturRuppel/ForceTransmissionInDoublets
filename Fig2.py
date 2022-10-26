@@ -7,17 +7,23 @@ Created on Wed Jul  7 21:56:01 2021
 """
 import os
 import pickle
-
 import matplotlib.image as mpimg
 import pandas as pd
-
 from plot_and_filter_functions import *
 
-# mpl.rcParams['pdf.fonttype'] = 42
+# define some colors for the plots
+colors_parent = ['#026473', '#E3CC69', '#77C8A6', '#D96248']
 mpl.rcParams['font.size'] = 8
 
+def rgb2gray(rgb):
+    return np.dot(rgb[..., :3], [0.2989, 0.5870, 0.1140])
+
+folder = "C:/Users/aruppel/Documents/_forcetransmission_in_cell_doublets_raw/"
+figfolder = folder + "_Figure2/"
+if not os.path.exists(figfolder):
+    os.mkdir(figfolder)
+    
 # %% load data for plotting
-folder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/"
 AR1to1d_fullstim_long = pickle.load(open(folder + "analysed_data/AR1to1d_fullstim_long.dat", "rb"))
 AR1to1d_fullstim_short = pickle.load(open(folder + "analysed_data/AR1to1d_fullstim_short.dat", "rb"))
 AR1to1d_halfstim = pickle.load(open(folder + "analysed_data/AR1to1d_halfstim.dat", "rb"))
@@ -34,17 +40,6 @@ AR1to1d_halfstim_CM = pickle.load(open(folder + "analysed_data/AR1to1d_halfstim_
 AR1to1s_fullstim_long_CM = pickle.load(open(folder + "analysed_data/AR1to1s_fullstim_long_CM.dat", "rb"))
 AR1to1s_fullstim_short_CM = pickle.load(open(folder + "analysed_data/AR1to1s_fullstim_short_CM.dat", "rb"))
 AR1to1s_halfstim_CM = pickle.load(open(folder + "analysed_data/AR1to1s_halfstim_CM.dat", "rb"))
-
-# define some colors for the plots
-colors_parent = ['#026473', '#E3CC69', '#77C8A6', '#D96248']
-
-figfolder = "C:/Users/Balland/Documents/_forcetransmission_in_cell_doublets_alldata/_Figure2/"
-if not os.path.exists(figfolder):
-    os.mkdir(figfolder)
-
-
-def rgb2gray(rgb):
-    return np.dot(rgb[..., :3], [0.2989, 0.5870, 0.1140])
 
 
 # %% set up pandas data frame to use with seaborn for box- and swarmplots
