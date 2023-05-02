@@ -310,8 +310,8 @@ def plot_two_values_over_time(x, y1, y2, xticks, yticks, ymin, ymax, xlabel, yla
     ax.set_title(label=title, pad=titleoffset)
 
     # add anotations for opto pulses
-    for i in np.arange(10):
-        ax.axline((20 + i, ymin), (20 + i, ymax), linewidth=optolinewidth, color="cyan")
+    # for i in np.arange(10):
+    #     ax.axline((20 + i, ymin), (20 + i, ymax), linewidth=optolinewidth, color="cyan")
 
     # set ticks
     ax.xaxis.set_ticks(xticks)
